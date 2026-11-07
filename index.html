@@ -50,7 +50,7 @@
 .floating-controls{position:absolute;right:32px;bottom:27px;display:flex;gap:9px}.floating-controls .round-btn{width:44px;height:44px}
 .selection-exit{position:absolute;top:114px;right:34px;opacity:0;pointer-events:none;transition:opacity .18s}.stage.has-selection~.chrome .selection-exit{opacity:1;pointer-events:auto}
 .corner-index{position:absolute;left:39px;top:119px;color:#fff8;font-size:9px;line-height:1.7;letter-spacing:.18em}.corner-index .accent{display:inline-block;width:6px;height:6px;background:#e2ded4;border-radius:50%;margin-right:8px;vertical-align:1px}
-.modal{position:absolute;inset:0;z-index:40;background:rgba(0,0,0,.67);display:grid;place-items:center;padding:22px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}.modal[hidden]{display:none}.modal-card{width:min(470px,100%);background:#141414;border:1px solid #ffffff2b;padding:32px 34px 33px;position:relative;box-shadow:0 22px 90px #000b}.modal-card .overline{font-size:10px;letter-spacing:.24em;color:#fff8;font-weight:700}.modal-card h2{font-size:37px;line-height:1;letter-spacing:-.055em;margin:24px 0 15px;font-weight:650}.modal-card p{font-size:13px;line-height:1.75;color:#d7d2c9}.modal-card .keys{display:grid;grid-template-columns:1fr 1fr;gap:12px 18px;margin-top:23px;padding-top:20px;border-top:1px solid #fff2}.key-item{font-size:12px;color:#fff9;display:flex;align-items:center;gap:9px}.kbd{display:inline-block;padding:5px 8px;min-width:29px;border:1px solid #fff3;color:#fff;text-align:center;font-size:11px}.modal-card .modal-close{position:absolute;right:21px;top:21px;width:35px;height:35px}
+.modal{position:absolute;inset:0;z-index:40;background:rgba(0,0,0,.67);display:grid;place-items:center;padding:22px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}.modal[hidden]{display:none}.modal-card{width:min(470px,100%);max-height:calc(100dvh - 44px);overflow-y:auto;background:#141414;border:1px solid #ffffff2b;padding:32px 34px 33px;position:relative;box-shadow:0 22px 90px #000b}.modal-card .overline{font-size:10px;letter-spacing:.24em;color:#fff8;font-weight:700}.modal-card h2{font-size:37px;line-height:1;letter-spacing:-.055em;margin:24px 0 15px;font-weight:650}.modal-card p{font-size:13px;line-height:1.75;color:#d7d2c9}.modal-card .keys{display:grid;grid-template-columns:1fr 1fr;gap:12px 18px;margin-top:23px;padding-top:20px;border-top:1px solid #fff2}.key-item{font-size:12px;color:#fff9;display:flex;align-items:center;gap:9px}.kbd{display:inline-block;padding:5px 8px;min-width:29px;border:1px solid #fff3;color:#fff;text-align:center;font-size:11px}.modal-card .modal-close{position:absolute;right:21px;top:21px;width:35px;height:35px}
 @media(max-width:760px){.topbar{padding:22px 20px}.brand{min-width:0}.brand-mark{transform:scale(.86)}.brand-name{font-size:12px}.brand-sub{font-size:8px}.top-middle{display:none}.top-tools{min-width:0;gap:9px}.edition{display:none}.bottom-left{left:20px;bottom:23px}.bottom-left .number{font-size:32px}.bottom-left .bottom-meta{display:none}.bottom-center{display:none}.floating-controls{right:16px;bottom:18px;gap:7px}.floating-controls .round-btn{width:44px;height:44px}.corner-index{left:20px;top:90px;opacity:.84}.selection-exit{top:91px;right:19px}.m-tile.is-active .tile-info{left:28px;bottom:29px}.m-tile.is-active .tile-title{font-size:clamp(37px,7.5cqw,72px)}.m-tile.is-active .detail{font-size:12px;line-height:1.55}.m-tile .tile-info{left:15px;bottom:15px}.m-tile .tile-kicker{font-size:9px}.m-tile .tile-title{font-size:clamp(20px,4.3cqw,48px)}}
 .import-btn{position:relative}
 .collection-tag{display:inline-flex;gap:8px;align-items:center;padding:9px 12px;color:#f7f4eed6;background:#111c;border:1px solid #ffffff2c;font-size:10px;letter-spacing:.08em;white-space:nowrap;max-width:225px;overflow:hidden;text-overflow:ellipsis}
@@ -86,6 +86,7 @@
 /* Quiet, temporary import affordance: controls stay subordinate to the artwork. */
 .import-progress{position:absolute;top:105px;left:50%;transform:translateX(-50%);z-index:38;display:flex;align-items:center;gap:15px;max-width:min(90vw,500px);padding:12px 14px;background:#0b0b0bef;border:1px solid #ffffff36;color:#f7f4ee;font-size:11px;letter-spacing:.04em;box-shadow:0 12px 40px #0008}
 .import-progress[hidden]{display:none}.import-progress span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.import-progress button{background:#242424;border:1px solid #ffffff35;color:inherit;font:inherit;cursor:pointer;white-space:nowrap;padding:7px 12px}.import-progress button:hover{background:#383838}
+.cache-actions{margin-top:17px;border-top:1px solid #ffffff20;padding-top:15px;display:flex;flex-wrap:wrap;align-items:center;gap:12px}.cache-actions span{color:#b9b5ae;font-size:11px;line-height:1.55;flex:1 1 180px}.cache-actions button{border:1px solid #ffffff35;background:#1e1e1e;color:#f7f4ee;font:inherit;font-size:11px;padding:8px 11px;cursor:pointer}.cache-actions button:disabled{opacity:.5;cursor:wait}
 .forget-folder{display:inline-block;margin-top:12px;padding:8px 0;border:0;background:none;color:#d7d2c9;text-decoration:underline;text-underline-offset:4px;cursor:pointer;font-size:12px}.forget-folder[hidden]{display:none}
 .top-tools .round-btn[hidden]{display:none}
 @media(max-width:760px){.import-progress{top:87px;max-width:calc(100vw - 30px)}.top-tools{gap:7px}}
@@ -120,7 +121,7 @@
   <div class="import-progress" id="importProgress" hidden role="status" aria-live="off"><span id="importMessage">准备导入图片…</span><button id="importCancel" type="button" aria-label="取消导入">取消</button></div>
   <div class="sr-only" id="sceneStatus" role="status" aria-live="polite" aria-atomic="true"></div>
   <div class="modal" id="helpModal" hidden role="dialog" aria-modal="true" aria-labelledby="helpTitle">
-    <div class="modal-card"><div class="overline">NOEMA / FIELD MANUAL</div><button class="round-btn modal-close" id="helpClose" aria-label="关闭指南"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button><h2 id="helpTitle">Explore without edges.</h2><p>无限延展的图像档案。拖动画布穿越视觉场景；缩放始终围绕指针所在的位置。选择任意图像，它将从原位置展开，周围作品随之自然退让。</p><div class="keys"><div class="key-item"><span class="kbd">拖动</span> 移动画布</div><div class="key-item"><span class="kbd">滚轮</span> 指针缩放</div><div class="key-item"><span class="kbd">+ / −</span> 缩放视图</div><div class="key-item"><span class="kbd">方向键</span> 平移画布</div><div class="key-item"><span class="kbd">Enter</span> 展开焦点作品</div><div class="key-item"><span class="kbd">Esc</span> 收起作品</div><div class="key-item"><span class="kbd">0</span> 重置视图</div><div class="key-item"><span class="kbd">?</span> 操作指南</div><div class="key-item"><span class="kbd">R</span> 随机发现</div><div class="key-item"><span class="kbd">I</span> 完整查看原图</div><div class="key-item"><span class="kbd">← / →</span> 原图切换</div><div class="key-item"><span class="kbd">1</span> 原图 100% 查看</div><div class="key-item"><span class="kbd">文件夹</span> 打开本地图片</div><div class="key-item"><span class="kbd">拖放</span> 导入文件或目录</div><div class="key-item"><span class="kbd">最近</span> 按需恢复授权文件夹</div></div><button class="forget-folder" id="forgetFolder" type="button" hidden>清除记住的文件夹</button></div>
+    <div class="modal-card"><div class="overline">NOEMA / FIELD MANUAL</div><button class="round-btn modal-close" id="helpClose" aria-label="关闭指南"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button><h2 id="helpTitle">Explore without edges.</h2><p>无限延展的图像档案。拖动画布穿越视觉场景；缩放始终围绕指针所在的位置。选择任意图像，它将从原位置展开，周围作品随之自然退让。</p><div class="keys"><div class="key-item"><span class="kbd">拖动</span> 移动画布</div><div class="key-item"><span class="kbd">滚轮</span> 指针缩放</div><div class="key-item"><span class="kbd">+ / −</span> 缩放视图</div><div class="key-item"><span class="kbd">方向键</span> 平移画布</div><div class="key-item"><span class="kbd">Enter</span> 展开焦点作品</div><div class="key-item"><span class="kbd">Esc</span> 收起作品</div><div class="key-item"><span class="kbd">0</span> 重置视图</div><div class="key-item"><span class="kbd">?</span> 操作指南</div><div class="key-item"><span class="kbd">R</span> 随机发现</div><div class="key-item"><span class="kbd">I</span> 完整查看原图</div><div class="key-item"><span class="kbd">← / →</span> 原图切换</div><div class="key-item"><span class="kbd">1</span> 原图 100% 查看</div><div class="key-item"><span class="kbd">文件夹</span> 打开本地图片</div><div class="key-item"><span class="kbd">拖放</span> 导入文件或目录</div><div class="key-item"><span class="kbd">最近</span> 按需恢复授权文件夹</div></div><div class="cache-actions"><span id="cacheStatus" aria-live="polite">正在读取缩略图缓存…</span><button type="button" id="clearCacheBtn">清除缩略图缓存</button></div><button class="forget-folder" id="forgetFolder" type="button" hidden>清除记住的文件夹</button></div>
   </div>
   <div id="inspector" class="inspector" hidden role="dialog" aria-modal="true" aria-labelledby="inspectorTitle">
     <header class="inspector-top">
@@ -147,6 +148,7 @@
     </footer>
   </div>
 </div>
+<script src="./thumbnail-store.js"></script>
 <script>
 (()=>{'use strict';
 // Original implementation: geometrical mosaic template, culling, camera and spring reflow.
@@ -174,6 +176,16 @@ let artworks=demoArtworks,localMode=false,collectionVersion=0;
 const MAX_LOCAL_FILES=20000,MAX_THUMB_CACHE=260,THUMB_SIZE=500;
 // Blob budget is compressed bytes, not decoded GPU/DOM memory. Both limits apply.
 const MAX_THUMB_BYTES=32*1024*1024;
+const persistentStore=window.NOEMAThumbStore||null;
+let cacheKeysComputed=0,cacheKeyErrors=0;
+async function getPersistentKey(art){
+ if(!persistentStore||!art.file)return null;
+ if(art.persistentKey)return art.persistentKey;
+ if(!art.keyPromise)art.keyPromise=persistentStore.keyFor(art.file,art.file.__noemaPath||art.file.webkitRelativePath||art.file.name)
+  .then(key=>{art.persistentKey=key;cacheKeysComputed++;return key})
+  .catch(()=>{cacheKeyErrors++;return null});
+ return art.keyPromise;
+}
 let thumbCacheBytes=0;
 let thumbnailWorker=null,workerDisabled=false,workerId=0;
 const workerPending=new Map();
@@ -275,9 +287,15 @@ function pumpThumbnails(){
   thumbnailWorkers++;
   (async()=>{
    try{
-    const blob=await thumbnailInBackground(task.art.file);
+    const key=await getPersistentKey(task.art);
+    if(task.version!==collectionVersion){task.resolve(null);return}
+    let blob=key?await persistentStore.get(key):null;
+    const cacheHit=Boolean(blob);
+    if(task.version!==collectionVersion){task.resolve(null);return}
+    if(!blob)blob=await thumbnailInBackground(task.art.file);
     if(task.version!==collectionVersion){task.resolve(null);return}
     const url=URL.createObjectURL(blob);rememberThumbnail(task.art,url,blob.size);task.resolve(url);
+    if(!cacheHit&&key&&blob.type==='image/webp')void persistentStore.put(key,blob);
    }catch(error){
     if(task.version===collectionVersion){task.art.thumbFailed=true;console.warn('缩略图生成失败，尝试直接显示原图:',task.art.title,error);
      const fallback=URL.createObjectURL(task.art.file);rememberThumbnail(task.art,fallback,task.art.file.size);task.resolve(fallback)}
@@ -662,11 +680,36 @@ document.addEventListener('keydown',event=>{
  else return;
  event.preventDefault();event.stopImmediatePropagation();
 },true);
-function showHelp(){if(!modal.hidden)return;lastModalFocus=document.activeElement;modal.hidden=false;stage.inert=true;chrome.inert=true;document.getElementById('helpClose').focus()}
+async function refreshCacheStatus(){
+ const label=document.getElementById('cacheStatus');
+ if(!persistentStore){label.textContent='此浏览器无法使用持久缩略图缓存';return}
+ const info=await persistentStore.stats();
+ if(modal.hidden)return;
+ label.textContent=info.available
+  ?`已保存 ${info.count} 张 · ${(info.bytes/1024/1024).toFixed(1)} MiB / 96 MiB；本次命中 ${info.hits} 次`
+  :'此浏览器无法使用持久缩略图缓存';
+}
+let cacheClearing=false;
+document.getElementById('clearCacheBtn').addEventListener('click',async e=>{
+ if(cacheClearing)return;
+ cacheClearing=true;const button=e.currentTarget;button.setAttribute('aria-busy','true');
+ try{
+  const success=Boolean(await persistentStore?.clear());
+  notify(success?'已清除保存在此浏览器中的缩略图，当前图库保持不变':'无法清除缓存，可能是浏览器限制');
+  if(!modal.hidden)await refreshCacheStatus();
+ }finally{cacheClearing=false;button.removeAttribute('aria-busy')}
+});
+function showHelp(){if(!modal.hidden)return;lastModalFocus=document.activeElement;modal.hidden=false;stage.inert=true;chrome.inert=true;document.getElementById('helpClose').focus();void refreshCacheStatus()}
 function hideHelp(){if(modal.hidden)return;modal.hidden=true;stage.inert=false;chrome.inert=false;
  const target=lastModalFocus?.isConnected?lastModalFocus:document.getElementById('infoBtn');target.focus({preventScroll:true});lastModalFocus=null}
-// The help dialog contains one actionable control; trap Tab there while visible.
-modal.addEventListener('keydown',e=>{if(e.key==='Tab'){e.preventDefault();document.getElementById('helpClose').focus()}});
+// Keep focus inside the help dialog even as cache/folder controls change visibility.
+modal.addEventListener('keydown',e=>{
+ if(e.key!=='Tab')return;
+ const controls=[...modal.querySelectorAll('button')].filter(button=>!button.hidden&&!button.disabled);
+ const first=controls[0],last=controls[controls.length-1];
+ if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}
+ else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}
+});
 function discover(){
  const visible={x:-camera.x/camera.s,y:-camera.y/camera.s,w:viewport.w/camera.s,h:viewport.h/camera.s};
  const options=[...nodes.values()].filter(m=>intersects(m.rect,visible)&&m.id!==active);
