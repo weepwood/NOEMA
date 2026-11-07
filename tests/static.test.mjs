@@ -68,7 +68,7 @@ test('local image import keeps user files on this device', () => {
 test('local image rendering escapes filenames before inserting HTML', () => {
   const implementation = script.match(/function escapeHTML\(text\)\{[^\n]+\}/)?.[0];
   assert.ok(implementation, 'Filename escaping helper missing');
-  const escaped = vm.runInNewContext(\`(() => { \${implementation}; return escapeHTML('<img src=x onerror="alert(1)">'); })()\`, {}, { timeout: 1000 });
+  const escaped = vm.runInNewContext(`(() => { ${implementation}; return escapeHTML('<img src=x onerror="alert(1)">'); })()`, {}, { timeout: 1000 });
   assert.equal(escaped, '&lt;img src=x onerror=&quot;alert(1)&quot;&gt;');
   assert.match(script, /escapeHTML\(a\.title\)/);
   assert.match(script, /escapeHTML\(a\.desc\)/);
