@@ -22,4 +22,4 @@ jobs:
         with:
           node-version: '22'
       - name: 检查图片资源、布局与可访问性
-        run: node --test tests/static.test.mjs
+        run: node --test tests/*.test.mjs

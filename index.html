@@ -59,6 +59,30 @@
 .drop-overlay{position:absolute;inset:12px;z-index:35;pointer-events:none;display:grid;place-items:center;border:1px dashed #f7f4ee7a;background:#070707d9;opacity:0;transition:opacity .14s}.drop-overlay.visible{opacity:1}.drop-overlay .drop-copy{text-align:center;padding:36px;font-size:22px;font-weight:650;line-height:1.7}.drop-overlay small{display:block;font-size:12px;letter-spacing:.1em;color:#bbb5aa;font-weight:400}
 .toast{position:absolute;z-index:36;left:50%;bottom:101px;transform:translateX(-50%);max-width:min(90vw,520px);padding:12px 17px;background:#171717e8;border:1px solid #ffffff33;color:#f7f4ee;font-size:12px;line-height:1.5;text-align:center;pointer-events:none;opacity:0;transition:opacity .2s}.toast.visible{opacity:1}
 @media(max-width:760px){.top-tools{gap:7px}.top-tools .round-btn{width:40px;height:40px}.brand{gap:8px}.brand-mark{transform:scale(.72)}.brand-name{font-size:11px;letter-spacing:.12em}.brand-sub{font-size:7px}.toast{bottom:88px}.collection-tag{position:absolute;top:75px;right:20px;max-width:calc(100vw - 40px);font-size:9px}.drop-overlay .drop-copy{font-size:18px}}
+
+/* Local galleries place the photograph first; metadata appears on intent, not continuously. */
+.local-collection .m-tile:not(.is-active) .tile-shade{opacity:.30;transition:opacity .24s ease}
+.local-collection .m-tile:not(.is-active) .tile-info{opacity:0;transform:translateY(9px);transition:opacity .24s ease,transform .24s ease}
+.local-collection .m-tile:not(.is-active):is(:hover,:focus-visible) .tile-info{opacity:1;transform:none}
+.local-collection .m-tile:not(.is-active):is(:hover,:focus-visible) .tile-shade{opacity:1}
+.selection-inspect{position:absolute;top:114px;right:88px;opacity:0;pointer-events:none;transition:opacity .18s}
+.stage.has-selection~.chrome .selection-inspect{opacity:1;pointer-events:auto}
+.inspector{position:absolute;inset:0;z-index:50;background:#070707;color:#f7f4ee;overflow:hidden;isolation:isolate}
+.inspector[hidden]{display:none}
+.inspector-viewport{position:absolute;inset:80px 0 84px;overflow:hidden;touch-action:none;cursor:grab;outline:none}
+.inspector-viewport.is-panning{cursor:grabbing}
+.inspector-image{position:absolute;left:50%;top:50%;width:1px;height:1px;max-width:none;max-height:none;user-select:none;-webkit-user-drag:none;pointer-events:none;transform:translate(calc(-50% + var(--pan-x,0px)),calc(-50% + var(--pan-y,0px)));object-fit:fill}
+.inspector-top{position:absolute;left:0;right:0;top:0;min-height:80px;display:flex;justify-content:space-between;align-items:center;gap:14px;padding:18px 32px;background:linear-gradient(180deg,#070707fa,#070707cb 65%,transparent);z-index:2}
+.inspector-title{min-width:0;display:flex;flex-direction:column;gap:7px}
+.inspector-title strong{font-weight:640;font-size:16px;letter-spacing:-.025em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:min(64vw,750px)}
+.inspector-title span,.inspector-meta{color:#b9b5ae;font-size:11px;letter-spacing:.075em}
+.inspector-bottom{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:84px;padding:16px 32px;z-index:2;background:linear-gradient(0deg,#070707fa,#070707bd 60%,transparent)}
+.inspector-group{display:flex;align-items:center;gap:9px}.inspector-group .round-btn{width:43px;height:43px}
+.inspector-scale{font-size:11px;letter-spacing:.08em;color:#ccc5b9;min-width:50px;text-align:center;font-variant-numeric:tabular-nums}
+.inspector-spinner{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:12px;letter-spacing:.14em;color:#ccc5b9;pointer-events:none}
+.inspector-spinner[hidden]{display:none}
+.inspector button:focus-visible{outline:2px solid #f7f4ee;outline-offset:3px}
+@media(max-width:760px){.selection-inspect{top:91px;right:72px}.inspector-top{padding:16px 16px;min-height:72px}.inspector-title strong{max-width:57vw;font-size:14px}.inspector-viewport{inset:72px 0 88px}.inspector-bottom{min-height:88px;padding:12px 16px env(safe-area-inset-bottom,12px)}.inspector-group{gap:5px}.inspector-group .round-btn{width:42px;height:42px}.inspector-meta{display:none}.inspector-scale{min-width:43px}}
 .sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important;scroll-behavior:auto!important}}
 </style>
@@ -77,6 +101,7 @@
       <div class="top-tools"><span class="edition">VOLUME 001 — 2026</span><span class="collection-tag" id="collectionTag" hidden></span><button class="round-btn import-btn" id="folderBtn" aria-label="打开本地图片文件夹" title="打开本地图片文件夹"><svg viewBox="0 0 24 24"><path d="M3 7V5.5A2 2 0 0 1 5 3.5h4l2.3 2.5H19a2 2 0 0 1 2 2v10.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10h18"/></svg></button><button class="round-btn" id="fileBtn" aria-label="选择图片文件" title="添加图片文件"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 16l3-4 2 2 2-3 3 5"/><circle cx="9" cy="8" r="1"/></svg></button><button class="round-btn" id="infoBtn" aria-label="操作指南" title="操作指南 (?)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.8 9a2.4 2.4 0 1 1 4.4 1.2c-.7 1-2.2 1.4-2.2 3.2M12 17.4h.01"/></svg></button></div>
     </header>
     <div class="corner-index"><span class="accent"></span>CURATED IN SPACE<br>FREEFORM EXPLORATION</div>
+    <button class="round-btn selection-inspect" id="inspectBtn" tabindex="-1" aria-label="完整查看原图" title="完整查看原图 (I)"><svg viewBox="0 0 24 24"><path d="M8 3H4a1 1 0 0 0-1 1v4M16 3h4a1 1 0 0 1 1 1v4M21 16v4a1 1 0 0 1-1 1h-4M8 21H4a1 1 0 0 1-1-1v-4"/><path d="M8 12h8M12 8v8"/></svg></button>
     <button class="round-btn selection-exit" id="closeBtn" tabindex="-1" aria-label="关闭展开的作品" title="关闭作品 (Esc)"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     <div class="bottom-left"><div class="number" id="counter">01<span style="font-size:.42em;color:#ffffff66"> / ∞</span></div><div class="bottom-meta">UNBOUND STORIES<br>ENDLESS FRAMES</div></div>
     <div class="bottom-center"><div class="hint"><span>DRAG TO EXPLORE</span><i></i><span>SCROLL TO ZOOM</span><i></i><span>SELECT TO EXPAND</span></div><div class="mini" id="coordinates">X 0000 — Y 0000 · 076%</div></div>
@@ -88,7 +113,31 @@
   <div class="toast" id="notice" aria-hidden="true"></div>
   <div class="sr-only" id="sceneStatus" role="status" aria-live="polite" aria-atomic="true"></div>
   <div class="modal" id="helpModal" hidden role="dialog" aria-modal="true" aria-labelledby="helpTitle">
-    <div class="modal-card"><div class="overline">NOEMA / FIELD MANUAL</div><button class="round-btn modal-close" id="helpClose" aria-label="关闭指南"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button><h2 id="helpTitle">Explore without edges.</h2><p>无限延展的图像档案。拖动画布穿越视觉场景；缩放始终围绕指针所在的位置。选择任意图像，它将从原位置展开，周围作品随之自然退让。</p><div class="keys"><div class="key-item"><span class="kbd">拖动</span> 移动画布</div><div class="key-item"><span class="kbd">滚轮</span> 指针缩放</div><div class="key-item"><span class="kbd">+ / −</span> 缩放视图</div><div class="key-item"><span class="kbd">方向键</span> 平移画布</div><div class="key-item"><span class="kbd">Enter</span> 展开焦点作品</div><div class="key-item"><span class="kbd">Esc</span> 收起作品</div><div class="key-item"><span class="kbd">0</span> 重置视图</div><div class="key-item"><span class="kbd">?</span> 操作指南</div><div class="key-item"><span class="kbd">R</span> 随机发现</div><div class="key-item"><span class="kbd">文件夹</span> 打开本地图片</div><div class="key-item"><span class="kbd">拖放</span> 导入文件或目录</div></div></div>
+    <div class="modal-card"><div class="overline">NOEMA / FIELD MANUAL</div><button class="round-btn modal-close" id="helpClose" aria-label="关闭指南"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button><h2 id="helpTitle">Explore without edges.</h2><p>无限延展的图像档案。拖动画布穿越视觉场景；缩放始终围绕指针所在的位置。选择任意图像，它将从原位置展开，周围作品随之自然退让。</p><div class="keys"><div class="key-item"><span class="kbd">拖动</span> 移动画布</div><div class="key-item"><span class="kbd">滚轮</span> 指针缩放</div><div class="key-item"><span class="kbd">+ / −</span> 缩放视图</div><div class="key-item"><span class="kbd">方向键</span> 平移画布</div><div class="key-item"><span class="kbd">Enter</span> 展开焦点作品</div><div class="key-item"><span class="kbd">Esc</span> 收起作品</div><div class="key-item"><span class="kbd">0</span> 重置视图</div><div class="key-item"><span class="kbd">?</span> 操作指南</div><div class="key-item"><span class="kbd">R</span> 随机发现</div><div class="key-item"><span class="kbd">I</span> 完整查看原图</div><div class="key-item"><span class="kbd">← / →</span> 原图切换</div><div class="key-item"><span class="kbd">1</span> 原图 100% 查看</div><div class="key-item"><span class="kbd">文件夹</span> 打开本地图片</div><div class="key-item"><span class="kbd">拖放</span> 导入文件或目录</div></div></div>
+  </div>
+  <div id="inspector" class="inspector" hidden role="dialog" aria-modal="true" aria-labelledby="inspectorTitle">
+    <header class="inspector-top">
+      <div class="inspector-title"><strong id="inspectorTitle">Image</strong><span id="inspectorCount">1 / 1</span></div>
+      <button class="round-btn" id="inspectorClose" aria-label="返回画布" title="返回画布 (Esc)"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </header>
+    <div class="inspector-viewport" id="inspectorViewport" tabindex="0" aria-label="原图查看区域，可拖动或滚轮缩放">
+      <img class="inspector-image" id="inspectorImage" alt="" draggable="false" />
+      <div class="inspector-spinner" id="inspectorLoading" role="status">LOADING IMAGE</div>
+    </div>
+    <footer class="inspector-bottom">
+      <div class="inspector-group">
+        <button class="round-btn" id="inspectorPrev" aria-label="上一张图片" title="上一张 (←)"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button>
+        <button class="round-btn" id="inspectorNext" aria-label="下一张图片" title="下一张 (→)"><svg viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></svg></button>
+      </div>
+      <div class="inspector-meta" id="inspectorMeta">FIT TO VIEW · NOEMA</div>
+      <div class="inspector-group">
+        <button class="round-btn" id="inspectorZoomOut" aria-label="缩小原图" title="缩小 (-)"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+        <span id="inspectorScale" class="inspector-scale">100%</span>
+        <button class="round-btn" id="inspectorZoomIn" aria-label="放大原图" title="放大 (+)"><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button>
+        <button class="round-btn" id="inspectorActual" aria-label="以 100% 像素比例查看" title="原始尺寸 (1)"><svg viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 14h6v6h-6zM4 20h6M20 4v6"/></svg></button>
+        <button class="round-btn" id="inspectorFit" aria-label="适应屏幕" title="适应屏幕 (0)"><svg viewBox="0 0 24 24"><path d="M8 3H4v5M16 3h4v5M20 16v5h-4M4 16v5h4"/></svg></button>
+      </div>
+    </footer>
   </div>
 </div>
 <script>
@@ -116,13 +165,52 @@ const demoArtworks=[
 ];
 let artworks=demoArtworks,localMode=false,collectionVersion=0;
 const MAX_LOCAL_FILES=20000,MAX_THUMB_CACHE=260,THUMB_SIZE=500;
-const supportedImage=file=>Boolean(file&&((file.type||'').startsWith('image/')||/\.(?:jpe?g|png|webp|avif|gif|bmp)$/i.test(file.name)));
+const supportedImage=file=>Boolean(file&&(/^(?:image\/(?:jpeg|png|webp|avif|gif|bmp|x-ms-bmp))$/i.test(file.type||'')||/\.(?:jpe?g|png|webp|avif|gif|bmp)$/i.test(file.name)));
 const thumbCache=new Map();
 const thumbnailQueue=[];
 let thumbnailWorkers=0;
 let activeFullUrl=null;
 function escapeHTML(text){return String(text).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]))}
 function titleFromFile(file){return (file.name.replace(/\.[^.]+$/, '').replace(/[_]+/g,' ').trim()||'Untitled').slice(0,110)}
+// Lightweight dimension probe for JPEG / PNG / WebP / GIF / BMP. Unreadable
+// formats fall back to 1:1 slot matching; actual image decoding is still lazy.
+async function inspectAspect(file){
+ try{
+  const b=new DataView(await file.slice(0,32768).arrayBuffer());
+  const n=b.byteLength;if(n<12)return 1;
+  let w=0,h=0;
+  const ascii=(at,length)=>{let result='';for(let i=0;i<length;i++)result+=String.fromCharCode(b.getUint8(at+i));return result};
+  if(n>=24&&ascii(1,3)==='PNG'){w=b.getUint32(16);h=b.getUint32(20)}
+  else if(n>=10&&ascii(0,3)==='GIF'){w=b.getUint16(6,true);h=b.getUint16(8,true)}
+  else if(n>=26&&ascii(0,2)==='BM'){w=Math.abs(b.getInt32(18,true));h=Math.abs(b.getInt32(22,true))}
+  else if(n>=30&&ascii(0,4)==='RIFF'&&ascii(8,4)==='WEBP'){
+   const kind=ascii(12,4);
+   if(kind==='VP8X'){w=1+b.getUint8(24)+(b.getUint8(25)<<8)+(b.getUint8(26)<<16);h=1+b.getUint8(27)+(b.getUint8(28)<<8)+(b.getUint8(29)<<16)}
+   else if(kind==='VP8 '){w=b.getUint16(26,true)&0x3fff;h=b.getUint16(28,true)&0x3fff}
+   else if(kind==='VP8L'){w=1+b.getUint8(21)+((b.getUint8(22)&0x3f)<<8);h=1+(b.getUint8(22)>>6)+(b.getUint8(23)<<2)+((b.getUint8(24)&0x0f)<<10)}
+  }else if(b.getUint8(0)===255&&b.getUint8(1)===216){
+   let at=2;
+   while(at+9<n){if(b.getUint8(at)!==255){at++;continue}
+    const type=b.getUint8(at+1);if(type===216||type===1){at+=2;continue}
+    if(type===217||type===218)break;
+    const length=b.getUint16(at+2);if(length<2)break;
+    if([192,193,194,195,197,198,199,201,202,203,205,206,207].includes(type)){
+     h=b.getUint16(at+5);w=b.getUint16(at+7);break
+    }
+    at+=2+length;
+   }
+  }
+  return w>0&&h>0&&w<100000&&h<100000?w/h:1;
+ }catch{return 1}
+}
+async function readAspectsLater(version){
+ for(let offset=90;offset<artworks.length;offset+=24){
+  if(version!==collectionVersion||!localMode)return;
+  const batch=artworks.slice(offset,offset+24);
+  await Promise.all(batch.map(async art=>{const ratio=await inspectAspect(art.file);if(version===collectionVersion)art.ratio=ratio}));
+  await new Promise(done=>setTimeout(done,0));
+ }
+}
 function scheduleThumbnail(art){
  if(!art.file)return Promise.resolve(photo(art.img,780));
  if(art.thumbUrl){thumbCache.delete(art);thumbCache.set(art,art.thumbUrl);return Promise.resolve(art.thumbUrl)}
@@ -183,13 +271,56 @@ function releaseFullImage(){
  for(const node of nodes.values()){node.hi.removeAttribute('src');node.hi.classList.remove('loaded');node.fullRequested=false}
 }
 
-// Fixed 12 × 8 cellular tiling. Every cell is covered exactly once, no Masonry.
+// Fixed 12 × 8 geometry, including portrait slots. Exact coverage; never Masonry.
 const UNIT=121, GAP=6, PITCH=UNIT+GAP;
 const TEMPLATE=[
- {x:0,y:0,w:3,h:3}, {x:3,y:0,w:4,h:2}, {x:7,y:0,w:5,h:4},
- {x:3,y:2,w:4,h:2}, {x:0,y:3,w:3,h:3}, {x:3,y:4,w:5,h:4},
- {x:8,y:4,w:4,h:2}, {x:8,y:6,w:4,h:2}, {x:0,y:6,w:3,h:2}
+ {x:0,y:0,w:4,h:3}, {x:0,y:3,w:2,h:5}, {x:2,y:3,w:2,h:5},
+ {x:4,y:0,w:5,h:2}, {x:4,y:2,w:3,h:3}, {x:7,y:2,w:2,h:3},
+ {x:4,y:5,w:5,h:3}, {x:9,y:0,w:3,h:5}, {x:9,y:5,w:3,h:3}
 ];
+// The demo remains periodic. Local files occupy a finite, unique rectangular atlas.
+let localColumns=1,localRows=0;
+const localSlotMaps=new Map();
+function configureLocalAtlas(){
+ const totalBlocks=Math.ceil(artworks.length/TEMPLATE.length);
+ localColumns=Math.max(1,Math.min(16,Math.round(Math.sqrt(totalBlocks*2.2*BH/BW))));
+ localRows=Math.ceil(totalBlocks/localColumns);
+ localSlotMaps.clear();
+}
+function slotRatio(slot){return slot.w/slot.h}
+function localBlockSlots(block){
+ if(localSlotMaps.has(block))return localSlotMaps.get(block);
+ const offset=block*TEMPLATE.length;
+ const available=Array.from({length:Math.min(TEMPLATE.length,Math.max(0,artworks.length-offset))},(_,j)=>offset+j);
+ const mapping=Array(TEMPLATE.length).fill(-1);
+ // Preserve the group's nine-image membership, but favor portrait sources for tall slots.
+ const preferred=available.length===1&&artworks[available[0]].ratio<.83?[1]:[0,3,1,4,7,2,5,6,8];
+ const slots=preferred.slice(0,available.length).map(i=>({i,ratio:slotRatio(TEMPLATE[i])})).sort((a,b)=>a.ratio-b.ratio);
+ for(const slot of slots){
+  if(!available.length)break;
+  let best=0,score=Infinity;
+  for(let j=0;j<available.length;j++){
+   const art=artworks[available[j]];
+   const ratio=art.ratio||1;
+   const cost=Math.abs(Math.log(ratio/slot.ratio))+.10*Math.abs((available[j]-offset)-slot.i);
+   if(cost<score){score=cost;best=j}
+  }
+  mapping[slot.i]=available.splice(best,1)[0];
+ }
+ localSlotMaps.set(block,mapping);
+ return mapping;
+}
+function localArtIndex(bx,by,i){
+ if(bx<0||bx>=localColumns||by<0||by>=localRows)return -1;
+ return localBlockSlots(by*localColumns+bx)[i];
+}
+function imageSlotForIndex(index){
+ if(!localMode||index<0||index>=artworks.length)return null;
+ const block=Math.floor(index/TEMPLATE.length);
+ const bx=block%localColumns,by=Math.floor(block/localColumns);
+ const i=localBlockSlots(block).indexOf(index);
+ return i<0?null:{bx,by,i,rect:getRect(bx,by,i)};
+}
 const BW=12*PITCH,BH=8*PITCH,MAX=220,OVERSCAN=650;
 const stage=document.getElementById('stage'),world=document.getElementById('world'),modal=document.getElementById('helpModal');
 const counter=document.getElementById('counter'),coordinates=document.getElementById('coordinates');
@@ -207,16 +338,13 @@ const intersects=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
 const getRect=(bx,by,i)=>{const t=TEMPLATE[i];return{x:bx*BW+t.x*PITCH,y:by*BH+t.y*PITCH,w:t.w*PITCH-GAP,h:t.h*PITCH-GAP}};
 const slugNum=(n)=>('000'+(Math.abs(n)%1000)).slice(-3);
 function artIndex(bx,by,i){
- // Keep every entry addressable across the unbounded periodic wall and avoid modulo patterns.
- if(!localMode){const n=(bx*17+by*29+i*7+100000*24)%artworks.length;return (n+artworks.length)%artworks.length}
- // Each 12 × 8 block has nine sequential seats. Blocks wrap through the imported collection.
- const zigzag=(n)=>n>=0?n*2:-n*2-1;
- const block=zigzag(bx)+zigzag(by)*(1+Math.ceil(Math.sqrt(artworks.length/9)));
- return (block*9+i)%artworks.length;
+ if(localMode)return localArtIndex(bx,by,i);
+ const n=(bx*17+by*29+i*7+100000*24)%artworks.length;
+ return(n+artworks.length)%artworks.length;
 }
 function start(){if(!raf)raf=requestAnimationFrame(frame)}
 function zoomAt(factor,px,py){const next=clamp(camera.s*factor,.40,1.9);const wx=(px-camera.x)/camera.s,wy=(py-camera.y)/camera.s;camera.s=next;camera.x=px-wx*next;camera.y=py-wy*next;cameraGoal={...camera};updateGoals();updateCamera();start()}
-function reset(animate=true){if(active)releaseFullImage();const s=viewport.w<700?.70:viewport.w<1150?.76:.84;const x=viewport.w*.5-BW*.46*s,y=viewport.h*.5-BH*.45*s;active=null;stage.classList.remove('has-selection');document.getElementById('closeBtn').tabIndex=-1;sceneStatus.textContent='已返回画布中心';updateGoals();cameraGoal={x,y,s};if(motion.matches||!animate)camera={...cameraGoal};updateCamera();start()}
+function reset(animate=true){if(active)releaseFullImage();const s=viewport.w<700?.70:viewport.w<1150?.76:.84;const single=localMode&&artworks.length===1?imageSlotForIndex(0)?.rect:null;const x=single?viewport.w/2-(single.x+single.w/2)*s:localMode?Math.max(20,viewport.w*.12):viewport.w*.5-BW*.46*s,y=single?viewport.h/2-(single.y+single.h/2)*s:localMode?Math.max(70,viewport.h*.10):viewport.h*.5-BH*.45*s;active=null;stage.classList.remove('has-selection');document.getElementById('closeBtn').tabIndex=-1;document.getElementById('inspectBtn').tabIndex=-1;sceneStatus.textContent='已返回画布中心';counter.innerHTML=`01<span style="font-size:.42em;color:#ffffff66"> / ${localMode?artworks.length:'∞'}</span>`;updateGoals();cameraGoal={x,y,s};if(motion.matches||!animate)camera={...cameraGoal};updateCamera();start()}
 function updateCamera(){world.style.transform=`translate3d(${camera.x}px,${camera.y}px,0) scale(${camera.s})`;if(coordinates)coordinates.textContent=`X ${slugNum(Math.round(-camera.x/camera.s))} — Y ${slugNum(Math.round(-camera.y/camera.s))} · ${String(Math.round(camera.s*100)).padStart(3,'0')}%`}
 function setImage(img,src){
  img.onload=async()=>{
@@ -249,46 +377,70 @@ function makeTile(id,rect,index){const a=artworks[index],button=document.createE
 }
 function place(m){const p=m.cur,b=m.button;b.style.left=`${p.x.toFixed(2)}px`;b.style.top=`${p.y.toFixed(2)}px`;b.style.width=`${Math.max(1,p.w).toFixed(2)}px`;b.style.height=`${Math.max(1,p.h).toFixed(2)}px`}
 function getExpansion(rect){const maxW=Math.max(rect.w,(viewport.w-38)/camera.s);const maxH=Math.max(rect.h,(viewport.h-68)/camera.s);const w=Math.min(Math.max(rect.w,690),maxW),h=Math.min(Math.max(rect.h,530),maxH);return{x:rect.x+(rect.w-w)*.5,y:rect.y+(rect.h-h)*.5,w,h}}
-function resolveReflow(rect,expanded,origin){if(!intersects(rect,{x:expanded.x-12,y:expanded.y-12,w:expanded.w+24,h:expanded.h+24}))return rect;
- const ex={left:expanded.x-12,right:expanded.x+expanded.w+12,top:expanded.y-12,bottom:expanded.y+expanded.h+12};
- const moves=[{x:ex.left-(rect.x+rect.w),y:0},{x:ex.right-rect.x,y:0},{x:0,y:ex.top-(rect.y+rect.h)},{x:0,y:ex.bottom-rect.y}];
- const rc={x:rect.x+rect.w/2,y:rect.y+rect.h/2};
- const ranked=moves.map(d=>{const signPenalty=(d.x&&(rc.x-origin.x)*d.x<0)||(d.y&&(rc.y-origin.y)*d.y<0)?100:0;return{...d,score:Math.abs(d.x+d.y)+signPenalty}}).sort((a,b)=>a.score-b.score);
- return{x:rect.x+ranked[0].x,y:rect.y+ranked[0].y,w:rect.w,h:rect.h}
+function resolveReflow(rect,expanded,original){
+ // Monotone, globally separating coordinate transform. Disjoint source rectangles
+ // remain disjoint: ordered x intervals cannot cross after monotone x offsets,
+ // and likewise for y. Every tile outside original clears the expanded rectangle.
+ const centerX=original.x+original.w/2,centerY=original.y+original.h/2;
+ const left=original.x-expanded.x+GAP*1.5;
+ const right=expanded.x+expanded.w-original.x-original.w+GAP*1.5;
+ const top=original.y-expanded.y+GAP*1.5;
+ const bottom=expanded.y+expanded.h-original.y-original.h+GAP*1.5;
+ const dx=(rect.x+rect.w/2)<centerX?-left:right;
+ const dy=(rect.y+rect.h/2)<centerY?-top:bottom;
+ return{x:rect.x+dx,y:rect.y+dy,w:rect.w,h:rect.h};
 }
-function updateGoals(){const chosen=active&&nodes.get(active);const exp=chosen?getExpansion(chosen.rect):null;const origin=chosen?{x:chosen.rect.x+chosen.rect.w/2,y:chosen.rect.y+chosen.rect.h/2}:null;
- for(const m of nodes.values()){const mine=m.id===active;if(mine&&exp)m.goal=exp;else if(exp)m.goal=resolveReflow(m.rect,exp,origin);else m.goal=m.rect;
+function updateGoals(){const chosen=active&&nodes.get(active);const exp=chosen?getExpansion(chosen.rect):null;const original=chosen?.rect||null;
+ for(const m of nodes.values()){const mine=m.id===active;if(mine&&exp)m.goal=exp;else if(exp)m.goal=resolveReflow(m.rect,exp,original);else m.goal=m.rect;
  m.button.classList.toggle('is-active',mine);if(m.button.getAttribute('aria-expanded')!==String(mine))m.button.setAttribute('aria-expanded',String(mine));if(mine)loadOriginal(m);
  }
 }
-function syncVisible(force=false){let changed=false;const x=-camera.x/camera.s,y=-camera.y/camera.s;
- // A generous overscan keeps tiles mounted between checks; skip repeated DOM traversal while the camera settles.
- if(!force&&lastCull&&Math.abs(lastCull.x-x)<110&&Math.abs(lastCull.y-y)<110&&Math.abs(lastCull.s-camera.s)<.04&&lastCull.w===viewport.w&&lastCull.h===viewport.h)return;
+function syncVisible(force=false){
+ let changed=false;
+ const x=-camera.x/camera.s,y=-camera.y/camera.s;
+ if(!force&&lastCull&&Math.abs(lastCull.x-x)<100&&Math.abs(lastCull.y-y)<100&&Math.abs(lastCull.s-camera.s)<.03&&lastCull.w===viewport.w&&lastCull.h===viewport.h)return;
  lastCull={x,y,s:camera.s,w:viewport.w,h:viewport.h};
- const view={x:x-OVERSCAN,y:y-OVERSCAN,w:viewport.w/camera.s+OVERSCAN*2,h:viewport.h/camera.s+OVERSCAN*2};
- const x1=Math.floor(view.x/BW)-1,x2=Math.ceil((view.x+view.w)/BW)+1,y1=Math.floor(view.y/BH)-1,y2=Math.ceil((view.y+view.h)/BH)+1;
- const wanted=new Set();let count=0;
- outer:for(let by=y1;by<=y2;by++)for(let bx=x1;bx<=x2;bx++)for(let i=0;i<TEMPLATE.length;i++){
- const rect=getRect(bx,by,i);if(!intersects(rect,view))continue;const id=`${bx}:${by}:${i}`;wanted.add(id);if(!nodes.has(id)){makeTile(id,rect,artIndex(bx,by,i));changed=true;}if(++count>=MAX)break outer;
+ const actual={x,y,w:viewport.w/camera.s,h:viewport.h/camera.s};
+ const view={x:x-OVERSCAN,y:y-OVERSCAN,w:actual.w+OVERSCAN*2,h:actual.h+OVERSCAN*2};
+ const x1=localMode?Math.max(0,Math.floor(view.x/BW)-1):Math.floor(view.x/BW)-1;
+ const x2=localMode?Math.min(localColumns-1,Math.ceil((view.x+view.w)/BW)+1):Math.ceil((view.x+view.w)/BW)+1;
+ const y1=localMode?Math.max(0,Math.floor(view.y/BH)-1):Math.floor(view.y/BH)-1;
+ const y2=localMode?Math.min(localRows-1,Math.ceil((view.y+view.h)/BH)+1):Math.ceil((view.y+view.h)/BH)+1;
+ const candidates=[];const cx=actual.x+actual.w/2,cy=actual.y+actual.h/2;
+ for(let by=y1;by<=y2;by++)for(let bx=x1;bx<=x2;bx++)for(let i=0;i<TEMPLATE.length;i++){
+  const rect=getRect(bx,by,i);if(!intersects(rect,view))continue;
+  const index=artIndex(bx,by,i);if(index<0)continue;
+  const onScreen=intersects(rect,actual);
+  const metric=Math.hypot(rect.x+rect.w/2-cx,rect.y+rect.h/2-cy);
+  candidates.push({id:localMode?`local:${index}`:`${bx}:${by}:${i}`,rect,index,onScreen,metric});
  }
- // Never remove the selected tile, even while the camera is moving or the layout is opening.
+ candidates.sort((a,b)=>Number(b.onScreen)-Number(a.onScreen)||a.metric-b.metric);
+ const visibleCount=candidates.filter(item=>item.onScreen).length;
+ const limit=Math.min(1000,Math.max(MAX,visibleCount));
+ const wanted=new Set();
+ for(const candidate of candidates.slice(0,limit)){
+  wanted.add(candidate.id);
+  if(!nodes.has(candidate.id)){makeTile(candidate.id,candidate.rect,candidate.index);changed=true}
+ }
  if(active)wanted.add(active);
  for(const [id,m] of nodes){if(wanted.has(id))continue;if(observer)observer.unobserve(m.button);
   if(document.activeElement===m.button)stage.focus({preventScroll:true});
-  m.button.remove();nodes.delete(id);changed=true}
- // Avoid putting hundreds of off-screen tiles into the keyboard tab sequence.
- const actual={x,y,w:viewport.w/camera.s,h:viewport.h/camera.s};
- for(const m of nodes.values()){const focusable=m.id===active||intersects(m.rect,actual);const tab=focusable?0:-1;if(m.button.tabIndex!==tab)m.button.tabIndex=tab}
+  m.button.remove();nodes.delete(id);changed=true;
+ }
+ for(const m of nodes.values()){
+  const focusable=m.id===active||intersects(m.rect,actual);
+  const tab=focusable?0:-1;if(m.button.tabIndex!==tab)m.button.tabIndex=tab;
+ }
  if(changed){updateGoals();evictThumbnails()}
 }
 function select(id){if(!nodes.has(id))return;const already=active===id;if(already){close();return}
  if(active!==null&&active!==id)releaseFullImage();
- active=id;stage.classList.add('has-selection');document.getElementById('closeBtn').tabIndex=0;const m=nodes.get(id),r=m.rect;const cx=r.x+r.w/2,cy=r.y+r.h/2;
+ active=id;stage.classList.add('has-selection');document.getElementById('closeBtn').tabIndex=0;document.getElementById('inspectBtn').tabIndex=0;const m=nodes.get(id),r=m.rect;const cx=r.x+r.w/2,cy=r.y+r.h/2;
  cameraGoal={x:viewport.w/2-cx*camera.s,y:viewport.h/2-cy*camera.s,s:camera.s};
- counter.innerHTML=`${String(artworks.indexOf(m.art)+1).padStart(2,'0')}<span style="font-size:.42em;color:#ffffff66"> / ∞</span>`;sceneStatus.textContent=`已展开 ${m.art.title}。按 Escape 收起作品。`;
+ counter.innerHTML=`${String(artworks.indexOf(m.art)+1).padStart(2,'0')}<span style="font-size:.42em;color:#ffffff66"> / ${localMode?artworks.length:'∞'}</span>`;sceneStatus.textContent=`已展开 ${m.art.title}。按 Escape 收起作品。`;
  updateGoals();start()
 }
-function close(){if(!active)return;releaseFullImage();active=null;stage.classList.remove('has-selection');document.getElementById('closeBtn').tabIndex=-1;updateGoals();counter.innerHTML='01<span style="font-size:.42em;color:#ffffff66"> / ∞</span>';if(focusRestore?.isConnected)focusRestore.focus({preventScroll:true});else stage.focus({preventScroll:true});focusRestore=null;sceneStatus.textContent='作品已收起';start()}
+function close(){if(!active)return;releaseFullImage();active=null;stage.classList.remove('has-selection');document.getElementById('closeBtn').tabIndex=-1;document.getElementById('inspectBtn').tabIndex=-1;updateGoals();counter.innerHTML=`01<span style="font-size:.42em;color:#ffffff66"> / ${localMode?artworks.length:'∞'}</span>`;if(focusRestore?.isConnected)focusRestore.focus({preventScroll:true});else stage.focus({preventScroll:true});focusRestore=null;sceneStatus.textContent='作品已收起';start()}
 function spring(m,dt){
  const k=170,damp=22;let isMoving=false,changed=false;
  for(const p of ['x','y','w','h']){
@@ -328,6 +480,153 @@ stage.addEventListener('pointerup',pointerEnd);stage.addEventListener('pointerca
 });
 stage.addEventListener('wheel',e=>{e.preventDefault();const p=point(e);zoomAt(Math.exp(-e.deltaY*(e.deltaMode===1?.028:.00135)),p.x,p.y)},{passive:false});
 stage.addEventListener('dblclick',e=>{if(e.target.closest('.m-tile'))return;const p=point(e);zoomAt(1.32,p.x,p.y)});
+// Dedicated full-resolution viewer. Unlike the wall's cover crop it never crops the image.
+const inspector=document.getElementById('inspector');
+const inspectorView=document.getElementById('inspectorViewport');
+const inspectorImage=document.getElementById('inspectorImage');
+const inspectorLoading=document.getElementById('inspectorLoading');
+const inspectorPointers=new Map();
+let inspectorIndex=-1,inspectorUrl=null,inspectorToken=0;
+let inspectorNatural={w:1,h:1},inspectorFit=1,inspectorZoom=1,inspectorPan={x:0,y:0},inspectorGesture=null;
+let inspectorFocus=null;
+function applyInspector(){
+ inspectorImage.style.width=`${inspectorNatural.w*inspectorZoom}px`;
+ inspectorImage.style.height=`${inspectorNatural.h*inspectorZoom}px`;
+ inspectorImage.style.setProperty('--pan-x',`${inspectorPan.x}px`);
+ inspectorImage.style.setProperty('--pan-y',`${inspectorPan.y}px`);
+ document.getElementById('inspectorScale').textContent=`${Math.round(inspectorZoom*100)}%`;
+}
+function inspectorFitToView(){
+ if(inspector.hidden)return;
+ const size=inspectorView.getBoundingClientRect();
+ inspectorFit=Math.max(.001,Math.min((size.width-38)/inspectorNatural.w,(size.height-38)/inspectorNatural.h));
+ inspectorZoom=inspectorFit;inspectorPan={x:0,y:0};applyInspector();
+}
+function inspectorZoomAt(target,clientX,clientY){
+ if(inspector.hidden)return;
+ const bounds=inspectorView.getBoundingClientRect();
+ const clamped=clamp(target,Math.min(.12,inspectorFit*.7),Math.max(6,inspectorFit*8));
+ const factor=clamped/inspectorZoom;
+ const x=clientX-(bounds.left+bounds.width/2),y=clientY-(bounds.top+bounds.height/2);
+ inspectorPan.x=x-(x-inspectorPan.x)*factor;
+ inspectorPan.y=y-(y-inspectorPan.y)*factor;
+ inspectorZoom=clamped;applyInspector();
+}
+function loadInspectorIndex(index){
+ if(index<0||index>=artworks.length)return;
+ inspectorIndex=index;const art=artworks[index];
+ if(inspectorUrl){URL.revokeObjectURL(inspectorUrl);inspectorUrl=null}
+ const token=++inspectorToken;
+ inspectorImage.onload=()=>{
+  if(token!==inspectorToken||inspector.hidden)return;
+  inspectorNatural={w:inspectorImage.naturalWidth||1,h:inspectorImage.naturalHeight||1};
+  inspectorLoading.hidden=true;
+  document.getElementById('inspectorMeta').textContent=`${inspectorNatural.w} × ${inspectorNatural.h} PX · ${art.file?((art.file.size/1024/1024).toFixed(1)+' MB'):'NOEMA ARCHIVE'}`;
+  inspectorFitToView();
+ };
+ inspectorImage.onerror=()=>{if(token===inspectorToken){inspectorLoading.hidden=false;inspectorLoading.textContent='无法解码此图像'}};
+ inspectorImage.removeAttribute('src');
+ inspectorLoading.hidden=false;inspectorLoading.textContent='LOADING IMAGE';
+ inspectorImage.alt=art.title;
+ document.getElementById('inspectorTitle').textContent=art.title;
+ document.getElementById('inspectorCount').textContent=`${index+1} / ${artworks.length}`;
+ if(art.file){inspectorUrl=URL.createObjectURL(art.file);inspectorImage.src=inspectorUrl}
+ else inspectorImage.src=photo(art.img,1800);
+ // Keep gallery selection and camera in sync with inspector navigation.
+ if(localMode){
+  const slot=imageSlotForIndex(index);
+  if(slot){const id=`local:${index}`;if(!nodes.has(id))makeTile(id,slot.rect,index);select(id)}
+ }
+}
+function openInspector(){
+ if(!inspector.hidden||!active)return;
+ const chosen=nodes.get(active);if(!chosen)return;
+ inspectorFocus=document.activeElement;
+ inspector.hidden=false;stage.inert=true;chrome.inert=true;
+ loadInspectorIndex(artworks.indexOf(chosen.art));
+ document.getElementById('inspectorClose').focus({preventScroll:true});
+ sceneStatus.textContent='已打开完整原图查看器；按 Escape 返回画布';
+}
+function closeInspector(){
+ if(inspector.hidden)return;
+ inspectorToken++;
+ inspector.hidden=true;inspectorPointers.clear();inspectorGesture=null;
+ inspectorImage.onload=null;inspectorImage.onerror=null;inspectorImage.removeAttribute('src');
+ if(inspectorUrl){URL.revokeObjectURL(inspectorUrl);inspectorUrl=null}
+ stage.inert=false;chrome.inert=false;
+ const target=inspectorFocus?.isConnected?inspectorFocus:document.getElementById('inspectBtn');
+ inspectorFocus=null;target.focus({preventScroll:true});sceneStatus.textContent='已返回空间画布';
+}
+function shiftInspector(step){if(inspectorIndex>=0)loadInspectorIndex((inspectorIndex+step+artworks.length)%artworks.length)}
+inspectorView.addEventListener('wheel',event=>{
+ event.preventDefault();inspectorZoomAt(inspectorZoom*Math.exp(-event.deltaY*(event.deltaMode===1?.03:.0014)),event.clientX,event.clientY)
+},{passive:false});
+inspectorView.addEventListener('dblclick',event=>{event.preventDefault();if(Math.abs(inspectorZoom-1)<.02)inspectorFitToView();else inspectorZoomAt(1,event.clientX,event.clientY)});
+function inspectorPinch(){
+ const pts=[...inspectorPointers.values()];if(pts.length<2)return null;
+ const mid={x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2};
+ return{distance:Math.max(1,dist(pts[0],pts[1])),mid,zoom:inspectorZoom,pan:{...inspectorPan}};
+}
+inspectorView.addEventListener('pointerdown',event=>{
+ if(event.button!==0&&event.pointerType==='mouse')return;
+ const p={x:event.clientX,y:event.clientY};inspectorPointers.set(event.pointerId,p);
+ inspectorView.setPointerCapture(event.pointerId);inspectorView.classList.add('is-panning');
+ inspectorGesture=inspectorPointers.size>1?inspectorPinch():null;
+});
+inspectorView.addEventListener('pointermove',event=>{
+ if(!inspectorPointers.has(event.pointerId))return;
+ const old=inspectorPointers.get(event.pointerId);const p={x:event.clientX,y:event.clientY};inspectorPointers.set(event.pointerId,p);
+ if(inspectorPointers.size>=2){
+  if(!inspectorGesture)inspectorGesture=inspectorPinch();
+  const pts=[...inspectorPointers.values()];const mid={x:(pts[0].x+pts[1].x)/2,y:(pts[0].y+pts[1].y)/2};
+  const rect=inspectorView.getBoundingClientRect();const initial=inspectorGesture;
+  const x=initial.mid.x-(rect.left+rect.width/2),y=initial.mid.y-(rect.top+rect.height/2);
+  const next=clamp(initial.zoom*dist(pts[0],pts[1])/initial.distance,Math.min(.12,inspectorFit*.7),Math.max(6,inspectorFit*8));
+  const ratio=next/initial.zoom;
+  inspectorZoom=next;
+  inspectorPan.x=mid.x-(rect.left+rect.width/2)-(x-initial.pan.x)*ratio;
+  inspectorPan.y=mid.y-(rect.top+rect.height/2)-(y-initial.pan.y)*ratio;
+ }else{inspectorPan.x+=p.x-old.x;inspectorPan.y+=p.y-old.y}
+ applyInspector();
+});
+function finishInspectorPointer(event){
+ inspectorPointers.delete(event.pointerId);
+ inspectorGesture=inspectorPointers.size>=2?inspectorPinch():null;
+ if(inspectorPointers.size===0)inspectorView.classList.remove('is-panning');
+}
+inspectorView.addEventListener('pointerup',finishInspectorPointer);
+inspectorView.addEventListener('pointercancel',finishInspectorPointer);
+inspectorView.addEventListener('lostpointercapture',finishInspectorPointer);
+document.getElementById('inspectBtn').addEventListener('click',openInspector);
+document.getElementById('inspectorClose').addEventListener('click',closeInspector);
+document.getElementById('inspectorPrev').addEventListener('click',()=>shiftInspector(-1));
+document.getElementById('inspectorNext').addEventListener('click',()=>shiftInspector(1));
+document.getElementById('inspectorZoomIn').addEventListener('click',()=>inspectorZoomAt(inspectorZoom*1.25,innerWidth/2,innerHeight/2));
+document.getElementById('inspectorZoomOut').addEventListener('click',()=>inspectorZoomAt(inspectorZoom/1.25,innerWidth/2,innerHeight/2));
+document.getElementById('inspectorActual').addEventListener('click',()=>inspectorZoomAt(1,innerWidth/2,innerHeight/2));
+document.getElementById('inspectorFit').addEventListener('click',inspectorFitToView);
+window.addEventListener('resize',()=>{if(!inspector.hidden)inspectorFitToView()});
+// Capture before global canvas bindings, and keep Tab inside the inspector dialog.
+document.addEventListener('keydown',event=>{
+ if(inspector.hidden)return;
+ const key=event.key.toLowerCase();
+ if(event.key==='Tab'){
+  const controls=[...inspector.querySelectorAll('button')].filter(element=>!element.disabled);
+  const first=controls[0],last=controls[controls.length-1];
+  if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus()}
+  else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}
+  return;
+ }
+ if(event.key==='Escape')closeInspector();
+ else if(event.key==='ArrowLeft')shiftInspector(-1);
+ else if(event.key==='ArrowRight')shiftInspector(1);
+ else if(key==='0')inspectorFitToView();
+ else if(key==='1')inspectorZoomAt(1,innerWidth/2,innerHeight/2);
+ else if(key==='+'||key==='=')inspectorZoomAt(inspectorZoom*1.2,innerWidth/2,innerHeight/2);
+ else if(key==='-')inspectorZoomAt(inspectorZoom/1.2,innerWidth/2,innerHeight/2);
+ else return;
+ event.preventDefault();event.stopImmediatePropagation();
+},true);
 function showHelp(){if(!modal.hidden)return;lastModalFocus=document.activeElement;modal.hidden=false;stage.inert=true;chrome.inert=true;document.getElementById('helpClose').focus()}
 function hideHelp(){if(modal.hidden)return;modal.hidden=true;stage.inert=false;chrome.inert=false;
  const target=lastModalFocus?.isConnected?lastModalFocus:document.getElementById('infoBtn');target.focus({preventScroll:true});lastModalFocus=null}
@@ -347,10 +646,18 @@ async function importFiles(input,displayName='LOCAL COLLECTION'){
  if(!valid.length){notify('未找到浏览器支持的图片（JPG / PNG / WEBP / AVIF / GIF 等）');return}
  const nameSorter=new Intl.Collator(undefined,{numeric:true,sensitivity:'base'});valid.sort((a,b)=>nameSorter.compare(a.name,b.name));
  const limited=valid.slice(0,MAX_LOCAL_FILES);
+ if(!inspector.hidden)closeInspector();
+ // Read image dimensions from small headers, without decoding all full images.
+ // Initial visible blocks receive real aspect-aware mapping; remaining blocks
+ // get best-effort asynchronous header scanning and freeze on first visit.
+ const initial=limited.slice(0,Math.min(90,limited.length));
+ await Promise.all(initial.map(async file=>{file.__noemaRatio=await inspectAspect(file)}));
  close();releaseFullImage();
  for(const m of nodes.values()){if(observer)observer.unobserve(m.button);m.button.remove()}
  nodes.clear();clearThumbnailCache();localMode=true;
- artworks=limited.map((file,index)=>({img:String(index),title:titleFromFile(file),category:'PERSONAL ARCHIVE',desc:file.webkitRelativePath||file.name,color:['#243138','#374033','#53473d','#38424b'][index%4],file}));
+ artworks=limited.map((file,index)=>({img:String(index),title:titleFromFile(file),category:'PERSONAL ARCHIVE',desc:file.webkitRelativePath||file.name,color:['#243138','#374033','#53473d','#38424b'][index%4],ratio:file.__noemaRatio||1,file}));
+ configureLocalAtlas();
+ readAspectsLater(collectionVersion);
  collectionTag.hidden=false;document.getElementById('app').classList.add('local-collection');
  collectionTag.replaceChildren();
  const label=document.createElement('span');label.textContent=String(displayName).slice(0,28)+' · '+artworks.length;
@@ -362,8 +669,9 @@ async function importFiles(input,displayName='LOCAL COLLECTION'){
  notify(`已打开 ${artworks.length} 张本地图片${valid.length>MAX_LOCAL_FILES?'（已达到 20000 张上限）':''}，仅在此设备处理`);
 }
 function restoreDemo(){
+ if(!inspector.hidden)closeInspector();
  close();releaseFullImage();for(const m of nodes.values()){if(observer)observer.unobserve(m.button);m.button.remove()}
- nodes.clear();clearThumbnailCache();artworks=demoArtworks;localMode=false;lastCull=null;
+ nodes.clear();clearThumbnailCache();artworks=demoArtworks;localMode=false;localRows=0;localSlotMaps.clear();lastCull=null;
  collectionTag.hidden=true;document.getElementById('app').classList.remove('local-collection');collectionTag.replaceChildren();
  document.querySelector('.top-middle .eyebrow').textContent='AN INFINITE COLLECTION';
  document.querySelector('.top-middle .subline').textContent='An exploration of image, atmosphere & form';
@@ -410,12 +718,12 @@ document.getElementById('closeBtn').addEventListener('click',close);document.get
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!modal.hidden){hideHelp();return}close();return}if(!modal.hidden)return;
  if(e.key==='?'||((e.shiftKey)&&e.key==='/')){e.preventDefault();showHelp();return}
  if(e.altKey||e.ctrlKey||e.metaKey)return;
- const k=e.key;if(k==='+'||k==='='||k==='Add'){e.preventDefault();zoomAt(1.2,viewport.w/2,viewport.h/2)}else if(k==='-'||k==='_'||k==='Subtract'){e.preventDefault();zoomAt(1/1.2,viewport.w/2,viewport.h/2)}else if(k==='0'){e.preventDefault();reset()}else if(k.toLowerCase()==='r'){e.preventDefault();discover()}
+ const k=e.key;if(k==='+'||k==='='||k==='Add'){e.preventDefault();zoomAt(1.2,viewport.w/2,viewport.h/2)}else if(k==='-'||k==='_'||k==='Subtract'){e.preventDefault();zoomAt(1/1.2,viewport.w/2,viewport.h/2)}else if(k==='0'){e.preventDefault();reset()}else if(k.toLowerCase()==='r'){e.preventDefault();discover()}else if(k.toLowerCase()==='i'&&active){e.preventDefault();openInspector()}
  else if(k.startsWith('Arrow')){e.preventDefault();const step=e.shiftKey?250:100;camera.x+=(k==='ArrowLeft'?step:k==='ArrowRight'?-step:0);camera.y+=(k==='ArrowUp'?step:k==='ArrowDown'?-step:0);cameraGoal={...camera};updateCamera();start()}
 });
 function measure(){const r=stage.getBoundingClientRect(),w=r.width,h=r.height;if(!w||!h)return;const old=viewport;viewport={w,h};if(!initialized){initialized=true;reset(false)}else{camera.x+=(w-old.w)/2;camera.y+=(h-old.h)/2;cameraGoal={...camera};updateGoals();start();syncVisible(true)}}
 new ResizeObserver(measure).observe(stage);measure();
-window.addEventListener('pagehide',()=>{releaseFullImage();clearThumbnailCache()});
+window.addEventListener('pagehide',()=>{closeInspector();releaseFullImage();clearThumbnailCache()});
 })();
 </script>
 </body>
