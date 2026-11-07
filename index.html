@@ -12,7 +12,7 @@
 .stage{position:absolute;inset:0;overflow:hidden;cursor:grab;touch-action:none;outline:0;background:#070707}
 .stage.is-dragging{cursor:grabbing}
 .world{position:absolute;left:0;top:0;width:0;height:0;transform-origin:0 0;will-change:transform}
-.m-tile{position:absolute;margin:0;padding:0;display:block;background:#21201c;border:0;border-radius:0;overflow:hidden;color:#fff;text-align:left;cursor:pointer;will-change:left,top,width,height;isolation:isolate;appearance:none;transform:translateZ(0);contain:layout style paint;outline-offset:-4px}
+.m-tile{position:absolute;margin:0;padding:0;display:block;background:#21201c;border:0;border-radius:0;overflow:hidden;color:#fff;text-align:left;cursor:pointer;isolation:isolate;appearance:none;transform:translateZ(0);contain:layout style paint;outline-offset:-4px}
 .m-tile .tile-art{position:absolute;inset:0;background:var(--fallback,linear-gradient(145deg,#31312d,#131515));overflow:hidden}
 .m-tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;user-select:none;-webkit-user-drag:none;pointer-events:none;transition:transform .65s cubic-bezier(.18,.68,.24,1),opacity .4s ease;opacity:0}
 .m-tile img.loaded{opacity:1}.m-tile img.hi-res{opacity:0;transition:opacity .35s ease}.m-tile img.hi-res.loaded{opacity:1}
@@ -51,7 +51,8 @@
 .selection-exit{position:absolute;top:114px;right:34px;opacity:0;pointer-events:none;transition:opacity .18s}.stage.has-selection~.chrome .selection-exit{opacity:1;pointer-events:auto}
 .corner-index{position:absolute;left:39px;top:119px;color:#fff8;font-size:9px;line-height:1.7;letter-spacing:.18em}.corner-index .accent{display:inline-block;width:6px;height:6px;background:#e2ded4;border-radius:50%;margin-right:8px;vertical-align:1px}
 .modal{position:absolute;inset:0;z-index:40;background:rgba(0,0,0,.67);display:grid;place-items:center;padding:22px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}.modal[hidden]{display:none}.modal-card{width:min(470px,100%);background:#141414;border:1px solid #ffffff2b;padding:32px 34px 33px;position:relative;box-shadow:0 22px 90px #000b}.modal-card .overline{font-size:10px;letter-spacing:.24em;color:#fff8;font-weight:700}.modal-card h2{font-size:37px;line-height:1;letter-spacing:-.055em;margin:24px 0 15px;font-weight:650}.modal-card p{font-size:13px;line-height:1.75;color:#d7d2c9}.modal-card .keys{display:grid;grid-template-columns:1fr 1fr;gap:12px 18px;margin-top:23px;padding-top:20px;border-top:1px solid #fff2}.key-item{font-size:12px;color:#fff9;display:flex;align-items:center;gap:9px}.kbd{display:inline-block;padding:5px 8px;min-width:29px;border:1px solid #fff3;color:#fff;text-align:center;font-size:11px}.modal-card .modal-close{position:absolute;right:21px;top:21px;width:35px;height:35px}
-@media(max-width:760px){.topbar{padding:22px 20px}.brand{min-width:0}.brand-mark{transform:scale(.86)}.brand-name{font-size:12px}.brand-sub{font-size:8px}.top-middle{display:none}.top-tools{min-width:0;gap:9px}.edition{display:none}.bottom-left{left:20px;bottom:23px}.bottom-left .number{font-size:32px}.bottom-center{display:none}.floating-controls{right:16px;bottom:18px;gap:7px}.floating-controls .round-btn{width:39px;height:39px}.corner-index{left:20px;top:90px}.selection-exit{top:91px;right:19px}.m-tile.is-active .tile-info{left:28px;bottom:29px}.m-tile.is-active .tile-title{font-size:clamp(37px,7.5cqw,72px)}.m-tile.is-active .detail{font-size:12px;line-height:1.55}.m-tile .tile-info{left:15px;bottom:15px}.m-tile .tile-kicker{font-size:9px}.m-tile .tile-title{font-size:clamp(20px,4.3cqw,48px)}}
+@media(max-width:760px){.topbar{padding:22px 20px}.brand{min-width:0}.brand-mark{transform:scale(.86)}.brand-name{font-size:12px}.brand-sub{font-size:8px}.top-middle{display:none}.top-tools{min-width:0;gap:9px}.edition{display:none}.bottom-left{left:20px;bottom:23px}.bottom-left .number{font-size:32px}.bottom-left .bottom-meta{display:none}.bottom-center{display:none}.floating-controls{right:16px;bottom:18px;gap:7px}.floating-controls .round-btn{width:44px;height:44px}.corner-index{left:20px;top:90px;opacity:.84}.selection-exit{top:91px;right:19px}.m-tile.is-active .tile-info{left:28px;bottom:29px}.m-tile.is-active .tile-title{font-size:clamp(37px,7.5cqw,72px)}.m-tile.is-active .detail{font-size:12px;line-height:1.55}.m-tile .tile-info{left:15px;bottom:15px}.m-tile .tile-kicker{font-size:9px}.m-tile .tile-title{font-size:clamp(20px,4.3cqw,48px)}}
+.sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important;scroll-behavior:auto!important}}
 </style>
 </head>
@@ -72,10 +73,11 @@
     <button class="round-btn selection-exit" id="closeBtn" tabindex="-1" aria-label="关闭展开的作品" title="关闭作品 (Esc)"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     <div class="bottom-left"><div class="number" id="counter">01<span style="font-size:.42em;color:#ffffff66"> / ∞</span></div><div class="bottom-meta">UNBOUND STORIES<br>ENDLESS FRAMES</div></div>
     <div class="bottom-center"><div class="hint"><span>DRAG TO EXPLORE</span><i></i><span>SCROLL TO ZOOM</span><i></i><span>SELECT TO EXPAND</span></div><div class="mini" id="coordinates">X 0000 — Y 0000 · 076%</div></div>
-    <div class="floating-controls"><button class="round-btn" id="minusBtn" aria-label="缩小画布" title="缩小 (-)"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button><button class="round-btn" id="plusBtn" aria-label="放大画布" title="放大 (+)"><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button><button class="round-btn" id="homeBtn" aria-label="返回画布中心" title="重置视图 (0)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button></div>
+    <div class="floating-controls"><button class="round-btn" id="minusBtn" aria-label="缩小画布" title="缩小 (-)"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button><button class="round-btn" id="plusBtn" aria-label="放大画布" title="放大 (+)"><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button><button class="round-btn" id="discoverBtn" aria-label="随机发现作品" title="发现作品 (R)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="m14.5 9.5-2.4 5-2.6.9 1-2.6 4-3.3z"/></svg></button><button class="round-btn" id="homeBtn" aria-label="返回画布中心" title="重置视图 (0)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button></div>
   </div>
+  <div class="sr-only" id="sceneStatus" role="status" aria-live="polite" aria-atomic="true"></div>
   <div class="modal" id="helpModal" hidden role="dialog" aria-modal="true" aria-labelledby="helpTitle">
-    <div class="modal-card"><div class="overline">NOEMA / FIELD MANUAL</div><button class="round-btn modal-close" id="helpClose" aria-label="关闭指南"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button><h2 id="helpTitle">Explore without edges.</h2><p>无限延展的图像档案。拖动画布穿越视觉场景；缩放始终围绕指针所在的位置。选择任意图像，它将从原位置展开，周围作品随之自然退让。</p><div class="keys"><div class="key-item"><span class="kbd">拖动</span> 移动画布</div><div class="key-item"><span class="kbd">滚轮</span> 指针缩放</div><div class="key-item"><span class="kbd">+ / −</span> 缩放视图</div><div class="key-item"><span class="kbd">方向键</span> 平移画布</div><div class="key-item"><span class="kbd">Enter</span> 展开焦点作品</div><div class="key-item"><span class="kbd">Esc</span> 收起作品</div><div class="key-item"><span class="kbd">0</span> 重置视图</div><div class="key-item"><span class="kbd">?</span> 操作指南</div></div></div>
+    <div class="modal-card"><div class="overline">NOEMA / FIELD MANUAL</div><button class="round-btn modal-close" id="helpClose" aria-label="关闭指南"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button><h2 id="helpTitle">Explore without edges.</h2><p>无限延展的图像档案。拖动画布穿越视觉场景；缩放始终围绕指针所在的位置。选择任意图像，它将从原位置展开，周围作品随之自然退让。</p><div class="keys"><div class="key-item"><span class="kbd">拖动</span> 移动画布</div><div class="key-item"><span class="kbd">滚轮</span> 指针缩放</div><div class="key-item"><span class="kbd">+ / −</span> 缩放视图</div><div class="key-item"><span class="kbd">方向键</span> 平移画布</div><div class="key-item"><span class="kbd">Enter</span> 展开焦点作品</div><div class="key-item"><span class="kbd">Esc</span> 收起作品</div><div class="key-item"><span class="kbd">0</span> 重置视图</div><div class="key-item"><span class="kbd">?</span> 操作指南</div><div class="key-item"><span class="kbd">R</span> 随机发现</div></div></div>
   </div>
 </div>
 <script>
@@ -111,11 +113,12 @@ const TEMPLATE=[
 const BW=12*PITCH,BH=8*PITCH,MAX=220,OVERSCAN=650;
 const stage=document.getElementById('stage'),world=document.getElementById('world'),modal=document.getElementById('helpModal');
 const counter=document.getElementById('counter'),coordinates=document.getElementById('coordinates');
+const sceneStatus=document.getElementById('sceneStatus'),chrome=document.querySelector('.chrome');
 const motion=window.matchMedia('(prefers-reduced-motion: reduce)');
 const nodes=new Map(),pointers=new Map();
 let viewport={w:innerWidth,h:innerHeight};
 let camera={x:0,y:0,s:.76},cameraGoal={...camera},last=0,raf=0,active=null,focusRestore=null;
-let drag=null,pinch=null,initialized=false,keepPlaying=false,renderCount=0;
+let drag=null,pinch=null,initialized=false,keepPlaying=false,lastCull=null,lastModalFocus=null;
 const clamp=(v,min,max)=>Math.min(max,Math.max(min,v));
 const dist=(p,q)=>Math.hypot(p.x-q.x,p.y-q.y);
 const intersects=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
@@ -124,15 +127,23 @@ const slugNum=(n)=>('000'+(Math.abs(n)%1000)).slice(-3);
 function artIndex(bx,by,i){const n=(bx*17+by*29+i*7+100000*24)%artworks.length;return (n+artworks.length)%artworks.length}
 function start(){if(!raf)raf=requestAnimationFrame(frame)}
 function zoomAt(factor,px,py){const next=clamp(camera.s*factor,.40,1.9);const wx=(px-camera.x)/camera.s,wy=(py-camera.y)/camera.s;camera.s=next;camera.x=px-wx*next;camera.y=py-wy*next;cameraGoal={...camera};updateGoals();updateCamera();start()}
-function reset(animate=true){const s=viewport.w<700?.70:viewport.w<1150?.76:.84;const x=viewport.w*.5-BW*.46*s,y=viewport.h*.5-BH*.45*s;active=null;stage.classList.remove('has-selection');document.getElementById('closeBtn').tabIndex=-1;updateGoals();cameraGoal={x,y,s};if(motion.matches||!animate)camera={...cameraGoal};updateCamera();start()}
+function reset(animate=true){const s=viewport.w<700?.70:viewport.w<1150?.76:.84;const x=viewport.w*.5-BW*.46*s,y=viewport.h*.5-BH*.45*s;active=null;stage.classList.remove('has-selection');document.getElementById('closeBtn').tabIndex=-1;sceneStatus.textContent='已返回画布中心';updateGoals();cameraGoal={x,y,s};if(motion.matches||!animate)camera={...cameraGoal};updateCamera();start()}
 function updateCamera(){world.style.transform=`translate3d(${camera.x}px,${camera.y}px,0) scale(${camera.s})`;if(coordinates)coordinates.textContent=`X ${slugNum(Math.round(-camera.x/camera.s))} — Y ${slugNum(Math.round(-camera.y/camera.s))} · ${String(Math.round(camera.s*100)).padStart(3,'0')}%`}
-function setImage(img,src){img.onload=()=>img.classList.add('loaded');img.onerror=()=>img.classList.remove('loaded');img.src=src}
+function setImage(img,src){
+ img.onload=async()=>{
+   try{if(img.decode)await img.decode()}catch{ /* onload already confirmed this asset */ }
+   if(img.isConnected&&img.getAttribute('src')===src)img.classList.add('loaded');
+ };
+ img.onerror=()=>img.classList.remove('loaded');img.src=src;
+}
 const observer=('IntersectionObserver' in window)?new IntersectionObserver(entries=>{for(const en of entries){if(!en.isIntersecting)continue;const m=nodes.get(en.target.dataset.instance);if(m)loadThumbnail(m);observer.unobserve(en.target)}},{root:stage,rootMargin:'280px'}):null;
 function loadThumbnail(m){if(m.thumbRequested)return;m.thumbRequested=true;setImage(m.low,photo(m.art.img,780,76))}
 function loadOriginal(m){if(m.fullRequested)return;m.fullRequested=true;setImage(m.hi,photo(m.art.img,1800,87))}
-function makeTile(id,rect,index){const a=artworks[index],button=document.createElement('button');button.type='button';button.className='m-tile';button.dataset.instance=id;button.setAttribute('aria-label',`${a.title}，${a.category}，按回车展开`);button.setAttribute('aria-pressed','false');button.style.setProperty('--fallback',`linear-gradient(145deg,${a.color},#101114)`);
+function makeTile(id,rect,index){const a=artworks[index],button=document.createElement('button');button.type='button';button.className='m-tile';button.dataset.instance=id;button.setAttribute('aria-label',`${a.title}，${a.category}，按回车展开`);button.setAttribute('aria-expanded','false');button.style.setProperty('--fallback',`linear-gradient(145deg,${a.color},#101114)`);
  button.innerHTML=`<div class="tile-art"><img class="low-res" alt="" loading="lazy" decoding="async" draggable="false"><img class="hi-res" alt="" decoding="async" draggable="false"></div><div class="tile-shade"></div><div class="tile-index">NO. ${String(index+1).padStart(2,'0')}</div><div class="tile-info"><div class="tile-kicker">${a.category} &nbsp; / &nbsp; STUDY ${String(index+1).padStart(2,'0')}</div><h2 class="tile-title">${a.title}</h2><div class="detail"><span class="detail-line"></span>${a.desc}<span class="detail-link">CLICK TO CLOSE <span aria-hidden="true">↙</span></span></div></div><div class="tile-arrow" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></div><div class="tile-dimmer"></div>`;
  button.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();focusRestore=button;select(id)}});
+ // Assistive technology may dispatch click without a preceding pointer sequence.
+ button.addEventListener('click',e=>{if(e.detail===0){focusRestore=button;select(id)}});
  world.appendChild(button);
  const m={id,rect,art:a,button,low:button.querySelector('.low-res'),hi:button.querySelector('.hi-res'),thumbRequested:false,fullRequested:false,cur:{...rect},vel:{x:0,y:0,w:0,h:0},goal:{...rect}};
  nodes.set(id,m);place(m);if(observer)observer.observe(button);else loadThumbnail(m);return m;
@@ -148,10 +159,14 @@ function resolveReflow(rect,expanded,origin){if(!intersects(rect,{x:expanded.x-1
 }
 function updateGoals(){const chosen=active&&nodes.get(active);const exp=chosen?getExpansion(chosen.rect):null;const origin=chosen?{x:chosen.rect.x+chosen.rect.w/2,y:chosen.rect.y+chosen.rect.h/2}:null;
  for(const m of nodes.values()){const mine=m.id===active;if(mine&&exp)m.goal=exp;else if(exp)m.goal=resolveReflow(m.rect,exp,origin);else m.goal=m.rect;
- m.button.classList.toggle('is-active',mine);m.button.setAttribute('aria-pressed',String(mine));if(mine)loadOriginal(m);
+ m.button.classList.toggle('is-active',mine);if(m.button.getAttribute('aria-expanded')!==String(mine))m.button.setAttribute('aria-expanded',String(mine));if(mine)loadOriginal(m);
  }
 }
-function syncVisible(){let changed=false;const x=-camera.x/camera.s,y=-camera.y/camera.s;const view={x:x-OVERSCAN,y:y-OVERSCAN,w:viewport.w/camera.s+OVERSCAN*2,h:viewport.h/camera.s+OVERSCAN*2};
+function syncVisible(force=false){let changed=false;const x=-camera.x/camera.s,y=-camera.y/camera.s;
+ // A generous overscan keeps tiles mounted between checks; skip repeated DOM traversal while the camera settles.
+ if(!force&&lastCull&&Math.abs(lastCull.x-x)<110&&Math.abs(lastCull.y-y)<110&&Math.abs(lastCull.s-camera.s)<.04&&lastCull.w===viewport.w&&lastCull.h===viewport.h)return;
+ lastCull={x,y,s:camera.s,w:viewport.w,h:viewport.h};
+ const view={x:x-OVERSCAN,y:y-OVERSCAN,w:viewport.w/camera.s+OVERSCAN*2,h:viewport.h/camera.s+OVERSCAN*2};
  const x1=Math.floor(view.x/BW)-1,x2=Math.ceil((view.x+view.w)/BW)+1,y1=Math.floor(view.y/BH)-1,y2=Math.ceil((view.y+view.h)/BH)+1;
  const wanted=new Set();let count=0;
  outer:for(let by=y1;by<=y2;by++)for(let bx=x1;bx<=x2;bx++)for(let i=0;i<TEMPLATE.length;i++){
@@ -159,23 +174,32 @@ function syncVisible(){let changed=false;const x=-camera.x/camera.s,y=-camera.y/
  }
  // Never remove the selected tile, even while the camera is moving or the layout is opening.
  if(active)wanted.add(active);
- for(const [id,m] of nodes){if(wanted.has(id))continue;if(observer)observer.unobserve(m.button);m.button.remove();nodes.delete(id);changed=true}
- if(changed)updateGoals();renderCount++;
+ for(const [id,m] of nodes){if(wanted.has(id))continue;if(observer)observer.unobserve(m.button);
+  if(document.activeElement===m.button)stage.focus({preventScroll:true});
+  m.button.remove();nodes.delete(id);changed=true}
+ // Avoid putting hundreds of off-screen tiles into the keyboard tab sequence.
+ const actual={x,y,w:viewport.w/camera.s,h:viewport.h/camera.s};
+ for(const m of nodes.values()){const focusable=m.id===active||intersects(m.rect,actual);const tab=focusable?0:-1;if(m.button.tabIndex!==tab)m.button.tabIndex=tab}
+ if(changed)updateGoals();
 }
 function select(id){if(!nodes.has(id))return;const already=active===id;if(already){close();return}
  active=id;stage.classList.add('has-selection');document.getElementById('closeBtn').tabIndex=0;const m=nodes.get(id),r=m.rect;const cx=r.x+r.w/2,cy=r.y+r.h/2;
  cameraGoal={x:viewport.w/2-cx*camera.s,y:viewport.h/2-cy*camera.s,s:camera.s};
- counter.innerHTML=`${String(artworks.indexOf(m.art)+1).padStart(2,'0')}<span style="font-size:.42em;color:#ffffff66"> / ∞</span>`;
+ counter.innerHTML=`${String(artworks.indexOf(m.art)+1).padStart(2,'0')}<span style="font-size:.42em;color:#ffffff66"> / ∞</span>`;sceneStatus.textContent=`已展开 ${m.art.title}。按 Escape 收起作品。`;
  updateGoals();start()
 }
-function close(){if(!active)return;active=null;stage.classList.remove('has-selection');document.getElementById('closeBtn').tabIndex=-1;updateGoals();counter.innerHTML='01<span style="font-size:.42em;color:#ffffff66"> / ∞</span>';if(focusRestore?.isConnected)focusRestore.focus({preventScroll:true});focusRestore=null;start()}
-function spring(m,dt){const k=170,damp=22;let isMoving=false;
- for(const p of ['x','y','w','h']){let value=m.cur[p],v=m.vel[p],goal=m.goal[p];if(motion.matches){m.cur[p]=goal;m.vel[p]=0;continue}
- v+=(goal-value)*k*dt;v*=Math.exp(-damp*dt);value+=v*dt;
- if(Math.abs(goal-value)<.025&&Math.abs(v)<.04){value=goal;v=0}else isMoving=true;
- m.cur[p]=value;m.vel[p]=v;
+function close(){if(!active)return;active=null;stage.classList.remove('has-selection');document.getElementById('closeBtn').tabIndex=-1;updateGoals();counter.innerHTML='01<span style="font-size:.42em;color:#ffffff66"> / ∞</span>';if(focusRestore?.isConnected)focusRestore.focus({preventScroll:true});else stage.focus({preventScroll:true});focusRestore=null;sceneStatus.textContent='作品已收起';start()}
+function spring(m,dt){
+ const k=170,damp=22;let isMoving=false,changed=false;
+ for(const p of ['x','y','w','h']){
+  let value=m.cur[p],v=m.vel[p],goal=m.goal[p];
+  if(motion.matches){if(value!==goal){m.cur[p]=goal;changed=true}m.vel[p]=0;continue}
+  if(Math.abs(value-goal)<.025&&Math.abs(v)<.04){if(value!==goal){m.cur[p]=goal;changed=true}m.vel[p]=0;continue}
+  v+=(goal-value)*k*dt;v*=Math.exp(-damp*dt);value+=v*dt;
+  if(Math.abs(goal-value)<.025&&Math.abs(v)<.04){value=goal;v=0}else isMoving=true;
+  if(value!==m.cur[p])changed=true;m.cur[p]=value;m.vel[p]=v;
  }
- place(m);return isMoving
+ if(changed)place(m);return isMoving
 }
 function frame(now){raf=0;const dt=last?Math.min(.034,(now-last)/1000):.016;last=now;let moving=false;
  if(motion.matches)camera={...cameraGoal};else for(const key of ['x','y','s']){const delta=cameraGoal[key]-camera[key];if(Math.abs(delta)>.04){camera[key]+=delta*(1-Math.exp(-10*dt));moving=true}else camera[key]=cameraGoal[key]}
@@ -196,20 +220,35 @@ function pointerEnd(e){const p=point(e),d=drag;const wasClick=d&&d.id===e.pointe
  pointers.delete(e.pointerId);if(pointers.size===0){stage.classList.remove('is-dragging');keepPlaying=false;drag=null;pinch=null}else if(pointers.size===1){const [id,v]=[...pointers.entries()][0];drag={id,point:v,start:v,travel:100,tile:null};pinch=null}
  if(wasClick&&d.tile){focusRestore=nodes.get(d.tile)?.button||null;select(d.tile)}start()
 }
-stage.addEventListener('pointerup',pointerEnd);stage.addEventListener('pointercancel',e=>{pointers.delete(e.pointerId);drag=null;pinch=null;keepPlaying=false;stage.classList.remove('is-dragging')});
+stage.addEventListener('pointerup',pointerEnd);stage.addEventListener('pointercancel',e=>{pointers.delete(e.pointerId);
+ if(pointers.size===1){const [id,p]=pointers.entries().next().value;drag={id,point:p,start:p,travel:100,tile:null};pinch=null}
+ else if(pointers.size>=2){drag=null;pinch=pinchState()}
+ else{drag=null;pinch=null;keepPlaying=false;stage.classList.remove('is-dragging')}
+ start();
+});
 stage.addEventListener('wheel',e=>{e.preventDefault();const p=point(e);zoomAt(Math.exp(-e.deltaY*(e.deltaMode===1?.028:.00135)),p.x,p.y)},{passive:false});
 stage.addEventListener('dblclick',e=>{if(e.target.closest('.m-tile'))return;const p=point(e);zoomAt(1.32,p.x,p.y)});
-function showHelp(){modal.hidden=false;document.getElementById('helpClose').focus()}
-function hideHelp(){modal.hidden=true;document.getElementById('infoBtn').focus()}
+function showHelp(){if(!modal.hidden)return;lastModalFocus=document.activeElement;modal.hidden=false;stage.inert=true;chrome.inert=true;document.getElementById('helpClose').focus()}
+function hideHelp(){if(modal.hidden)return;modal.hidden=true;stage.inert=false;chrome.inert=false;
+ const target=lastModalFocus?.isConnected?lastModalFocus:document.getElementById('infoBtn');target.focus({preventScroll:true});lastModalFocus=null}
+// The help dialog contains one actionable control; trap Tab there while visible.
+modal.addEventListener('keydown',e=>{if(e.key==='Tab'){e.preventDefault();document.getElementById('helpClose').focus()}});
+function discover(){
+ const visible={x:-camera.x/camera.s,y:-camera.y/camera.s,w:viewport.w/camera.s,h:viewport.h/camera.s};
+ const options=[...nodes.values()].filter(m=>intersects(m.rect,visible)&&m.id!==active);
+ if(!options.length){reset();return}
+ const item=options[Math.floor(Math.random()*options.length)];focusRestore=item.button;
+ select(item.id);item.button.focus({preventScroll:true});
+}
 document.getElementById('infoBtn').addEventListener('click',showHelp);document.getElementById('helpClose').addEventListener('click',hideHelp);modal.addEventListener('click',e=>{if(e.target===modal)hideHelp()});
-document.getElementById('closeBtn').addEventListener('click',close);document.getElementById('plusBtn').addEventListener('click',()=>zoomAt(1.24,viewport.w/2,viewport.h/2));document.getElementById('minusBtn').addEventListener('click',()=>zoomAt(1/1.24,viewport.w/2,viewport.h/2));document.getElementById('homeBtn').addEventListener('click',()=>reset());
+document.getElementById('closeBtn').addEventListener('click',close);document.getElementById('plusBtn').addEventListener('click',()=>zoomAt(1.24,viewport.w/2,viewport.h/2));document.getElementById('minusBtn').addEventListener('click',()=>zoomAt(1/1.24,viewport.w/2,viewport.h/2));document.getElementById('homeBtn').addEventListener('click',()=>reset());document.getElementById('discoverBtn').addEventListener('click',discover);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!modal.hidden){hideHelp();return}close();return}if(!modal.hidden)return;
  if(e.key==='?'||((e.shiftKey)&&e.key==='/')){e.preventDefault();showHelp();return}
  if(e.altKey||e.ctrlKey||e.metaKey)return;
- const k=e.key;if(k==='+'||k==='='||k==='Add'){e.preventDefault();zoomAt(1.2,viewport.w/2,viewport.h/2)}else if(k==='-'||k==='_'||k==='Subtract'){e.preventDefault();zoomAt(1/1.2,viewport.w/2,viewport.h/2)}else if(k==='0'){e.preventDefault();reset()}
+ const k=e.key;if(k==='+'||k==='='||k==='Add'){e.preventDefault();zoomAt(1.2,viewport.w/2,viewport.h/2)}else if(k==='-'||k==='_'||k==='Subtract'){e.preventDefault();zoomAt(1/1.2,viewport.w/2,viewport.h/2)}else if(k==='0'){e.preventDefault();reset()}else if(k.toLowerCase()==='r'){e.preventDefault();discover()}
  else if(k.startsWith('Arrow')){e.preventDefault();const step=e.shiftKey?250:100;camera.x+=(k==='ArrowLeft'?step:k==='ArrowRight'?-step:0);camera.y+=(k==='ArrowUp'?step:k==='ArrowDown'?-step:0);cameraGoal={...camera};updateCamera();start()}
 });
-function measure(){const r=stage.getBoundingClientRect(),w=r.width,h=r.height;if(!w||!h)return;const old=viewport;viewport={w,h};if(!initialized){initialized=true;reset(false)}else{camera.x+=(w-old.w)/2;camera.y+=(h-old.h)/2;cameraGoal={...camera};updateGoals();start()}}
+function measure(){const r=stage.getBoundingClientRect(),w=r.width,h=r.height;if(!w||!h)return;const old=viewport;viewport={w,h};if(!initialized){initialized=true;reset(false)}else{camera.x+=(w-old.w)/2;camera.y+=(h-old.h)/2;cameraGoal={...camera};updateGoals();start();syncVisible(true)}}
 new ResizeObserver(measure).observe(stage);measure();
 })();
 </script>
