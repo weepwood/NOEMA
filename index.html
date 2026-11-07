@@ -83,6 +83,12 @@
 .inspector-spinner[hidden]{display:none}
 .inspector button:focus-visible{outline:2px solid #f7f4ee;outline-offset:3px}
 @media(max-width:760px){.selection-inspect{top:91px;right:72px}.inspector-top{padding:16px 16px;min-height:72px}.inspector-title strong{max-width:57vw;font-size:14px}.inspector-viewport{inset:72px 0 88px}.inspector-bottom{min-height:88px;padding:12px 16px env(safe-area-inset-bottom,12px)}.inspector-group{gap:5px}.inspector-group .round-btn{width:42px;height:42px}.inspector-meta{display:none}.inspector-scale{min-width:43px}}
+/* Quiet, temporary import affordance: controls stay subordinate to the artwork. */
+.import-progress{position:absolute;top:105px;left:50%;transform:translateX(-50%);z-index:38;display:flex;align-items:center;gap:15px;max-width:min(90vw,500px);padding:12px 14px;background:#0b0b0bef;border:1px solid #ffffff36;color:#f7f4ee;font-size:11px;letter-spacing:.04em;box-shadow:0 12px 40px #0008}
+.import-progress[hidden]{display:none}.import-progress span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.import-progress button{background:#242424;border:1px solid #ffffff35;color:inherit;font:inherit;cursor:pointer;white-space:nowrap;padding:7px 12px}.import-progress button:hover{background:#383838}
+.forget-folder{display:inline-block;margin-top:12px;padding:8px 0;border:0;background:none;color:#d7d2c9;text-decoration:underline;text-underline-offset:4px;cursor:pointer;font-size:12px}.forget-folder[hidden]{display:none}
+.top-tools .round-btn[hidden]{display:none}
+@media(max-width:760px){.import-progress{top:87px;max-width:calc(100vw - 30px)}.top-tools{gap:7px}}
 .sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important;scroll-behavior:auto!important}}
 </style>
@@ -98,7 +104,7 @@
     <header class="topbar">
       <div class="brand" aria-label="Noema 视觉档案"><div class="brand-mark"><span class="cross-h"></span><span class="cross-v"></span></div><div><div class="brand-name">N O E M A</div><div class="brand-sub">THE VISUAL ARCHIVE</div></div></div>
       <div class="top-middle"><div class="eyebrow">AN INFINITE COLLECTION</div><div class="subline">An exploration of image, atmosphere &amp; form</div></div>
-      <div class="top-tools"><span class="edition">VOLUME 001 — 2026</span><span class="collection-tag" id="collectionTag" hidden></span><button class="round-btn import-btn" id="folderBtn" aria-label="打开本地图片文件夹" title="打开本地图片文件夹"><svg viewBox="0 0 24 24"><path d="M3 7V5.5A2 2 0 0 1 5 3.5h4l2.3 2.5H19a2 2 0 0 1 2 2v10.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10h18"/></svg></button><button class="round-btn" id="fileBtn" aria-label="选择图片文件" title="添加图片文件"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 16l3-4 2 2 2-3 3 5"/><circle cx="9" cy="8" r="1"/></svg></button><button class="round-btn" id="infoBtn" aria-label="操作指南" title="操作指南 (?)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.8 9a2.4 2.4 0 1 1 4.4 1.2c-.7 1-2.2 1.4-2.2 3.2M12 17.4h.01"/></svg></button></div>
+      <div class="top-tools"><span class="edition">VOLUME 001 — 2026</span><span class="collection-tag" id="collectionTag" hidden></span><button class="round-btn" id="recentBtn" hidden aria-label="重新打开最近文件夹" title="恢复最近文件夹"><svg viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/><path d="M7 13a5 5 0 1 1 3 4.6M7 10v3h3"/></svg></button><button class="round-btn import-btn" id="folderBtn" aria-label="打开本地图片文件夹" title="打开本地图片文件夹"><svg viewBox="0 0 24 24"><path d="M3 7V5.5A2 2 0 0 1 5 3.5h4l2.3 2.5H19a2 2 0 0 1 2 2v10.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10h18"/></svg></button><button class="round-btn" id="fileBtn" aria-label="选择图片文件" title="添加图片文件"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 16l3-4 2 2 2-3 3 5"/><circle cx="9" cy="8" r="1"/></svg></button><button class="round-btn" id="infoBtn" aria-label="操作指南" title="操作指南 (?)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.8 9a2.4 2.4 0 1 1 4.4 1.2c-.7 1-2.2 1.4-2.2 3.2M12 17.4h.01"/></svg></button></div>
     </header>
     <div class="corner-index"><span class="accent"></span>CURATED IN SPACE<br>FREEFORM EXPLORATION</div>
     <button class="round-btn selection-inspect" id="inspectBtn" tabindex="-1" aria-label="完整查看原图" title="完整查看原图 (I)"><svg viewBox="0 0 24 24"><path d="M8 3H4a1 1 0 0 0-1 1v4M16 3h4a1 1 0 0 1 1 1v4M21 16v4a1 1 0 0 1-1 1h-4M8 21H4a1 1 0 0 1-1-1v-4"/><path d="M8 12h8M12 8v8"/></svg></button>
@@ -111,9 +117,10 @@
   <input class="sr-only" type="file" id="fileInput" accept="image/*,.jpg,.jpeg,.png,.webp,.avif,.gif,.bmp" multiple tabindex="-1" aria-label="选择图片文件" />
   <div class="drop-overlay" id="dropOverlay" aria-hidden="true"><div class="drop-copy">DROP YOUR IMAGES HERE<small>拖入图片文件或文件夹 · 所有图片仅在本地处理</small></div></div>
   <div class="toast" id="notice" aria-hidden="true"></div>
+  <div class="import-progress" id="importProgress" hidden role="status" aria-live="off"><span id="importMessage">准备导入图片…</span><button id="importCancel" type="button" aria-label="取消导入">取消</button></div>
   <div class="sr-only" id="sceneStatus" role="status" aria-live="polite" aria-atomic="true"></div>
   <div class="modal" id="helpModal" hidden role="dialog" aria-modal="true" aria-labelledby="helpTitle">
-    <div class="modal-card"><div class="overline">NOEMA / FIELD MANUAL</div><button class="round-btn modal-close" id="helpClose" aria-label="关闭指南"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button><h2 id="helpTitle">Explore without edges.</h2><p>无限延展的图像档案。拖动画布穿越视觉场景；缩放始终围绕指针所在的位置。选择任意图像，它将从原位置展开，周围作品随之自然退让。</p><div class="keys"><div class="key-item"><span class="kbd">拖动</span> 移动画布</div><div class="key-item"><span class="kbd">滚轮</span> 指针缩放</div><div class="key-item"><span class="kbd">+ / −</span> 缩放视图</div><div class="key-item"><span class="kbd">方向键</span> 平移画布</div><div class="key-item"><span class="kbd">Enter</span> 展开焦点作品</div><div class="key-item"><span class="kbd">Esc</span> 收起作品</div><div class="key-item"><span class="kbd">0</span> 重置视图</div><div class="key-item"><span class="kbd">?</span> 操作指南</div><div class="key-item"><span class="kbd">R</span> 随机发现</div><div class="key-item"><span class="kbd">I</span> 完整查看原图</div><div class="key-item"><span class="kbd">← / →</span> 原图切换</div><div class="key-item"><span class="kbd">1</span> 原图 100% 查看</div><div class="key-item"><span class="kbd">文件夹</span> 打开本地图片</div><div class="key-item"><span class="kbd">拖放</span> 导入文件或目录</div></div></div>
+    <div class="modal-card"><div class="overline">NOEMA / FIELD MANUAL</div><button class="round-btn modal-close" id="helpClose" aria-label="关闭指南"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button><h2 id="helpTitle">Explore without edges.</h2><p>无限延展的图像档案。拖动画布穿越视觉场景；缩放始终围绕指针所在的位置。选择任意图像，它将从原位置展开，周围作品随之自然退让。</p><div class="keys"><div class="key-item"><span class="kbd">拖动</span> 移动画布</div><div class="key-item"><span class="kbd">滚轮</span> 指针缩放</div><div class="key-item"><span class="kbd">+ / −</span> 缩放视图</div><div class="key-item"><span class="kbd">方向键</span> 平移画布</div><div class="key-item"><span class="kbd">Enter</span> 展开焦点作品</div><div class="key-item"><span class="kbd">Esc</span> 收起作品</div><div class="key-item"><span class="kbd">0</span> 重置视图</div><div class="key-item"><span class="kbd">?</span> 操作指南</div><div class="key-item"><span class="kbd">R</span> 随机发现</div><div class="key-item"><span class="kbd">I</span> 完整查看原图</div><div class="key-item"><span class="kbd">← / →</span> 原图切换</div><div class="key-item"><span class="kbd">1</span> 原图 100% 查看</div><div class="key-item"><span class="kbd">文件夹</span> 打开本地图片</div><div class="key-item"><span class="kbd">拖放</span> 导入文件或目录</div><div class="key-item"><span class="kbd">最近</span> 按需恢复授权文件夹</div></div><button class="forget-folder" id="forgetFolder" type="button" hidden>清除记住的文件夹</button></div>
   </div>
   <div id="inspector" class="inspector" hidden role="dialog" aria-modal="true" aria-labelledby="inspectorTitle">
     <header class="inspector-top">
@@ -165,6 +172,34 @@ const demoArtworks=[
 ];
 let artworks=demoArtworks,localMode=false,collectionVersion=0;
 const MAX_LOCAL_FILES=20000,MAX_THUMB_CACHE=260,THUMB_SIZE=500;
+// Blob budget is compressed bytes, not decoded GPU/DOM memory. Both limits apply.
+const MAX_THUMB_BYTES=32*1024*1024;
+let thumbCacheBytes=0;
+let thumbnailWorker=null,workerDisabled=false,workerId=0;
+const workerPending=new Map();
+function getThumbnailWorker(){
+ if(workerDisabled||location.protocol==='file:'||!('Worker' in window)||!('OffscreenCanvas' in window))return null;
+ if(thumbnailWorker)return thumbnailWorker;
+ try{
+  const worker=new Worker(new URL('./thumbnail-worker.js',document.baseURI));
+  worker.onmessage=({data})=>{const task=workerPending.get(data.id);if(!task)return;workerPending.delete(data.id);data.error?task.reject(new Error(data.error)):task.resolve(data.blob)};
+  worker.onerror=()=>{workerDisabled=true;worker.terminate();thumbnailWorker=null;for(const task of workerPending.values())task.reject(new Error('Worker unavailable'));workerPending.clear()};
+  thumbnailWorker=worker;return worker;
+ }catch{workerDisabled=true;return null}
+}
+function thumbnailInBackground(file){
+ const worker=getThumbnailWorker();if(!worker)return makeThumbnailBlob(file);
+ return new Promise((resolve,reject)=>{
+  const id=++workerId;workerPending.set(id,{resolve,reject});
+  try{worker.postMessage({id,file,maxEdge:THUMB_SIZE})}catch(e){workerPending.delete(id);reject(e)}
+ }).catch(()=>makeThumbnailBlob(file));
+}
+function rememberThumbnail(art,url,bytes){
+ if(thumbCache.has(art)){const previous=thumbCache.get(art);if(previous&&previous!==url)URL.revokeObjectURL(previous);thumbCacheBytes-=art.thumbBytes||0;thumbCache.delete(art)}
+ art.thumbBytes=bytes;art.thumbUrl=url;thumbCache.set(art,url);thumbCacheBytes+=bytes;
+ evictThumbnails();
+}
+
 const supportedImage=file=>Boolean(file&&(/^(?:image\/(?:jpeg|png|webp|avif|gif|bmp|x-ms-bmp))$/i.test(file.type||'')||/\.(?:jpe?g|png|webp|avif|gif|bmp)$/i.test(file.name)));
 const thumbCache=new Map();
 const thumbnailQueue=[];
@@ -240,30 +275,30 @@ function pumpThumbnails(){
   thumbnailWorkers++;
   (async()=>{
    try{
-    const blob=await makeThumbnailBlob(task.art.file);
+    const blob=await thumbnailInBackground(task.art.file);
     if(task.version!==collectionVersion){task.resolve(null);return}
-    const url=URL.createObjectURL(blob);task.art.thumbUrl=url;thumbCache.set(task.art,url);evictThumbnails();task.resolve(url);
+    const url=URL.createObjectURL(blob);rememberThumbnail(task.art,url,blob.size);task.resolve(url);
    }catch(error){
     if(task.version===collectionVersion){task.art.thumbFailed=true;console.warn('缩略图生成失败，尝试直接显示原图:',task.art.title,error);
-     const fallback=URL.createObjectURL(task.art.file);task.art.thumbUrl=fallback;thumbCache.set(task.art,fallback);evictThumbnails();task.resolve(fallback)}
+     const fallback=URL.createObjectURL(task.art.file);rememberThumbnail(task.art,fallback,task.art.file.size);task.resolve(fallback)}
     else task.resolve(null);
    }finally{thumbnailWorkers--;pumpThumbnails()}
   })();
  }
 }
 function evictThumbnails(){
- if(thumbCache.size<=MAX_THUMB_CACHE)return;
+ if(thumbCache.size<=MAX_THUMB_CACHE&&thumbCacheBytes<=MAX_THUMB_BYTES)return;
  const pinned=new Set([...nodes.values()].map(node=>node.art));
  for(const [art,url] of thumbCache){
-  if(thumbCache.size<=MAX_THUMB_CACHE)break;
+  if(thumbCache.size<=MAX_THUMB_CACHE&&thumbCacheBytes<=MAX_THUMB_BYTES)break;
   if(pinned.has(art))continue;
-  URL.revokeObjectURL(url);thumbCache.delete(art);art.thumbUrl=null;art.thumbPromise=null;
+  URL.revokeObjectURL(url);thumbCache.delete(art);thumbCacheBytes-=art.thumbBytes||0;art.thumbBytes=0;art.thumbUrl=null;art.thumbPromise=null;
  }
 }
 function clearThumbnailCache(){
  collectionVersion++;
- for(const [art,url] of thumbCache){URL.revokeObjectURL(url);art.thumbUrl=null;art.thumbPromise=null}
- thumbCache.clear();
+ for(const [art,url] of thumbCache){URL.revokeObjectURL(url);art.thumbUrl=null;art.thumbPromise=null;art.thumbBytes=0}
+ thumbCache.clear();thumbCacheBytes=0;
  while(thumbnailQueue.length){thumbnailQueue.shift().resolve(null)}
 }
 function releaseFullImage(){
@@ -640,10 +675,89 @@ function discover(){
  select(item.id);item.button.focus({preventScroll:true});
 }
 
-// Local collections never leave the browser. File handles are held only for this tab.
-async function importFiles(input,displayName='LOCAL COLLECTION'){
+// Import tasks are interruptible until the previous collection is replaced.
+const progress=document.getElementById('importProgress'),progressText=document.getElementById('importMessage');
+let importTask=null;
+function beginImport(label){
+ if(importTask)importTask.cancelled=true;
+ const task={cancelled:false,label};importTask=task;
+ progress.hidden=false;progressText.textContent=label;return task;
+}
+function alive(task){return importTask===task&&!task.cancelled}
+function setImportProgress(task,message){if(alive(task))progressText.textContent=message}
+function finishImport(task){if(importTask!==task)return;progress.hidden=true;importTask=null}
+function cancelImport(){if(!importTask)return;const task=importTask;task.cancelled=true;finishImport(task);notify('已取消导入；当前图库保持不变')}
+document.getElementById('importCancel').addEventListener('click',cancelImport);
+
+// Only the user-approved directory handle is saved, never image contents.
+const directoryDB='noema-local-directory-v1';
+function openDirectoryDB(){return new Promise((resolve,reject)=>{
+ if(!('indexedDB' in window))return reject(new Error('IndexedDB unavailable'));
+ const request=indexedDB.open(directoryDB,1);
+ request.onupgradeneeded=()=>request.result.createObjectStore('folders');
+ request.onsuccess=()=>resolve(request.result);
+ request.onerror=()=>reject(request.error);
+})}
+async function readRecentDirectory(){
+ try{const db=await openDirectoryDB();try{return await new Promise((resolve,reject)=>{
+  const request=db.transaction('folders','readonly').objectStore('folders').get('recent');
+  request.onsuccess=()=>resolve(request.result||null);request.onerror=()=>reject(request.error);
+ })}finally{db.close()}}catch{return null}
+}
+async function saveRecentDirectory(handle){
+ try{const db=await openDirectoryDB();try{await new Promise((resolve,reject)=>{
+  const request=db.transaction('folders','readwrite').objectStore('folders').put(handle,'recent');
+  request.onsuccess=()=>resolve(true);request.onerror=()=>reject(request.error);
+ })}finally{db.close()}return true}catch{return false}
+}
+let recentHandle=null;
+function exposeRecent(handle){recentHandle=handle;document.getElementById('recentBtn').hidden=!handle;document.getElementById('forgetFolder').hidden=!handle}
+if('showDirectoryPicker' in window)readRecentDirectory().then(exposeRecent);
+async function forgetRecentDirectory(){
+ try{const db=await openDirectoryDB();try{await new Promise((resolve,reject)=>{
+   const request=db.transaction('folders','readwrite').objectStore('folders').delete('recent');
+   request.onsuccess=()=>resolve();request.onerror=()=>reject(request.error)
+ })}finally{db.close()}}catch{}
+ exposeRecent(null);notify('已清除记住的文件夹，当前图片不会被删除');
+}
+document.getElementById('forgetFolder').addEventListener('click',forgetRecentDirectory);
+async function gatherDirectory(handle,task){
+ const files=[],directories=[{handle,path:''}];let visited=0;
+ while(directories.length&&files.length<MAX_LOCAL_FILES&&alive(task)){
+  const {handle:directory,path}=directories.shift();
+  for await(const item of directory.values()){
+   if(!alive(task)||files.length>=MAX_LOCAL_FILES)break;
+   try{if(item.kind==='file'){const file=await item.getFile();file.__noemaPath=(path?path+'/':'')+file.name;files.push(file)}else if(item.kind==='directory')directories.push({handle:item,path:(path?path+'/':'')+item.name})}catch{}
+   if(++visited%80===0){setImportProgress(task,`正在索引 · ${files.length.toLocaleString()} 张图片`);await new Promise(done=>setTimeout(done,0))}
+  }
+ }
+ return files;
+}
+async function chooseDirectory(){
+ if(!window.showDirectoryPicker){document.getElementById('folderInput').click();return}
+ // Must occur synchronously in direct response to the user gesture.
+ let handle;try{handle=await window.showDirectoryPicker({mode:'read'})}catch(error){if(error.name!=='AbortError')notify('当前浏览器无法使用目录权限，改用文件夹选择器');if(error.name!=='AbortError')document.getElementById('folderInput').click();return}
+ const task=beginImport('正在读取文件夹…');
+ try{const files=await gatherDirectory(handle,task);if(!alive(task))return;
+  const imported=await importFiles(files,handle.name,task);
+  if(imported&&(await saveRecentDirectory(handle)))exposeRecent(handle)
+ }catch(error){if(alive(task))notify('读取目录失败：'+(error?.message||'未知错误'))}finally{finishImport(task)}
+}
+async function reopenDirectory(){
+ const handle=recentHandle;if(!handle)return;
+ try{const permitted=await handle.queryPermission({mode:'read'});
+  if(permitted!=='granted'&&(await handle.requestPermission({mode:'read'}))!=='granted'){notify('未授予目录读取权限');return}
+ }catch{notify('无法恢复目录权限，请重新选择文件夹');return}
+ const task=beginImport('正在恢复最近文件夹…');
+ try{const files=await gatherDirectory(handle,task);if(alive(task))await importFiles(files,handle.name,task)}
+ catch(error){if(alive(task))notify('重新打开目录失败：'+(error?.message||'未知错误'))}
+ finally{finishImport(task)}
+}
+
+// Local collections never leave the browser. File handles require explicit permission.
+async function importFiles(input,displayName='LOCAL COLLECTION',task=beginImport('正在准备图片…')){
  const valid=[...input].filter(supportedImage);
- if(!valid.length){notify('未找到浏览器支持的图片（JPG / PNG / WEBP / AVIF / GIF 等）');return}
+ if(!valid.length){if(alive(task))notify('未找到浏览器支持的图片（JPG / PNG / WEBP / AVIF / GIF 等）');finishImport(task);return false}
  const nameSorter=new Intl.Collator(undefined,{numeric:true,sensitivity:'base'});valid.sort((a,b)=>nameSorter.compare(a.name,b.name));
  const limited=valid.slice(0,MAX_LOCAL_FILES);
  if(!inspector.hidden)closeInspector();
@@ -651,11 +765,18 @@ async function importFiles(input,displayName='LOCAL COLLECTION'){
  // Initial visible blocks receive real aspect-aware mapping; remaining blocks
  // get best-effort asynchronous header scanning and freeze on first visit.
  const initial=limited.slice(0,Math.min(90,limited.length));
- await Promise.all(initial.map(async file=>{file.__noemaRatio=await inspectAspect(file)}));
+ for(let offset=0;offset<initial.length;offset+=15){
+  if(!alive(task))return false;
+  const batch=initial.slice(offset,offset+15);
+  await Promise.all(batch.map(async file=>{file.__noemaRatio=await inspectAspect(file)}));
+  setImportProgress(task,`正在识别图片比例 · ${Math.min(initial.length,offset+15)}/${initial.length}`);
+  await new Promise(done=>setTimeout(done,0));
+ }
+ if(!alive(task))return false;
  close();releaseFullImage();
  for(const m of nodes.values()){if(observer)observer.unobserve(m.button);m.button.remove()}
  nodes.clear();clearThumbnailCache();localMode=true;
- artworks=limited.map((file,index)=>({img:String(index),title:titleFromFile(file),category:'PERSONAL ARCHIVE',desc:file.webkitRelativePath||file.name,color:['#243138','#374033','#53473d','#38424b'][index%4],ratio:file.__noemaRatio||1,file}));
+ artworks=limited.map((file,index)=>({img:String(index),title:titleFromFile(file),category:'PERSONAL ARCHIVE',desc:file.__noemaPath||file.webkitRelativePath||file.name,color:['#243138','#374033','#53473d','#38424b'][index%4],ratio:file.__noemaRatio||1,file}));
  configureLocalAtlas();
  readAspectsLater(collectionVersion);
  collectionTag.hidden=false;document.getElementById('app').classList.add('local-collection');
@@ -667,6 +788,7 @@ async function importFiles(input,displayName='LOCAL COLLECTION'){
  document.querySelector('.top-middle .subline').textContent='Local only · No uploads · '+artworks.length+' files';
  lastCull=null;focusRestore=null;reset(false);syncVisible(true);
  notify(`已打开 ${artworks.length} 张本地图片${valid.length>MAX_LOCAL_FILES?'（已达到 20000 张上限）':''}，仅在此设备处理`);
+ finishImport(task);return true;
 }
 function restoreDemo(){
  if(!inspector.hidden)closeInspector();
@@ -678,26 +800,30 @@ function restoreDemo(){
  reset(false);syncVisible(true);notify('已返回 NOEMA 示例图库');
 }
 // Drag-and-drop directories: Chromium exposes filesystem entries, with paginated readEntries.
-async function fromEntry(entry,files,limit=MAX_LOCAL_FILES){
- if(files.length>=limit)return;
+async function fromEntry(entry,files,limit=MAX_LOCAL_FILES,task=null){
+ if(files.length>=limit||(task&&!alive(task)))return;
  if(entry.isFile){try{const file=await new Promise((resolve,reject)=>entry.file(resolve,reject));files.push(file)}catch{};return}
  if(!entry.isDirectory)return;
  const reader=entry.createReader();
  while(files.length<limit){
   const entries=await new Promise((resolve,reject)=>reader.readEntries(resolve,reject));
   if(!entries.length)break;
-  for(const child of entries){if(files.length>=limit)break;await fromEntry(child,files,limit)}
+  for(const child of entries){if(files.length>=limit||(task&&!alive(task)))break;await fromEntry(child,files,limit,task)}
+  if(task){setImportProgress(task,`正在扫描拖入文件 · ${files.length.toLocaleString()} 张`);await new Promise(done=>setTimeout(done,0))}
  }
 }
 async function handleDrop(dataTransfer){
+ const task=beginImport('正在扫描拖入的图片…');
  const items=[...(dataTransfer.items||[])];
  const entries=items.map(item=>item.webkitGetAsEntry?.()).filter(Boolean);
  let files=[];
- if(entries.length){for(const entry of entries){if(files.length>=MAX_LOCAL_FILES)break;await fromEntry(entry,files)}}
+ if(entries.length){for(const entry of entries){if(files.length>=MAX_LOCAL_FILES||!alive(task))break;await fromEntry(entry,files,MAX_LOCAL_FILES,task)}}
  else files=[...(dataTransfer.files||[])];
- await importFiles(files,entries.find(entry=>entry.isDirectory)?.name||'DROPPED IMAGES');
+ if(alive(task))await importFiles(files,entries.find(entry=>entry.isDirectory)?.name||'DROPPED IMAGES',task);
+ finishImport(task);
 }
-document.getElementById('folderBtn').addEventListener('click',()=>document.getElementById('folderInput').click());
+document.getElementById('folderBtn').addEventListener('click',chooseDirectory);
+document.getElementById('recentBtn').addEventListener('click',reopenDirectory);
 document.getElementById('fileBtn').addEventListener('click',()=>document.getElementById('fileInput').click());
 for(const id of ['folderInput','fileInput']){
  document.getElementById(id).addEventListener('change',async event=>{
@@ -723,7 +849,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!modal.hidden){h
 });
 function measure(){const r=stage.getBoundingClientRect(),w=r.width,h=r.height;if(!w||!h)return;const old=viewport;viewport={w,h};if(!initialized){initialized=true;reset(false)}else{camera.x+=(w-old.w)/2;camera.y+=(h-old.h)/2;cameraGoal={...camera};updateGoals();start();syncVisible(true)}}
 new ResizeObserver(measure).observe(stage);measure();
-window.addEventListener('pagehide',()=>{closeInspector();releaseFullImage();clearThumbnailCache()});
+window.addEventListener('pagehide',()=>{cancelImport();closeInspector();releaseFullImage();clearThumbnailCache();thumbnailWorker?.terminate();thumbnailWorker=null});
 })();
 </script>
 </body>
