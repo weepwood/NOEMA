@@ -32,14 +32,14 @@
 .m-tile.is-active .tile-index{top:28px;right:32px}
 .m-tile .detail{display:none;margin-top:3px;max-width:460px;color:rgba(255,255,255,.75);font-size:14px;line-height:1.65;font-weight:400;letter-spacing:.008em}
 .m-tile .detail .detail-line{display:block;width:33px;height:1px;background:#fff9;margin:0 0 12px}
-.m-tile .detail .detail-link{display:inline-flex;align-items:center;gap:13px;margin-top:19px;color:#fff;font-size:10px;letter-spacing:.15em;font-weight:700}
+.m-tile .detail .detail-link{display:flex;align-items:center;gap:13px;margin-top:19px;color:#fff;font-size:10px;letter-spacing:.15em;font-weight:700}
 .m-tile.is-active .detail{display:block;animation:detail-on .38s ease both}
 @keyframes detail-on{0%{opacity:0;transform:translateY(10px)}100%{opacity:1;transform:none}}
 .m-tile.is-active .tile-arrow{opacity:0}
 .stage-vignette{position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,7,7,.85) 0%,rgba(7,7,7,.22) 12%,transparent 23%,transparent 78%,rgba(7,7,7,.36) 91%,rgba(7,7,7,.75) 100%);pointer-events:none;z-index:12}
 .grain{position:absolute;inset:0;opacity:.105;z-index:13;pointer-events:none;background-image:url('data:image/svg+xml,%3Csvg viewBox=%220 0 180 180%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%22.95%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22 opacity=%22.55%22/%3E%3C/svg%3E');mix-blend-mode:soft-light}
 .chrome{position:absolute;inset:0;z-index:18;pointer-events:none}.chrome button{pointer-events:auto}
-.topbar{position:absolute;top:0;left:0;right:0;height:110px;padding:32px 38px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:20px}
+.topbar{position:absolute;top:0;left:0;right:0;height:110px;background:linear-gradient(180deg,#070707e6,#070707a8 58%,transparent);padding:32px 38px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:20px}
 .brand{display:flex;align-items:center;gap:15px;min-width:220px;user-select:none}
 .brand-mark{width:29px;height:29px;position:relative;display:grid;place-items:center}.brand-mark::before,.brand-mark::after{content:"";position:absolute;border:1.5px solid var(--paper);border-radius:50%;width:24px;height:24px}.brand-mark::after{width:8px;height:8px;border-width:4px;border-color:var(--paper);box-shadow:0 0 0 2px #0004}.brand-mark .cross-h,.brand-mark .cross-v{position:absolute;background:var(--paper)}.brand-mark .cross-h{width:34px;height:1px}.brand-mark .cross-v{width:1px;height:34px}
 .brand-name{font-size:15px;letter-spacing:.18em;font-weight:800;line-height:1}.brand-sub{font-size:9px;letter-spacing:.15em;font-weight:550;color:rgba(247,244,238,.57);margin-top:6px}
@@ -52,6 +52,13 @@
 .corner-index{position:absolute;left:39px;top:119px;color:#fff8;font-size:9px;line-height:1.7;letter-spacing:.18em}.corner-index .accent{display:inline-block;width:6px;height:6px;background:#e2ded4;border-radius:50%;margin-right:8px;vertical-align:1px}
 .modal{position:absolute;inset:0;z-index:40;background:rgba(0,0,0,.67);display:grid;place-items:center;padding:22px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}.modal[hidden]{display:none}.modal-card{width:min(470px,100%);background:#141414;border:1px solid #ffffff2b;padding:32px 34px 33px;position:relative;box-shadow:0 22px 90px #000b}.modal-card .overline{font-size:10px;letter-spacing:.24em;color:#fff8;font-weight:700}.modal-card h2{font-size:37px;line-height:1;letter-spacing:-.055em;margin:24px 0 15px;font-weight:650}.modal-card p{font-size:13px;line-height:1.75;color:#d7d2c9}.modal-card .keys{display:grid;grid-template-columns:1fr 1fr;gap:12px 18px;margin-top:23px;padding-top:20px;border-top:1px solid #fff2}.key-item{font-size:12px;color:#fff9;display:flex;align-items:center;gap:9px}.kbd{display:inline-block;padding:5px 8px;min-width:29px;border:1px solid #fff3;color:#fff;text-align:center;font-size:11px}.modal-card .modal-close{position:absolute;right:21px;top:21px;width:35px;height:35px}
 @media(max-width:760px){.topbar{padding:22px 20px}.brand{min-width:0}.brand-mark{transform:scale(.86)}.brand-name{font-size:12px}.brand-sub{font-size:8px}.top-middle{display:none}.top-tools{min-width:0;gap:9px}.edition{display:none}.bottom-left{left:20px;bottom:23px}.bottom-left .number{font-size:32px}.bottom-left .bottom-meta{display:none}.bottom-center{display:none}.floating-controls{right:16px;bottom:18px;gap:7px}.floating-controls .round-btn{width:44px;height:44px}.corner-index{left:20px;top:90px;opacity:.84}.selection-exit{top:91px;right:19px}.m-tile.is-active .tile-info{left:28px;bottom:29px}.m-tile.is-active .tile-title{font-size:clamp(37px,7.5cqw,72px)}.m-tile.is-active .detail{font-size:12px;line-height:1.55}.m-tile .tile-info{left:15px;bottom:15px}.m-tile .tile-kicker{font-size:9px}.m-tile .tile-title{font-size:clamp(20px,4.3cqw,48px)}}
+.import-btn{position:relative}
+.collection-tag{display:inline-flex;gap:8px;align-items:center;padding:9px 12px;color:#f7f4eed6;background:#111c;border:1px solid #ffffff2c;font-size:10px;letter-spacing:.08em;white-space:nowrap;max-width:225px;overflow:hidden;text-overflow:ellipsis}
+.collection-tag[hidden]{display:none}.collection-tag button{color:inherit;border:0;background:transparent;text-decoration:underline;cursor:pointer;padding:0;white-space:nowrap}
+.local-collection .corner-index{opacity:0;pointer-events:none}
+.drop-overlay{position:absolute;inset:12px;z-index:35;pointer-events:none;display:grid;place-items:center;border:1px dashed #f7f4ee7a;background:#070707d9;opacity:0;transition:opacity .14s}.drop-overlay.visible{opacity:1}.drop-overlay .drop-copy{text-align:center;padding:36px;font-size:22px;font-weight:650;line-height:1.7}.drop-overlay small{display:block;font-size:12px;letter-spacing:.1em;color:#bbb5aa;font-weight:400}
+.toast{position:absolute;z-index:36;left:50%;bottom:101px;transform:translateX(-50%);max-width:min(90vw,520px);padding:12px 17px;background:#171717e8;border:1px solid #ffffff33;color:#f7f4ee;font-size:12px;line-height:1.5;text-align:center;pointer-events:none;opacity:0;transition:opacity .2s}.toast.visible{opacity:1}
+@media(max-width:760px){.top-tools{gap:7px}.top-tools .round-btn{width:40px;height:40px}.brand{gap:8px}.brand-mark{transform:scale(.72)}.brand-name{font-size:11px;letter-spacing:.12em}.brand-sub{font-size:7px}.toast{bottom:88px}.collection-tag{position:absolute;top:75px;right:20px;max-width:calc(100vw - 40px);font-size:9px}.drop-overlay .drop-copy{font-size:18px}}
 .sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important;scroll-behavior:auto!important}}
 </style>
@@ -67,7 +74,7 @@
     <header class="topbar">
       <div class="brand" aria-label="Noema 视觉档案"><div class="brand-mark"><span class="cross-h"></span><span class="cross-v"></span></div><div><div class="brand-name">N O E M A</div><div class="brand-sub">THE VISUAL ARCHIVE</div></div></div>
       <div class="top-middle"><div class="eyebrow">AN INFINITE COLLECTION</div><div class="subline">An exploration of image, atmosphere &amp; form</div></div>
-      <div class="top-tools"><span class="edition">VOLUME 001 — 2026</span><button class="round-btn" id="infoBtn" aria-label="操作指南" title="操作指南 (?)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.8 9a2.4 2.4 0 1 1 4.4 1.2c-.7 1-2.2 1.4-2.2 3.2M12 17.4h.01"/></svg></button></div>
+      <div class="top-tools"><span class="edition">VOLUME 001 — 2026</span><span class="collection-tag" id="collectionTag" hidden></span><button class="round-btn import-btn" id="folderBtn" aria-label="打开本地图片文件夹" title="打开本地图片文件夹"><svg viewBox="0 0 24 24"><path d="M3 7V5.5A2 2 0 0 1 5 3.5h4l2.3 2.5H19a2 2 0 0 1 2 2v10.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10h18"/></svg></button><button class="round-btn" id="fileBtn" aria-label="选择图片文件" title="添加图片文件"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 16l3-4 2 2 2-3 3 5"/><circle cx="9" cy="8" r="1"/></svg></button><button class="round-btn" id="infoBtn" aria-label="操作指南" title="操作指南 (?)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.8 9a2.4 2.4 0 1 1 4.4 1.2c-.7 1-2.2 1.4-2.2 3.2M12 17.4h.01"/></svg></button></div>
     </header>
     <div class="corner-index"><span class="accent"></span>CURATED IN SPACE<br>FREEFORM EXPLORATION</div>
     <button class="round-btn selection-exit" id="closeBtn" tabindex="-1" aria-label="关闭展开的作品" title="关闭作品 (Esc)"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
@@ -75,9 +82,13 @@
     <div class="bottom-center"><div class="hint"><span>DRAG TO EXPLORE</span><i></i><span>SCROLL TO ZOOM</span><i></i><span>SELECT TO EXPAND</span></div><div class="mini" id="coordinates">X 0000 — Y 0000 · 076%</div></div>
     <div class="floating-controls"><button class="round-btn" id="minusBtn" aria-label="缩小画布" title="缩小 (-)"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button><button class="round-btn" id="plusBtn" aria-label="放大画布" title="放大 (+)"><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button><button class="round-btn" id="discoverBtn" aria-label="随机发现作品" title="发现作品 (R)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="m14.5 9.5-2.4 5-2.6.9 1-2.6 4-3.3z"/></svg></button><button class="round-btn" id="homeBtn" aria-label="返回画布中心" title="重置视图 (0)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button></div>
   </div>
+  <input class="sr-only" type="file" id="folderInput" accept="image/*" webkitdirectory multiple tabindex="-1" aria-label="选择图片文件夹" />
+  <input class="sr-only" type="file" id="fileInput" accept="image/*,.jpg,.jpeg,.png,.webp,.avif,.gif,.bmp" multiple tabindex="-1" aria-label="选择图片文件" />
+  <div class="drop-overlay" id="dropOverlay" aria-hidden="true"><div class="drop-copy">DROP YOUR IMAGES HERE<small>拖入图片文件或文件夹 · 所有图片仅在本地处理</small></div></div>
+  <div class="toast" id="notice" aria-hidden="true"></div>
   <div class="sr-only" id="sceneStatus" role="status" aria-live="polite" aria-atomic="true"></div>
   <div class="modal" id="helpModal" hidden role="dialog" aria-modal="true" aria-labelledby="helpTitle">
-    <div class="modal-card"><div class="overline">NOEMA / FIELD MANUAL</div><button class="round-btn modal-close" id="helpClose" aria-label="关闭指南"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button><h2 id="helpTitle">Explore without edges.</h2><p>无限延展的图像档案。拖动画布穿越视觉场景；缩放始终围绕指针所在的位置。选择任意图像，它将从原位置展开，周围作品随之自然退让。</p><div class="keys"><div class="key-item"><span class="kbd">拖动</span> 移动画布</div><div class="key-item"><span class="kbd">滚轮</span> 指针缩放</div><div class="key-item"><span class="kbd">+ / −</span> 缩放视图</div><div class="key-item"><span class="kbd">方向键</span> 平移画布</div><div class="key-item"><span class="kbd">Enter</span> 展开焦点作品</div><div class="key-item"><span class="kbd">Esc</span> 收起作品</div><div class="key-item"><span class="kbd">0</span> 重置视图</div><div class="key-item"><span class="kbd">?</span> 操作指南</div><div class="key-item"><span class="kbd">R</span> 随机发现</div></div></div>
+    <div class="modal-card"><div class="overline">NOEMA / FIELD MANUAL</div><button class="round-btn modal-close" id="helpClose" aria-label="关闭指南"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button><h2 id="helpTitle">Explore without edges.</h2><p>无限延展的图像档案。拖动画布穿越视觉场景；缩放始终围绕指针所在的位置。选择任意图像，它将从原位置展开，周围作品随之自然退让。</p><div class="keys"><div class="key-item"><span class="kbd">拖动</span> 移动画布</div><div class="key-item"><span class="kbd">滚轮</span> 指针缩放</div><div class="key-item"><span class="kbd">+ / −</span> 缩放视图</div><div class="key-item"><span class="kbd">方向键</span> 平移画布</div><div class="key-item"><span class="kbd">Enter</span> 展开焦点作品</div><div class="key-item"><span class="kbd">Esc</span> 收起作品</div><div class="key-item"><span class="kbd">0</span> 重置视图</div><div class="key-item"><span class="kbd">?</span> 操作指南</div><div class="key-item"><span class="kbd">R</span> 随机发现</div><div class="key-item"><span class="kbd">文件夹</span> 打开本地图片</div><div class="key-item"><span class="kbd">拖放</span> 导入文件或目录</div></div></div>
   </div>
 </div>
 <script>
@@ -85,7 +96,7 @@
 // Original implementation: geometrical mosaic template, culling, camera and spring reflow.
 // Included original demonstration artwork is local, with separate thumbnail and full-size assets.
 const photo=(id,w=760)=>`assets/${w>900?'poster-':'thumb-'}${id}.webp`;
-const artworks=[
+const demoArtworks=[
  {img:'00',title:'Into the Night',category:'NOCTURNES',desc:'当光线隐去，另一个关于距离和寂静的世界开始显现。',color:'#242c3e'},
  {img:'01',title:'The Green Room',category:'FOREST LIGHT',desc:'树冠之间泄露的日光，构成了一座自然的剧场。',color:'#304534'},
  {img:'02',title:'Soft Focus',category:'BOTANICAL',desc:'在花朵与微风之间，寻找稍纵即逝的平衡。',color:'#725b66'},
@@ -103,6 +114,75 @@ const artworks=[
  {img:'14',title:'Living Forms',category:'ORGANIC',desc:'微小的生命在极简的形态里，表达复杂的美感。',color:'#345648'},
  {img:'15',title:'Afterglow',category:'SKY STUDIES',desc:'日落后的最后一点亮光，恰好够让人记住。',color:'#69565c'},
 ];
+let artworks=demoArtworks,localMode=false,collectionVersion=0;
+const MAX_LOCAL_FILES=20000,MAX_THUMB_CACHE=260,THUMB_SIZE=500;
+const supportedImage=file=>Boolean(file&&((file.type||'').startsWith('image/')||/\.(?:jpe?g|png|webp|avif|gif|bmp)$/i.test(file.name)));
+const thumbCache=new Map();
+const thumbnailQueue=[];
+let thumbnailWorkers=0;
+let activeFullUrl=null;
+function escapeHTML(text){return String(text).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]))}
+function titleFromFile(file){return (file.name.replace(/\.[^.]+$/, '').replace(/[_]+/g,' ').trim()||'Untitled').slice(0,110)}
+function scheduleThumbnail(art){
+ if(!art.file)return Promise.resolve(photo(art.img,780));
+ if(art.thumbUrl){thumbCache.delete(art);thumbCache.set(art,art.thumbUrl);return Promise.resolve(art.thumbUrl)}
+ if(art.thumbPromise)return art.thumbPromise;
+ const version=collectionVersion;
+ art.thumbPromise=new Promise((resolve,reject)=>{thumbnailQueue.push({art,version,resolve,reject});pumpThumbnails()});
+ return art.thumbPromise;
+}
+async function makeThumbnailBlob(file){
+ let bitmap;
+ try{
+  if(typeof createImageBitmap==='function')bitmap=await createImageBitmap(file,{resizeWidth:THUMB_SIZE,resizeQuality:'medium'});
+  if(!bitmap)throw Error('ImageBitmap unavailable');
+  const ratio=Math.min(1,THUMB_SIZE/Math.max(bitmap.width,bitmap.height));
+  const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(bitmap.width*ratio));canvas.height=Math.max(1,Math.round(bitmap.height*ratio));
+  const ctx=canvas.getContext('2d',{alpha:false});if(!ctx)throw Error('Canvas unavailable');
+  ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);
+  const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/webp',.78));
+  if(!blob)throw Error('Cannot encode thumbnail');
+  return blob;
+ }finally{if(bitmap)bitmap.close()}
+}
+function pumpThumbnails(){
+ while(thumbnailWorkers<3&&thumbnailQueue.length){
+  const task=thumbnailQueue.shift();
+  if(task.version!==collectionVersion){task.resolve(null);continue}
+  thumbnailWorkers++;
+  (async()=>{
+   try{
+    const blob=await makeThumbnailBlob(task.art.file);
+    if(task.version!==collectionVersion){task.resolve(null);return}
+    const url=URL.createObjectURL(blob);task.art.thumbUrl=url;thumbCache.set(task.art,url);evictThumbnails();task.resolve(url);
+   }catch(error){
+    if(task.version===collectionVersion){task.art.thumbFailed=true;console.warn('缩略图生成失败，尝试直接显示原图:',task.art.title,error);
+     const fallback=URL.createObjectURL(task.art.file);task.art.thumbUrl=fallback;thumbCache.set(task.art,fallback);evictThumbnails();task.resolve(fallback)}
+    else task.resolve(null);
+   }finally{thumbnailWorkers--;pumpThumbnails()}
+  })();
+ }
+}
+function evictThumbnails(){
+ if(thumbCache.size<=MAX_THUMB_CACHE)return;
+ const pinned=new Set([...nodes.values()].map(node=>node.art));
+ for(const [art,url] of thumbCache){
+  if(thumbCache.size<=MAX_THUMB_CACHE)break;
+  if(pinned.has(art))continue;
+  URL.revokeObjectURL(url);thumbCache.delete(art);art.thumbUrl=null;art.thumbPromise=null;
+ }
+}
+function clearThumbnailCache(){
+ collectionVersion++;
+ for(const [art,url] of thumbCache){URL.revokeObjectURL(url);art.thumbUrl=null;art.thumbPromise=null}
+ thumbCache.clear();
+ while(thumbnailQueue.length){thumbnailQueue.shift().resolve(null)}
+}
+function releaseFullImage(){
+ if(activeFullUrl){URL.revokeObjectURL(activeFullUrl);activeFullUrl=null}
+ for(const node of nodes.values()){node.hi.removeAttribute('src');node.hi.classList.remove('loaded');node.fullRequested=false}
+}
+
 // Fixed 12 × 8 cellular tiling. Every cell is covered exactly once, no Masonry.
 const UNIT=121, GAP=6, PITCH=UNIT+GAP;
 const TEMPLATE=[
@@ -114,6 +194,8 @@ const BW=12*PITCH,BH=8*PITCH,MAX=220,OVERSCAN=650;
 const stage=document.getElementById('stage'),world=document.getElementById('world'),modal=document.getElementById('helpModal');
 const counter=document.getElementById('counter'),coordinates=document.getElementById('coordinates');
 const sceneStatus=document.getElementById('sceneStatus'),chrome=document.querySelector('.chrome');
+const collectionTag=document.getElementById('collectionTag'),notice=document.getElementById('notice'),dropOverlay=document.getElementById('dropOverlay');
+let noticeTimer=0;function notify(message){sceneStatus.textContent=message;notice.textContent=message;notice.classList.add('visible');clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>notice.classList.remove('visible'),3800)}
 const motion=window.matchMedia('(prefers-reduced-motion: reduce)');
 const nodes=new Map(),pointers=new Map();
 let viewport={w:innerWidth,h:innerHeight};
@@ -124,10 +206,17 @@ const dist=(p,q)=>Math.hypot(p.x-q.x,p.y-q.y);
 const intersects=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
 const getRect=(bx,by,i)=>{const t=TEMPLATE[i];return{x:bx*BW+t.x*PITCH,y:by*BH+t.y*PITCH,w:t.w*PITCH-GAP,h:t.h*PITCH-GAP}};
 const slugNum=(n)=>('000'+(Math.abs(n)%1000)).slice(-3);
-function artIndex(bx,by,i){const n=(bx*17+by*29+i*7+100000*24)%artworks.length;return (n+artworks.length)%artworks.length}
+function artIndex(bx,by,i){
+ // Keep every entry addressable across the unbounded periodic wall and avoid modulo patterns.
+ if(!localMode){const n=(bx*17+by*29+i*7+100000*24)%artworks.length;return (n+artworks.length)%artworks.length}
+ // Each 12 × 8 block has nine sequential seats. Blocks wrap through the imported collection.
+ const zigzag=(n)=>n>=0?n*2:-n*2-1;
+ const block=zigzag(bx)+zigzag(by)*(1+Math.ceil(Math.sqrt(artworks.length/9)));
+ return (block*9+i)%artworks.length;
+}
 function start(){if(!raf)raf=requestAnimationFrame(frame)}
 function zoomAt(factor,px,py){const next=clamp(camera.s*factor,.40,1.9);const wx=(px-camera.x)/camera.s,wy=(py-camera.y)/camera.s;camera.s=next;camera.x=px-wx*next;camera.y=py-wy*next;cameraGoal={...camera};updateGoals();updateCamera();start()}
-function reset(animate=true){const s=viewport.w<700?.70:viewport.w<1150?.76:.84;const x=viewport.w*.5-BW*.46*s,y=viewport.h*.5-BH*.45*s;active=null;stage.classList.remove('has-selection');document.getElementById('closeBtn').tabIndex=-1;sceneStatus.textContent='已返回画布中心';updateGoals();cameraGoal={x,y,s};if(motion.matches||!animate)camera={...cameraGoal};updateCamera();start()}
+function reset(animate=true){if(active)releaseFullImage();const s=viewport.w<700?.70:viewport.w<1150?.76:.84;const x=viewport.w*.5-BW*.46*s,y=viewport.h*.5-BH*.45*s;active=null;stage.classList.remove('has-selection');document.getElementById('closeBtn').tabIndex=-1;sceneStatus.textContent='已返回画布中心';updateGoals();cameraGoal={x,y,s};if(motion.matches||!animate)camera={...cameraGoal};updateCamera();start()}
 function updateCamera(){world.style.transform=`translate3d(${camera.x}px,${camera.y}px,0) scale(${camera.s})`;if(coordinates)coordinates.textContent=`X ${slugNum(Math.round(-camera.x/camera.s))} — Y ${slugNum(Math.round(-camera.y/camera.s))} · ${String(Math.round(camera.s*100)).padStart(3,'0')}%`}
 function setImage(img,src){
  img.onload=async()=>{
@@ -137,10 +226,20 @@ function setImage(img,src){
  img.onerror=()=>img.classList.remove('loaded');img.src=src;
 }
 const observer=('IntersectionObserver' in window)?new IntersectionObserver(entries=>{for(const en of entries){if(!en.isIntersecting)continue;const m=nodes.get(en.target.dataset.instance);if(m)loadThumbnail(m);observer.unobserve(en.target)}},{root:stage,rootMargin:'280px'}):null;
-function loadThumbnail(m){if(m.thumbRequested)return;m.thumbRequested=true;setImage(m.low,photo(m.art.img,780,76))}
-function loadOriginal(m){if(m.fullRequested)return;m.fullRequested=true;setImage(m.hi,photo(m.art.img,1800,87))}
+async function loadThumbnail(m){
+ if(m.thumbRequested)return;m.thumbRequested=true;
+ const version=collectionVersion,art=m.art;
+ const url=art.file?await scheduleThumbnail(art):photo(art.img,780);
+ if(version!==collectionVersion||!m.button.isConnected||m.art!==art){return}
+ if(url)setImage(m.low,url);
+}
+function loadOriginal(m){
+ if(m.fullRequested)return;m.fullRequested=true;
+ if(m.art.file){releaseFullImage();m.fullRequested=true;activeFullUrl=URL.createObjectURL(m.art.file);setImage(m.hi,activeFullUrl)}
+ else setImage(m.hi,photo(m.art.img,1800));
+}
 function makeTile(id,rect,index){const a=artworks[index],button=document.createElement('button');button.type='button';button.className='m-tile';button.dataset.instance=id;button.setAttribute('aria-label',`${a.title}，${a.category}，按回车展开`);button.setAttribute('aria-expanded','false');button.style.setProperty('--fallback',`linear-gradient(145deg,${a.color},#101114)`);
- button.innerHTML=`<div class="tile-art"><img class="low-res" alt="" loading="lazy" decoding="async" draggable="false"><img class="hi-res" alt="" decoding="async" draggable="false"></div><div class="tile-shade"></div><div class="tile-index">NO. ${String(index+1).padStart(2,'0')}</div><div class="tile-info"><div class="tile-kicker">${a.category} &nbsp; / &nbsp; STUDY ${String(index+1).padStart(2,'0')}</div><h2 class="tile-title">${a.title}</h2><div class="detail"><span class="detail-line"></span>${a.desc}<span class="detail-link">CLICK TO CLOSE <span aria-hidden="true">↙</span></span></div></div><div class="tile-arrow" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></div><div class="tile-dimmer"></div>`;
+ button.innerHTML=`<div class="tile-art"><img class="low-res" alt="" loading="lazy" decoding="async" draggable="false"><img class="hi-res" alt="" decoding="async" draggable="false"></div><div class="tile-shade"></div><div class="tile-index">NO. ${String(index+1).padStart(2,'0')}</div><div class="tile-info"><div class="tile-kicker">${escapeHTML(a.category)} &nbsp; / &nbsp; STUDY ${String(index+1).padStart(2,'0')}</div><h2 class="tile-title">${escapeHTML(a.title)}</h2><div class="detail"><span class="detail-line"></span>${escapeHTML(a.desc)}<span class="detail-link">CLICK TO CLOSE <span aria-hidden="true">↙</span></span></div></div><div class="tile-arrow" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></div><div class="tile-dimmer"></div>`;
  button.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();focusRestore=button;select(id)}});
  // Assistive technology may dispatch click without a preceding pointer sequence.
  button.addEventListener('click',e=>{if(e.detail===0){focusRestore=button;select(id)}});
@@ -180,15 +279,16 @@ function syncVisible(force=false){let changed=false;const x=-camera.x/camera.s,y
  // Avoid putting hundreds of off-screen tiles into the keyboard tab sequence.
  const actual={x,y,w:viewport.w/camera.s,h:viewport.h/camera.s};
  for(const m of nodes.values()){const focusable=m.id===active||intersects(m.rect,actual);const tab=focusable?0:-1;if(m.button.tabIndex!==tab)m.button.tabIndex=tab}
- if(changed)updateGoals();
+ if(changed){updateGoals();evictThumbnails()}
 }
 function select(id){if(!nodes.has(id))return;const already=active===id;if(already){close();return}
+ if(active!==null&&active!==id)releaseFullImage();
  active=id;stage.classList.add('has-selection');document.getElementById('closeBtn').tabIndex=0;const m=nodes.get(id),r=m.rect;const cx=r.x+r.w/2,cy=r.y+r.h/2;
  cameraGoal={x:viewport.w/2-cx*camera.s,y:viewport.h/2-cy*camera.s,s:camera.s};
  counter.innerHTML=`${String(artworks.indexOf(m.art)+1).padStart(2,'0')}<span style="font-size:.42em;color:#ffffff66"> / ∞</span>`;sceneStatus.textContent=`已展开 ${m.art.title}。按 Escape 收起作品。`;
  updateGoals();start()
 }
-function close(){if(!active)return;active=null;stage.classList.remove('has-selection');document.getElementById('closeBtn').tabIndex=-1;updateGoals();counter.innerHTML='01<span style="font-size:.42em;color:#ffffff66"> / ∞</span>';if(focusRestore?.isConnected)focusRestore.focus({preventScroll:true});else stage.focus({preventScroll:true});focusRestore=null;sceneStatus.textContent='作品已收起';start()}
+function close(){if(!active)return;releaseFullImage();active=null;stage.classList.remove('has-selection');document.getElementById('closeBtn').tabIndex=-1;updateGoals();counter.innerHTML='01<span style="font-size:.42em;color:#ffffff66"> / ∞</span>';if(focusRestore?.isConnected)focusRestore.focus({preventScroll:true});else stage.focus({preventScroll:true});focusRestore=null;sceneStatus.textContent='作品已收起';start()}
 function spring(m,dt){
  const k=170,damp=22;let isMoving=false,changed=false;
  for(const p of ['x','y','w','h']){
@@ -240,6 +340,71 @@ function discover(){
  const item=options[Math.floor(Math.random()*options.length)];focusRestore=item.button;
  select(item.id);item.button.focus({preventScroll:true});
 }
+
+// Local collections never leave the browser. File handles are held only for this tab.
+async function importFiles(input,displayName='LOCAL COLLECTION'){
+ const valid=[...input].filter(supportedImage);
+ if(!valid.length){notify('未找到浏览器支持的图片（JPG / PNG / WEBP / AVIF / GIF 等）');return}
+ const nameSorter=new Intl.Collator(undefined,{numeric:true,sensitivity:'base'});valid.sort((a,b)=>nameSorter.compare(a.name,b.name));
+ const limited=valid.slice(0,MAX_LOCAL_FILES);
+ close();releaseFullImage();
+ for(const m of nodes.values()){if(observer)observer.unobserve(m.button);m.button.remove()}
+ nodes.clear();clearThumbnailCache();localMode=true;
+ artworks=limited.map((file,index)=>({img:String(index),title:titleFromFile(file),category:'PERSONAL ARCHIVE',desc:file.webkitRelativePath||file.name,color:['#243138','#374033','#53473d','#38424b'][index%4],file}));
+ collectionTag.hidden=false;document.getElementById('app').classList.add('local-collection');
+ collectionTag.replaceChildren();
+ const label=document.createElement('span');label.textContent=String(displayName).slice(0,28)+' · '+artworks.length;
+ const back=document.createElement('button');back.type='button';back.textContent='DEMO';back.title='返回示例图库';back.addEventListener('click',restoreDemo);
+ collectionTag.append(label,back);
+ document.querySelector('.top-middle .eyebrow').textContent='YOUR PRIVATE IMAGE COLLECTION';
+ document.querySelector('.top-middle .subline').textContent='Local only · No uploads · '+artworks.length+' files';
+ lastCull=null;focusRestore=null;reset(false);syncVisible(true);
+ notify(`已打开 ${artworks.length} 张本地图片${valid.length>MAX_LOCAL_FILES?'（已达到 20000 张上限）':''}，仅在此设备处理`);
+}
+function restoreDemo(){
+ close();releaseFullImage();for(const m of nodes.values()){if(observer)observer.unobserve(m.button);m.button.remove()}
+ nodes.clear();clearThumbnailCache();artworks=demoArtworks;localMode=false;lastCull=null;
+ collectionTag.hidden=true;document.getElementById('app').classList.remove('local-collection');collectionTag.replaceChildren();
+ document.querySelector('.top-middle .eyebrow').textContent='AN INFINITE COLLECTION';
+ document.querySelector('.top-middle .subline').textContent='An exploration of image, atmosphere & form';
+ reset(false);syncVisible(true);notify('已返回 NOEMA 示例图库');
+}
+// Drag-and-drop directories: Chromium exposes filesystem entries, with paginated readEntries.
+async function fromEntry(entry,files,limit=MAX_LOCAL_FILES){
+ if(files.length>=limit)return;
+ if(entry.isFile){try{const file=await new Promise((resolve,reject)=>entry.file(resolve,reject));files.push(file)}catch{};return}
+ if(!entry.isDirectory)return;
+ const reader=entry.createReader();
+ while(files.length<limit){
+  const entries=await new Promise((resolve,reject)=>reader.readEntries(resolve,reject));
+  if(!entries.length)break;
+  for(const child of entries){if(files.length>=limit)break;await fromEntry(child,files,limit)}
+ }
+}
+async function handleDrop(dataTransfer){
+ const items=[...(dataTransfer.items||[])];
+ const entries=items.map(item=>item.webkitGetAsEntry?.()).filter(Boolean);
+ let files=[];
+ if(entries.length){for(const entry of entries){if(files.length>=MAX_LOCAL_FILES)break;await fromEntry(entry,files)}}
+ else files=[...(dataTransfer.files||[])];
+ await importFiles(files,entries.find(entry=>entry.isDirectory)?.name||'DROPPED IMAGES');
+}
+document.getElementById('folderBtn').addEventListener('click',()=>document.getElementById('folderInput').click());
+document.getElementById('fileBtn').addEventListener('click',()=>document.getElementById('fileInput').click());
+for(const id of ['folderInput','fileInput']){
+ document.getElementById(id).addEventListener('change',async event=>{
+  const input=event.currentTarget;
+  const files=Array.from(input.files||[]);
+  await importFiles(files,id==='folderInput'?(files[0]?.webkitRelativePath?.split('/')[0]||'LOCAL FOLDER'):'SELECTED IMAGES');
+  input.value='';
+ });
+}
+let dragDepth=0;
+document.addEventListener('dragenter',event=>{if(!event.dataTransfer?.types?.includes('Files'))return;event.preventDefault();dragDepth++;dropOverlay.classList.add('visible')});
+document.addEventListener('dragover',event=>{if(!event.dataTransfer?.types?.includes('Files'))return;event.preventDefault();event.dataTransfer.dropEffect='copy'});
+document.addEventListener('dragleave',event=>{if(!event.dataTransfer?.types?.includes('Files'))return;dragDepth=Math.max(0,dragDepth-1);if(!dragDepth)dropOverlay.classList.remove('visible')});
+document.addEventListener('drop',async event=>{event.preventDefault();dragDepth=0;dropOverlay.classList.remove('visible');if(event.dataTransfer)await handleDrop(event.dataTransfer)});
+
 document.getElementById('infoBtn').addEventListener('click',showHelp);document.getElementById('helpClose').addEventListener('click',hideHelp);modal.addEventListener('click',e=>{if(e.target===modal)hideHelp()});
 document.getElementById('closeBtn').addEventListener('click',close);document.getElementById('plusBtn').addEventListener('click',()=>zoomAt(1.24,viewport.w/2,viewport.h/2));document.getElementById('minusBtn').addEventListener('click',()=>zoomAt(1/1.24,viewport.w/2,viewport.h/2));document.getElementById('homeBtn').addEventListener('click',()=>reset());document.getElementById('discoverBtn').addEventListener('click',discover);
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!modal.hidden){hideHelp();return}close();return}if(!modal.hidden)return;
@@ -250,6 +415,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(!modal.hidden){h
 });
 function measure(){const r=stage.getBoundingClientRect(),w=r.width,h=r.height;if(!w||!h)return;const old=viewport;viewport={w,h};if(!initialized){initialized=true;reset(false)}else{camera.x+=(w-old.w)/2;camera.y+=(h-old.h)/2;cameraGoal={...camera};updateGoals();start();syncVisible(true)}}
 new ResizeObserver(measure).observe(stage);measure();
+window.addEventListener('pagehide',()=>{releaseFullImage();clearThumbnailCache()});
 })();
 </script>
 </body>

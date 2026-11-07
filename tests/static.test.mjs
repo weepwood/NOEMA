@@ -54,3 +54,32 @@ test('page preserves accessibility and self-hosted image contracts', () => {
   assert.match(html, /assets\/\$\{/);
   assert.doesNotMatch(html, /https?:\/\/(?:images\.unsplash|picsum\.photos|source\.unsplash)/);
 });
+
+test('local image import keeps user files on this device', () => {
+  assert.match(html, /id="folderInput"[^>]*webkitdirectory/);
+  assert.match(html, /id="fileInput"[^>]*multiple/);
+  assert.match(html, /id="dropOverlay"/);
+  assert.match(script, /async function importFiles\(/);
+  assert.match(script, /async function handleDrop\(/);
+  assert.match(script, /MAX_LOCAL_FILES=20000/);
+  assert.match(script, /document\.getElementById\('fileInput'\)\.click\(\)/);
+});
+
+test('local image rendering escapes filenames before inserting HTML', () => {
+  const implementation = script.match(/function escapeHTML\(text\)\{[^\n]+\}/)?.[0];
+  assert.ok(implementation, 'Filename escaping helper missing');
+  const escaped = vm.runInNewContext(\`(() => { \${implementation}; return escapeHTML('<img src=x onerror="alert(1)">'); })()\`, {}, { timeout: 1000 });
+  assert.equal(escaped, '&lt;img src=x onerror=&quot;alert(1)&quot;&gt;');
+  assert.match(script, /escapeHTML\(a\.title\)/);
+  assert.match(script, /escapeHTML\(a\.desc\)/);
+});
+
+test('local thumbnail pipeline is bounded and revokes object URLs', () => {
+  assert.match(script, /thumbnailWorkers<3/);
+  assert.match(script, /MAX_THUMB_CACHE=260/);
+  assert.match(script, /resizeWidth:THUMB_SIZE/);
+  assert.doesNotMatch(script, /resizeHeight:THUMB_SIZE/);
+  assert.match(script, /URL\.revokeObjectURL\(url\)/);
+  assert.match(script, /function releaseFullImage\(/);
+  assert.match(script, /window\.addEventListener\('pagehide'/);
+});
