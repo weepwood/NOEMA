@@ -82,7 +82,7 @@
 (()=>{'use strict';
 // Original implementation: geometrical mosaic template, culling, camera and spring reflow.
 // Included original demonstration artwork is local, with separate thumbnail and full-size assets.
-const photo=(id,w=760)=>`https://picsum.photos/seed/noema-${id}/${w>900?1440:380}/${w>900?960:280}.webp`;
+const photo=(id,w=760)=>`assets/${w>900?'poster-':'thumb-'}${id}.webp`;
 const artworks=[
  {img:'00',title:'Into the Night',category:'NOCTURNES',desc:'当光线隐去，另一个关于距离和寂静的世界开始显现。',color:'#242c3e'},
  {img:'01',title:'The Green Room',category:'FOREST LIGHT',desc:'树冠之间泄露的日光，构成了一座自然的剧场。',color:'#304534'},
