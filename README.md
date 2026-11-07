@@ -4,7 +4,7 @@
 
 ## 运行
 
-本仓库版本可直接在现代浏览器打开 `index.html` 或通过 GitHub Pages 访问，无需构建或后端。为适配 GitHub 代码仓库的文本写入接口，在线版本的示例图片来自 `picsum.photos` 响应式地址（需要联网）。如需离线使用、保留原始 32 张本地 WebP 演示图片，请使用原始的完整项目 ZIP，并将 `photo()` 还原为本地路径。
+直接使用现代浏览器打开 `index.html` 即可运行；也可以通过 GitHub Pages 访问，无需构建或后端。仓库包含完整的 16 张缩略图与 16 张原图，离线也可以查看图像。建议运行 `python -m http.server 8000` 后打开 `http://localhost:8000`。
 
 ## 功能
 
@@ -21,6 +21,8 @@
 
 ```text
 index.html            # 完整原生 HTML / CSS / JS，零依赖
+assets/thumb-00.webp  # 210px 等级缩略图 × 16
+assets/poster-00.webp # 较高分辨率示例图片 × 16
 README.md             # 设计与使用说明
 .github/workflows/pages.yml # 静态页面部署
 ```
@@ -29,7 +31,7 @@ README.md             # 设计与使用说明
 
 修改 `index.html` 里的 `artworks` 列表和 `photo(id, width)` 函数。正式项目可将缩略图替换为 CDN 自动生成的 WebP/AVIF 小图，将原图映射为独立原始尺寸 URL；推荐响应式 `srcset`、合理 HTTP `Cache-Control` 和单独的图片缓存策略。
 
-本仓库通过 Picsum Photos 提供在线演示图片，非 Folia Major 的媒体资产；原始下载包包含单独生成的本地示例图片。
+示例图片由生成式图像工具创作，均随本仓库提供，非 Folia Major 的媒体资产。
 
 ## 关于参考项目的许可证
 
@@ -37,7 +39,7 @@ Folia Major 仓库声明使用 **AGPL-3.0**。这里采用了原创的代码、�
 
 ## 当前范围
 
-这是没有服务端的 UI 演示，不包含图片管理、搜索、账户或持久化自定义收藏。在线图片需要网络，图片加载使用浏览器原生缓存，不包含 Service Worker 离线缓存。扩展重排是针对视觉效果的局部推挤，并不是约束求解器级别的全局零重叠排布。
+这是没有服务端的 UI 演示，不包含图片管理、搜索、账户或持久化自定义收藏。本地图片加载使用浏览器原生缓存，不包含 Service Worker 离线缓存。扩展重排是针对视觉效果的局部推挤，并不是约束求解器级别的全局零重叠排布。
 ## GitHub Pages 部署
 
 本仓库附带 `.github/workflows/pages.yml`，用于将静态页面自动部署到 GitHub Pages。仓库首次启用 Pages 必须由有仓库管理权限的用户完成（`GITHUB_TOKEN` 无法替代管理员创建站点）：
@@ -46,4 +48,4 @@ Folia Major 仓库声明使用 **AGPL-3.0**。这里采用了原创的代码、�
 2. 在 **Actions → Deploy NOEMA to GitHub Pages** 选择 **Run workflow**（或向 `main` 推送一次提交）。
 3. 工作流成功后，从 Actions 输出的 `page_url` 访问网站。公开仓库的常见地址为 `https://weepwood.github.io/NOEMA/`，以实际部署输出为准。
 
-当前发布版本通过 Picsum Photos 加载示例图片，访问图片需要网络；如果期望完全离线、自托管图片，请将完整 ZIP 中的 `assets/` 一并上传并改回本地 `photo()` 映射。
+本仓库包含本地 `assets/` 素材，网页无需调用第三方图片服务。
