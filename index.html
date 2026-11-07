@@ -112,6 +112,15 @@
 .search-result .search-path{display:block;margin-top:4px;color:#918c84;white-space:nowrap;text-overflow:ellipsis;overflow:hidden;font-size:11px}
 .search-result .search-arrow{text-align:right;color:#aaa59b;font-size:18px}
 .search-empty{padding:32px 16px 44px;text-align:center;font-size:13px;color:#8e8880}
+ .search-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 20px 13px;border-top:1px solid #ffffff12}
+.search-actions button,.filter-banner button{color:#f7f4ee;border:1px solid #ffffff34;padding:10px 14px;background:#1b1b1a;cursor:pointer;font:inherit;font-size:11px}
+.search-actions button:disabled{opacity:.34;cursor:default}
+.filter-banner{position:absolute;z-index:25;top:111px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:11px;padding:7px 9px 7px 14px;background:#0b0b0bee;color:#d5cec4;font-size:11px;border:1px solid #ffffff25;max-width:min(90vw,440px);pointer-events:auto}
+.filter-banner span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.filter-banner[hidden]{display:none}
+.metrics-hud{position:absolute;z-index:27;left:22px;bottom:105px;color:#d7d4cc;background:rgba(10,10,10,.92);border:1px solid rgba(255,255,255,.25);padding:12px 16px;min-width:202px;pointer-events:none;font:11px/1.8 ui-monospace,monospace;white-space:pre-line;letter-spacing:.01em;font-variant-numeric:tabular-nums}
+.metrics-hud[hidden]{display:none}.metrics-hud strong{font-weight:600;color:#fff;font-size:11px;letter-spacing:.1em}
+@media(max-width:760px){.filter-banner{top:126px;max-width:calc(100vw - 24px)}.metrics-hud{left:12px;bottom:92px;min-width:190px}}
 .search-footer{padding:15px 20px;color:#76716b;font-size:10px;letter-spacing:.06em;border-top:1px solid #ffffff18}
 @media(max-width:520px){.search-overlay{padding:76px 10px 16px}.search-panel{max-height:calc(100dvh - 100px)}.search-field input{font-size:16px}.search-footer{font-size:9px;padding:12px 14px}.floating-controls{gap:5px}.floating-controls .round-btn{width:42px;height:42px}.bottom-left .number{font-size:27px}}
 .sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
@@ -148,14 +157,17 @@
       <div class="search-field"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><input id="searchInput" type="search" placeholder="输入文件名、路径或作品标题…" autocomplete="off" spellcheck="false" /></div>
       <div class="search-summary" id="searchSummary" role="status" aria-live="polite"></div>
       <div class="search-results" id="searchResults" role="group" aria-label="匹配的图片"></div>
+      <div class="search-actions"><span id="searchFilterHint">仅限本地图库可按结果过滤</span><button id="searchFilterBtn" type="button" disabled>仅显示匹配项</button></div>
       <div class="search-footer">↑ ↓ 浏览结果　·　ENTER 定位作品　·　ESC 返回画布</div>
     </div>
   </div>
+  <div class="filter-banner" id="filterBanner" hidden><span id="filterBannerText"></span><button type="button" id="filterClear" aria-label="清除图片筛选">清除</button></div>
+  <div class="metrics-hud" id="metricsHud" hidden aria-label="当前画布性能信息"><strong>NOEMA / DIAGNOSTICS</strong><div id="metricsText"></div></div>
   <div class="toast" id="notice" aria-hidden="true"></div>
   <div class="import-progress" id="importProgress" hidden role="status" aria-live="off"><span id="importMessage">准备导入图片…</span><button id="importCancel" type="button" aria-label="取消导入">取消</button></div>
   <div class="sr-only" id="sceneStatus" role="status" aria-live="polite" aria-atomic="true"></div>
   <div class="modal" id="helpModal" hidden role="dialog" aria-modal="true" aria-labelledby="helpTitle">
-    <div class="modal-card"><div class="overline">NOEMA / FIELD MANUAL</div><button class="round-btn modal-close" id="helpClose" aria-label="关闭指南"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button><h2 id="helpTitle">Explore without edges.</h2><p>无限延展的图像档案。拖动画布穿越视觉场景；缩放始终围绕指针所在的位置。选择任意图像，它将从原位置展开，周围作品随之自然退让。</p><div class="keys"><div class="key-item"><span class="kbd">拖动</span> 移动画布</div><div class="key-item"><span class="kbd">滚轮</span> 指针缩放</div><div class="key-item"><span class="kbd">+ / −</span> 缩放视图</div><div class="key-item"><span class="kbd">方向键</span> 平移画布</div><div class="key-item"><span class="kbd">Enter</span> 展开焦点作品</div><div class="key-item"><span class="kbd">Esc</span> 收起作品</div><div class="key-item"><span class="kbd">0</span> 重置视图</div><div class="key-item"><span class="kbd">?</span> 操作指南</div><div class="key-item"><span class="kbd">R</span> 随机发现</div><div class="key-item"><span class="kbd">I</span> 完整查看原图</div><div class="key-item"><span class="kbd">← / →</span> 原图切换</div><div class="key-item"><span class="kbd">1</span> 原图 100% 查看</div><div class="key-item"><span class="kbd">文件夹</span> 打开本地图片</div><div class="key-item"><span class="kbd">拖放</span> 导入文件或目录</div><div class="key-item"><span class="kbd">最近</span> 按需恢复授权文件夹</div><div class="key-item"><span class="kbd">/ 或 ⌘K</span> 搜索图片</div></div><div class="cache-actions"><span id="cacheStatus" aria-live="polite">正在读取缩略图缓存…</span><button type="button" id="clearCacheBtn">清除缩略图缓存</button></div><div class="cache-actions"><span id="indexStatus" aria-live="polite">正在读取图片布局索引…</span><button type="button" id="clearIndexBtn">清除布局索引</button></div><button class="forget-folder" id="forgetFolder" type="button" hidden>清除记住的文件夹</button></div>
+    <div class="modal-card"><div class="overline">NOEMA / FIELD MANUAL</div><button class="round-btn modal-close" id="helpClose" aria-label="关闭指南"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button><h2 id="helpTitle">Explore without edges.</h2><p>无限延展的图像档案。拖动画布穿越视觉场景；缩放始终围绕指针所在的位置。选择任意图像，它将从原位置展开，周围作品随之自然退让。</p><div class="keys"><div class="key-item"><span class="kbd">拖动</span> 移动画布</div><div class="key-item"><span class="kbd">滚轮</span> 指针缩放</div><div class="key-item"><span class="kbd">+ / −</span> 缩放视图</div><div class="key-item"><span class="kbd">方向键</span> 平移画布</div><div class="key-item"><span class="kbd">Enter</span> 展开焦点作品</div><div class="key-item"><span class="kbd">Esc</span> 收起作品</div><div class="key-item"><span class="kbd">0</span> 重置视图</div><div class="key-item"><span class="kbd">?</span> 操作指南</div><div class="key-item"><span class="kbd">R</span> 随机发现</div><div class="key-item"><span class="kbd">I</span> 完整查看原图</div><div class="key-item"><span class="kbd">← / →</span> 原图切换</div><div class="key-item"><span class="kbd">1</span> 原图 100% 查看</div><div class="key-item"><span class="kbd">文件夹</span> 打开本地图片</div><div class="key-item"><span class="kbd">拖放</span> 导入文件或目录</div><div class="key-item"><span class="kbd">最近</span> 按需恢复授权文件夹</div><div class="key-item"><span class="kbd">/ 或 ⌘K</span> 搜索图片</div></div><div class="cache-actions"><span id="cacheStatus" aria-live="polite">正在读取缩略图缓存…</span><button type="button" id="clearCacheBtn">清除缩略图缓存</button></div><div class="cache-actions"><span id="indexStatus" aria-live="polite">正在读取图片布局索引…</span><button type="button" id="clearIndexBtn">清除布局索引</button></div><div class="cache-actions"><span>渲染性能指标仅在开启时采样，关闭后立即停止。</span><button id="metricsToggle" type="button" aria-pressed="false">显示性能指标 (Shift+P)</button></div><button class="forget-folder" id="forgetFolder" type="button" hidden>清除记住的文件夹</button></div>
   </div>
   <div id="inspector" class="inspector" hidden role="dialog" aria-modal="true" aria-labelledby="inspectorTitle">
     <header class="inspector-top">
@@ -184,6 +196,10 @@
 </div>
 <script src="./thumbnail-store.js"></script>
 <script src="./library-index.js"></script>
+<script src="./src/canvas-core.js"></script>
+<script src="./src/search-core.js"></script>
+<script src="./src/directory-scanner.js"></script>
+<script src="./src/performance-monitor.js"></script>
 <script>
 (()=>{'use strict';
 // Original implementation: geometrical mosaic template, culling, camera and spring reflow.
@@ -208,6 +224,8 @@ const demoArtworks=[
  {img:'15',title:'Afterglow',category:'SKY STUDIES',desc:'日落后的最后一点亮光，恰好够让人记住。',color:'#69565c'},
 ];
 let artworks=demoArtworks,localMode=false,collectionVersion=0;
+let allLocalArtworks=null,activeFilterQuery='';
+const canvasCore=window.NOEMACanvasCore, searchCore=window.NOEMASearchCore, directoryScanner=window.NOEMADirectoryScanner;
 const MAX_LOCAL_FILES=20000,MAX_THUMB_CACHE=260,THUMB_SIZE=500;
 // Blob budget is compressed bytes, not decoded GPU/DOM memory. Both limits apply.
 const MAX_THUMB_BYTES=32*1024*1024;
@@ -431,6 +449,7 @@ const nodes=new Map(),pointers=new Map();
 let viewport={w:innerWidth,h:innerHeight};
 let camera={x:0,y:0,s:.76},cameraGoal={...camera},last=0,raf=0,active=null,focusRestore=null;
 let drag=null,pinch=null,initialized=false,keepPlaying=false,lastCull=null,lastModalFocus=null;
+let cullRuns=0,lastCandidateCount=0,lastClippedCount=0;
 const clamp=(v,min,max)=>Math.min(max,Math.max(min,v));
 const dist=(p,q)=>Math.hypot(p.x-q.x,p.y-q.y);
 const intersects=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
@@ -442,7 +461,7 @@ function artIndex(bx,by,i){
  return(n+artworks.length)%artworks.length;
 }
 function start(){if(!raf)raf=requestAnimationFrame(frame)}
-function zoomAt(factor,px,py){const next=clamp(camera.s*factor,.40,1.9);const wx=(px-camera.x)/camera.s,wy=(py-camera.y)/camera.s;camera.s=next;camera.x=px-wx*next;camera.y=py-wy*next;cameraGoal={...camera};updateGoals();updateCamera();start()}
+function zoomAt(factor,px,py){camera=canvasCore.anchoredZoom(camera,factor,px,py,.40,1.9);cameraGoal={...camera};updateGoals();updateCamera();start()}
 function reset(animate=true){if(active)releaseFullImage();const s=viewport.w<700?.70:viewport.w<1150?.76:.84;const single=localMode&&artworks.length===1?imageSlotForIndex(0)?.rect:null;const x=single?viewport.w/2-(single.x+single.w/2)*s:localMode?Math.max(20,viewport.w*.12):viewport.w*.5-BW*.46*s,y=single?viewport.h/2-(single.y+single.h/2)*s:localMode?Math.max(70,viewport.h*.10):viewport.h*.5-BH*.45*s;active=null;stage.classList.remove('has-selection');document.getElementById('closeBtn').tabIndex=-1;document.getElementById('inspectBtn').tabIndex=-1;sceneStatus.textContent='已返回画布中心';counter.innerHTML=`01<span style="font-size:.42em;color:#ffffff66"> / ${localMode?artworks.length:'∞'}</span>`;updateGoals();cameraGoal={x,y,s};if(motion.matches||!animate)camera={...cameraGoal};updateCamera();start()}
 function updateCamera(){world.style.transform=`translate3d(${camera.x}px,${camera.y}px,0) scale(${camera.s})`;if(coordinates)coordinates.textContent=`X ${slugNum(Math.round(-camera.x/camera.s))} — Y ${slugNum(Math.round(-camera.y/camera.s))} · ${String(Math.round(camera.s*100)).padStart(3,'0')}%`}
 function setImage(img,src){
@@ -499,25 +518,22 @@ function syncVisible(force=false){
  const x=-camera.x/camera.s,y=-camera.y/camera.s;
  if(!force&&lastCull&&Math.abs(lastCull.x-x)<100&&Math.abs(lastCull.y-y)<100&&Math.abs(lastCull.s-camera.s)<.03&&lastCull.w===viewport.w&&lastCull.h===viewport.h)return;
  lastCull={x,y,s:camera.s,w:viewport.w,h:viewport.h};
- const actual={x,y,w:viewport.w/camera.s,h:viewport.h/camera.s};
+ const actual=canvasCore.viewportBounds(camera,viewport);
  const view={x:x-OVERSCAN,y:y-OVERSCAN,w:actual.w+OVERSCAN*2,h:actual.h+OVERSCAN*2};
  const x1=localMode?Math.max(0,Math.floor(view.x/BW)-1):Math.floor(view.x/BW)-1;
  const x2=localMode?Math.min(localColumns-1,Math.ceil((view.x+view.w)/BW)+1):Math.ceil((view.x+view.w)/BW)+1;
  const y1=localMode?Math.max(0,Math.floor(view.y/BH)-1):Math.floor(view.y/BH)-1;
  const y2=localMode?Math.min(localRows-1,Math.ceil((view.y+view.h)/BH)+1):Math.ceil((view.y+view.h)/BH)+1;
- const candidates=[];const cx=actual.x+actual.w/2,cy=actual.y+actual.h/2;
+ const candidates=[];
  for(let by=y1;by<=y2;by++)for(let bx=x1;bx<=x2;bx++)for(let i=0;i<TEMPLATE.length;i++){
   const rect=getRect(bx,by,i);if(!intersects(rect,view))continue;
   const index=artIndex(bx,by,i);if(index<0)continue;
-  const onScreen=intersects(rect,actual);
-  const metric=Math.hypot(rect.x+rect.w/2-cx,rect.y+rect.h/2-cy);
-  candidates.push({id:localMode?`local:${index}`:`${bx}:${by}:${i}`,rect,index,onScreen,metric});
+  candidates.push({id:localMode?`local:${index}`:`${bx}:${by}:${i}`,rect,index});
  }
- candidates.sort((a,b)=>Number(b.onScreen)-Number(a.onScreen)||a.metric-b.metric);
- const visibleCount=candidates.filter(item=>item.onScreen).length;
- const limit=Math.min(1000,Math.max(MAX,visibleCount));
+ const {selected,clippedCount}=canvasCore.prioritizeVisible(candidates,actual,MAX,1000);
+ cullRuns++;lastCandidateCount=candidates.length;lastClippedCount=clippedCount;
  const wanted=new Set();
- for(const candidate of candidates.slice(0,limit)){
+ for(const candidate of selected){
   wanted.add(candidate.id);
   if(!nodes.has(candidate.id)){makeTile(candidate.id,candidate.rect,candidate.index);changed=true}
  }
@@ -790,21 +806,9 @@ const searchInput=document.getElementById('searchInput');
 const searchResults=document.getElementById('searchResults');
 const searchSummary=document.getElementById('searchSummary');
 let searchPreviousFocus=null,searchTimeout=0,searchMatches=[];
-const normalizeQuery=value=>String(value||'').normalize('NFKC').toLocaleLowerCase().trim();
-function findArtworks(query,limit=40){
- const needle=normalizeQuery(query);
- const found=[];let total=0;
- for(let i=0;i<artworks.length;i++){
-  const art=artworks[i];
-  const title=normalizeQuery(art.title),path=normalizeQuery(art.desc);
-  if(!needle||title.includes(needle)||path.includes(needle)||normalizeQuery(art.category).includes(needle)){
-   total++;
-   if(found.length<limit)found.push({index:i,art,rank:title===needle?0:title.startsWith(needle)?1:title.includes(needle)?2:3});
-  }
- }
- found.sort((a,b)=>a.rank-b.rank||a.index-b.index);
- return {found,total};
-}
+const normalizeQuery=value=>searchCore.normalize(value);
+function searchSource(){return localMode?(allLocalArtworks||artworks):artworks}
+function findArtworks(query,limit=40){return searchCore.search(searchSource(),query,limit)}
 function searchResultButton(index){
  const entry=searchMatches[index];
  if(!entry)return null;
@@ -815,6 +819,9 @@ function renderSearch(){
  const query=searchInput.value;
  const {found,total}=findArtworks(query);
  searchMatches=found;
+ const filterBtn=document.getElementById('searchFilterBtn');
+ filterBtn.disabled=!localMode||!normalizeQuery(query)||total===0;
+ document.getElementById('searchFilterHint').textContent=localMode?'在当前图库中只显示匹配的图片':'仅限本地图库支持筛选';
  searchResults.replaceChildren();
  searchSummary.textContent=total?`${total.toLocaleString()} 个匹配项 · 显示前 ${found.length} 项`: '没有找到匹配的图片';
  for(const item of found){
@@ -834,7 +841,7 @@ function openSearch(){
  if(!inspector.hidden||!modal.hidden||!searchOverlay.hidden)return;
  searchPreviousFocus=document.activeElement;
  searchOverlay.hidden=false;stage.inert=true;chrome.inert=true;
- searchInput.value='';renderSearch();searchInput.focus({preventScroll:true});
+ searchInput.value=activeFilterQuery||'';renderSearch();searchInput.focus({preventScroll:true});
 }
 function closeSearch(){
  if(searchOverlay.hidden)return;
@@ -858,16 +865,51 @@ function locateArt(index){
  }
  return candidate;
 }
+function applyLocalView(items,query=''){
+ if(!localMode)return;
+ if(!inspector.hidden)closeInspector();
+ close();releaseFullImage();
+ for(const m of nodes.values()){if(observer)observer.unobserve(m.button);m.button.remove()}
+ nodes.clear();clearThumbnailCache();
+ artworks=items;activeFilterQuery=query;configureLocalAtlas();lastCull=null;focusRestore=null;
+ // Keep physical files in allLocalArtworks, while layout and inspector use only filtered items.
+ const collectionLabel=collectionTag.querySelector('span');
+ if(collectionLabel)collectionLabel.textContent=`${indexNamespace.slice(0,24)} · ${artworks.length}/${allLocalArtworks?.length||artworks.length}`;
+ const banner=document.getElementById('filterBanner');banner.hidden=!query;
+ document.getElementById('filterBannerText').textContent=query?`筛选 “${query.slice(0,45)}” · ${artworks.length} 张`:'';
+ reset(false);syncVisible(true);
+ if(artworks.length)readAspectsLater(collectionVersion);
+}
+function clearLocalFilter(announce=true){
+ if(!localMode||!activeFilterQuery)return;
+ applyLocalView(allLocalArtworks,'');
+ if(announce)notify('已清除筛选，恢复完整图库');
+}
+function filterSearchResults(){
+ if(!localMode)return;
+ const query=searchInput.value.trim();if(!query)return;
+ const matching=searchCore.filter(allLocalArtworks||artworks,query);
+ if(!matching.length)return;
+ closeSearch();applyLocalView(matching,query);
+ notify(`已筛选 ${matching.length} 张图片 · 点击顶部标签可恢复全部`);
+}
+document.getElementById('searchFilterBtn').addEventListener('click',filterSearchResults);
+document.getElementById('filterClear').addEventListener('click',()=>clearLocalFilter());
 function activateSearchResult(index){
- const target=locateArt(index);
+ const source=searchSource(),art=source[index];
+ if(localMode&&activeFilterQuery&&!artworks.includes(art)){
+  clearLocalFilter(false);
+ }
+ const currentIndex=localMode?artworks.indexOf(art):index;
+ const target=locateArt(currentIndex);
  if(!target){notify('无法定位该图片');return}
  closeSearch();
- if(!nodes.has(target.id))makeTile(target.id,target.rect,index);
+ if(!nodes.has(target.id))makeTile(target.id,target.rect,currentIndex);
  const tile=nodes.get(target.id);
  focusRestore=tile.button;
  select(target.id);
  tile.button.focus({preventScroll:true});
- sceneStatus.textContent=`已定位 ${artworks[index].title}，按 I 可查看原图`;
+ sceneStatus.textContent=`已定位 ${artworks[currentIndex].title}，按 I 可查看原图`;
 }
 document.getElementById('searchBtn').addEventListener('click',openSearch);
 document.getElementById('searchClose').addEventListener('click',closeSearch);
@@ -878,7 +920,7 @@ searchInput.addEventListener('input',()=>{
 searchOverlay.addEventListener('keydown',e=>{
  if(e.key==='Escape'){e.preventDefault();e.stopPropagation();closeSearch();return}
  if(e.key==='Tab'){
-  const controls=[document.getElementById('searchClose'),searchInput,...searchResults.querySelectorAll('.search-result')];
+  const controls=[document.getElementById('searchClose'),searchInput,...searchResults.querySelectorAll('.search-result'),...(document.getElementById('searchFilterBtn').disabled?[]:[document.getElementById('searchFilterBtn')])];
   const i=controls.indexOf(document.activeElement);
   if((e.shiftKey&&i===0)||(!e.shiftKey&&i===controls.length-1)){
    e.preventDefault();controls[e.shiftKey?controls.length-1:0].focus();
@@ -942,16 +984,11 @@ async function forgetRecentDirectory(){
 }
 document.getElementById('forgetFolder').addEventListener('click',forgetRecentDirectory);
 async function gatherDirectory(handle,task){
- const files=[],directories=[{handle,path:''}];let visited=0;
- while(directories.length&&files.length<MAX_LOCAL_FILES&&alive(task)){
-  const {handle:directory,path}=directories.shift();
-  for await(const item of directory.values()){
-   if(!alive(task)||files.length>=MAX_LOCAL_FILES)break;
-   try{if(item.kind==='file'){const file=await item.getFile();file.__noemaPath=(path?path+'/':'')+file.name;files.push(file)}else if(item.kind==='directory')directories.push({handle:item,path:(path?path+'/':'')+item.name})}catch{}
-   if(++visited%80===0){setImportProgress(task,`正在索引 · ${files.length.toLocaleString()} 张图片`);await new Promise(done=>setTimeout(done,0))}
-  }
- }
- return files;
+ const result=await directoryScanner.scan(handle,{
+  isCancelled:()=>!alive(task),maxFiles:MAX_LOCAL_FILES,concurrency:4,yieldEvery:60,
+  onProgress:stats=>setImportProgress(task,`扫描 ${stats.visited.toLocaleString()} 项 · 图片 ${stats.accepted.toLocaleString()} · ${stats.directories} 个目录 · ${(stats.elapsedMs/1000).toFixed(1)}s`)
+ });
+ return result.files;
 }
 async function chooseDirectory(){
  if(!window.showDirectoryPicker){document.getElementById('folderInput').click();return}
@@ -997,6 +1034,8 @@ async function importFiles(input,displayName='LOCAL COLLECTION',task=beginImport
  for(const m of nodes.values()){if(observer)observer.unobserve(m.button);m.button.remove()}
  nodes.clear();clearThumbnailCache();localMode=true;
  artworks=limited.map((file,index)=>({img:String(index),title:titleFromFile(file),category:'PERSONAL ARCHIVE',desc:file.__noemaPath||file.webkitRelativePath||file.name,color:['#243138','#374033','#53473d','#38424b'][index%4],ratio:file.__noemaRatio||1,file}));
+ allLocalArtworks=artworks;activeFilterQuery='';
+ document.getElementById('filterBanner').hidden=true;
  configureLocalAtlas();
  indexNamespace=displayName;
  readAspectsLater(collectionVersion);
@@ -1014,7 +1053,7 @@ async function importFiles(input,displayName='LOCAL COLLECTION',task=beginImport
 function restoreDemo(){
  if(!inspector.hidden)closeInspector();
  close();releaseFullImage();for(const m of nodes.values()){if(observer)observer.unobserve(m.button);m.button.remove()}
- nodes.clear();clearThumbnailCache();artworks=demoArtworks;localMode=false;localRows=0;localSlotMaps.clear();lastCull=null;
+ nodes.clear();clearThumbnailCache();artworks=demoArtworks;allLocalArtworks=null;activeFilterQuery='';document.getElementById('filterBanner').hidden=true;localMode=false;localRows=0;localSlotMaps.clear();lastCull=null;
  collectionTag.hidden=true;document.getElementById('app').classList.remove('local-collection');collectionTag.replaceChildren();
  document.querySelector('.top-middle .eyebrow').textContent='AN INFINITE COLLECTION';
  document.querySelector('.top-middle .subline').textContent='An exploration of image, atmosphere & form';
@@ -1060,6 +1099,24 @@ document.addEventListener('dragover',event=>{if(!event.dataTransfer?.types?.incl
 document.addEventListener('dragleave',event=>{if(!event.dataTransfer?.types?.includes('Files'))return;dragDepth=Math.max(0,dragDepth-1);if(!dragDepth)dropOverlay.classList.remove('visible')});
 document.addEventListener('drop',async event=>{event.preventDefault();dragDepth=0;dropOverlay.classList.remove('visible');if(event.dataTransfer)await handleDrop(event.dataTransfer)});
 
+const metricsHud=document.getElementById('metricsHud'),metricsText=document.getElementById('metricsText');
+let metricsMonitor=null;
+function toggleMetrics(force=null){
+ const enable=force===null?metricsHud.hidden:force;
+ metricsHud.hidden=!enable;
+ const toggle=document.getElementById('metricsToggle');toggle.setAttribute('aria-pressed',String(enable));
+ toggle.textContent=enable?'关闭性能指标 (Shift+P)':'显示性能指标 (Shift+P)';
+ if(!metricsMonitor){
+  metricsMonitor=window.NOEMAPerformanceMonitor.create({
+   requestFrame:callback=>requestAnimationFrame(callback),cancelFrame:id=>cancelAnimationFrame(id),
+   snapshot:()=>({tiles:nodes.size,cullRuns,candidates:lastCandidateCount,clipped:lastClippedCount,
+    cacheCount:thumbCache.size,cacheMiB:(thumbCacheBytes/1048576).toFixed(1),workers:thumbnailWorkers,queue:thumbnailQueue.length}),
+   onSample:stats=>{metricsText.textContent=`FPS ${stats.fps}   最慢帧 ${stats.longestFrameMs}ms\n磁贴 ${stats.tiles}   视图候选 ${stats.candidates}\n裁剪次数 ${stats.cullRuns}   未显示 ${stats.clipped}\n缩略图 ${stats.cacheCount} / ${stats.cacheMiB} MiB\n任务 ${stats.workers}   等待 ${stats.queue}`}
+  });
+ }
+ if(enable)metricsMonitor.start();else metricsMonitor.stop();
+}
+document.getElementById('metricsToggle').addEventListener('click',()=>toggleMetrics());
 document.getElementById('infoBtn').addEventListener('click',showHelp);document.getElementById('helpClose').addEventListener('click',hideHelp);modal.addEventListener('click',e=>{if(e.target===modal)hideHelp()});
 document.getElementById('closeBtn').addEventListener('click',close);document.getElementById('plusBtn').addEventListener('click',()=>zoomAt(1.24,viewport.w/2,viewport.h/2));document.getElementById('minusBtn').addEventListener('click',()=>zoomAt(1/1.24,viewport.w/2,viewport.h/2));document.getElementById('homeBtn').addEventListener('click',()=>reset());document.getElementById('discoverBtn').addEventListener('click',discover);
 document.addEventListener('keydown',e=>{
@@ -1069,12 +1126,12 @@ document.addEventListener('keydown',e=>{
  if(e.key==='/'&&!e.shiftKey&&!e.altKey&&!e.ctrlKey&&!e.metaKey){e.preventDefault();openSearch();return}
  if(e.key==='?'||((e.shiftKey)&&e.key==='/')){e.preventDefault();showHelp();return}
  if(e.altKey||e.ctrlKey||e.metaKey)return;
- const k=e.key;if(k==='+'||k==='='||k==='Add'){e.preventDefault();zoomAt(1.2,viewport.w/2,viewport.h/2)}else if(k==='-'||k==='_'||k==='Subtract'){e.preventDefault();zoomAt(1/1.2,viewport.w/2,viewport.h/2)}else if(k==='0'){e.preventDefault();reset()}else if(k.toLowerCase()==='r'){e.preventDefault();discover()}else if(k.toLowerCase()==='i'&&active){e.preventDefault();openInspector()}
+ const k=e.key;if(e.shiftKey&&k.toLowerCase()==='p'){e.preventDefault();toggleMetrics();return}if(k==='+'||k==='='||k==='Add'){e.preventDefault();zoomAt(1.2,viewport.w/2,viewport.h/2)}else if(k==='-'||k==='_'||k==='Subtract'){e.preventDefault();zoomAt(1/1.2,viewport.w/2,viewport.h/2)}else if(k==='0'){e.preventDefault();reset()}else if(k.toLowerCase()==='r'){e.preventDefault();discover()}else if(k.toLowerCase()==='i'&&active){e.preventDefault();openInspector()}
  else if(k.startsWith('Arrow')){e.preventDefault();const step=e.shiftKey?250:100;camera.x+=(k==='ArrowLeft'?step:k==='ArrowRight'?-step:0);camera.y+=(k==='ArrowUp'?step:k==='ArrowDown'?-step:0);cameraGoal={...camera};updateCamera();start()}
 });
 function measure(){const r=stage.getBoundingClientRect(),w=r.width,h=r.height;if(!w||!h)return;const old=viewport;viewport={w,h};if(!initialized){initialized=true;reset(false)}else{camera.x+=(w-old.w)/2;camera.y+=(h-old.h)/2;cameraGoal={...camera};updateGoals();start();syncVisible(true)}}
 new ResizeObserver(measure).observe(stage);measure();
-window.addEventListener('pagehide',()=>{cancelImport();closeInspector();releaseFullImage();clearThumbnailCache();thumbnailWorker?.terminate();thumbnailWorker=null});
+window.addEventListener('pagehide',()=>{metricsMonitor?.stop();cancelImport();closeInspector();releaseFullImage();clearThumbnailCache();thumbnailWorker?.terminate();thumbnailWorker=null});
 })();
 </script>
 </body>

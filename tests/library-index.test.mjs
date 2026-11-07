@@ -42,7 +42,7 @@ function instance(db){
  vm.runInNewContext(code,{window,indexedDB:db?.indexedDB,crypto:webcrypto,TextEncoder,Math,Date,Error,setTimeout,clearTimeout},{timeout:1000});
  return window.NOEMALibraryIndex;
 }
-const img=(name='portrait.jpg',mtime=1770000000000,size=9981,filePath='my-album/portrait.jpg')=>({name,lastModified:mtime,size,type:'image/jpeg',__noemaPath:filePath});
+const img=(name='portrait.jpg',mtime=1770000000000,size=9981,path='my-album/portrait.jpg')=>({name,lastModified:mtime,size,type:'image/jpeg',__noemaPath:path});
 
 test('metadata identity is stable across visits and does not contain plaintext paths',async()=>{
  const db=createFakeDB();const a=instance(db),b=instance(db);
@@ -81,18 +81,17 @@ test('invalid ratios are rejected and blocked storage does not break imports',as
  assert.equal((await noDb.stats()).available,false);
 });
 
-test('search remains bounded to forty results for a 20k-file collection',()=>{
- assert.ok(inline,'Inline gallery script is missing');
- const normalization=inline.match(/const normalizeQuery=value=>[^\n]+/);
- const finder=inline.match(/function findArtworks\(query,limit=40\)\{[\s\S]*?\n\}/);
- assert.ok(normalization&&finder,'Search implementation is not found');
- const items=Array.from({length:20000},(_,i)=>({title:'photo-'+String(i).padStart(5,'0'),desc:'folder/sub/'+i+'.jpg',category:'LOCAL'}));
- const context={artworks:items};
- const run=vm.runInNewContext(normalization[0]+'\n'+finder[0]+'\nfindArtworks;',context);
- const broad=run('photo');
+test('search ranks exact matches even when they occur after the initial forty',()=>{
+ const code=fs.readFileSync(path.join(root,'src/search-core.js'),'utf8');
+ const context={window:{}};vm.runInNewContext(code,context,{timeout:1000});
+ const items=Array.from({length:20000},(_,i)=>({title:`photo-${String(i).padStart(5,'0')}`,desc:`folder/sub/${i}.jpg`,category:'LOCAL'}));
+ const search=context.window.NOEMASearchCore.search;
+ const broad=search(items,'photo',40);
  assert.equal(broad.total,20000);assert.equal(broad.found.length,40);
- const exact=run('PHOTO-01998');
+ const exact=search(items,'PHOTO-01998');
  assert.equal(exact.total,1);assert.equal(exact.found[0].index,1998);
+ items[19980].title='photo';
+ assert.equal(search(items,'photo').found[0].index,19980);
 });
 
 test('index is separate from thumbnail cache, and search overlay respects keyboard focus',()=>{
@@ -101,6 +100,6 @@ test('index is separate from thumbnail cache, and search overlay respects keyboa
  assert.match(html,/id="searchInput" type="search"/);
  assert.match(html,/document\.getElementById\('clearIndexBtn'\)/);
  assert.match(html,/searchInput\.addEventListener\('input'/);
- assert.match(html,/makeTile\(target\.id,target\.rect,index\)/);
+ assert.match(html,/makeTile\(target\.id,target\.rect,currentIndex\)/);
  assert.match(html,/cachedAspect\(file,displayName\)/);
 });
