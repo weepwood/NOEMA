@@ -38,3 +38,12 @@ Folia Major 仓库声明使用 **AGPL-3.0**。这里采用了原创的代码、�
 ## 当前范围
 
 这是没有服务端的 UI 演示，不包含图片管理、搜索、账户或持久化自定义收藏。在线图片需要网络，图片加载使用浏览器原生缓存，不包含 Service Worker 离线缓存。扩展重排是针对视觉效果的局部推挤，并不是约束求解器级别的全局零重叠排布。
+## GitHub Pages 部署
+
+本仓库附带 `.github/workflows/pages.yml`，用于将静态页面自动部署到 GitHub Pages。仓库首次启用 Pages 必须由有仓库管理权限的用户完成（`GITHUB_TOKEN` 无法替代管理员创建站点）：
+
+1. 在仓库 **Settings → Pages → Build and deployment → Source** 选择 **GitHub Actions**。
+2. 在 **Actions → Deploy NOEMA to GitHub Pages** 选择 **Run workflow**（或向 `main` 推送一次提交）。
+3. 工作流成功后，从 Actions 输出的 `page_url` 访问网站。公开仓库的常见地址为 `https://weepwood.github.io/NOEMA/`，以实际部署输出为准。
+
+当前发布版本通过 Picsum Photos 加载示例图片，访问图片需要网络；如果期望完全离线、自托管图片，请将完整 ZIP 中的 `assets/` 一并上传并改回本地 `photo()` 映射。
