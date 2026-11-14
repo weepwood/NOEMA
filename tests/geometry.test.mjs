@@ -12,9 +12,9 @@ assert.ok(source);
 const raw=source.match(/const TEMPLATE=\[([\s\S]*?)\];/)?.[1];
 assert.ok(raw);
 const template=vm.runInNewContext('['+raw+']');
-const reflowCode=source.match(/function resolveReflow\(rect,expanded,original\)\{[\s\S]*?\n\}/)?.[0];
-assert.ok(reflowCode);
-const reflow=vm.runInNewContext('const GAP=6;'+reflowCode+';resolveReflow;');
+const focusCode=source.match(/function focusParallax\\(rect,expanded\\)\\{[\\s\\S]*?\\n\\}/)?.[0];
+assert.ok(focusCode);
+const focusParallax=vm.runInNewContext(focusCode+';focusParallax;');
 const gap=6,pitch=127,bw=12*pitch,bh=8*pitch;
 const rect=(bx,by,i)=>{
  const t=template[i];return{x:bx*bw+t.x*pitch,y:by*bh+t.y*pitch,w:t.w*pitch-gap,h:t.h*pitch-gap};
@@ -29,20 +29,30 @@ test('portrait and landscape slots coexist in a gap-free 12x8 block',()=>{
  assert.ok(cover.every(row=>row.every(x=>x===1)));
 });
 
-test('expanding a poster does not collide with any other poster',()=>{
+test('selected poster overlays a continuous stationary mosaic instead of leaving black strips',()=>{
+ assert.match(source,/m\\.goal=mine&&exp\\?exp:m\\.rect/);
+ assert.match(html,/\\.m-tile\\.is-active\\{z-index:8/);
+ assert.match(html,/\\.m-tile img\\{[^}]*object-fit:cover/);
  const all=[];
- for(let by=-2;by<=2;by++)for(let bx=-2;bx<=2;bx++)for(let i=0;i<template.length;i++){
+ for(let by=-2;by<=2;by++)for(let bx=-2;bx<=2;bx++)for(let i=0;i<template.length;i++)
   all.push({id:bx+':'+by+':'+i,...rect(bx,by,i)});
- }
+ for(let i=0;i<all.length;i++)for(let j=i+1;j<all.length;j++)
+  assert.ok(!overlap(all[i],all[j]),'base mosaic must not overlap');
  for(const chosen of all.filter(t=>t.id.startsWith('0:0:'))){
-  for(const [dw,dh] of [[200,300],[850,450],[1300,1100]]){
-   const expanded={x:chosen.x-dw/2,y:chosen.y-dh/2,w:chosen.w+dw,h:chosen.h+dh};
-   const targets=all.map(t=>t.id===chosen.id?expanded:reflow(t,expanded,chosen));
-   for(let i=0;i<targets.length;i++)for(let j=i+1;j<targets.length;j++){
-    assert.ok(!overlap(targets[i],targets[j]),'collision while expanding '+chosen.id);
-   }
-  }
+  const expanded={x:chosen.x-250,y:chosen.y-200,w:chosen.w+500,h:chosen.h+400};
+  assert.ok(all.some(t=>t.id!==chosen.id&&overlap(expanded,t)), 'focus overlays its neighbors');
  }
+});
+
+test('nearby artwork parallax remains inside its tile and distant tiles remain untouched',()=>{
+ const expanded={x:0,y:0,w:690,h:530},near={x:680,y:180,w:230,h:190};
+ const drift=focusParallax(near,expanded);
+ assert.ok(drift);
+ assert.ok(Math.abs(drift.x)<=Math.min(9,near.w*.018)+1e-9);
+ assert.ok(Math.abs(drift.y)<=Math.min(9,near.h*.018)+1e-9);
+ assert.equal(focusParallax({x:5000,y:5000,w:230,h:190},expanded),null);
+ assert.match(html,/\\.stage\\.has-selection \\.m-tile\\.is-near-focus img\\{[^}]*scale\\(1\\.06\\)/);
+ assert.match(source,/style\\.removeProperty\\('--focus-dx'\\)/);
 });
 
 test('20k local images map to 20k distinct slots without wrapping',()=>{
