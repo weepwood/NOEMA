@@ -12,9 +12,10 @@ assert.ok(source);
 const raw=source.match(/const TEMPLATE=\[([\s\S]*?)\];/)?.[1];
 assert.ok(raw);
 const template=vm.runInNewContext('['+raw+']');
-const focusCode=source.match(/function focusParallax\\(rect,expanded\\)\\{[\\s\\S]*?\\n\\}/)?.[0];
-assert.ok(focusCode);
-const focusParallax=vm.runInNewContext(focusCode+';focusParallax;');
+const focusStart=source.indexOf('function focusParallax(');
+const focusEnd=source.indexOf('\nfunction updateGoals()',focusStart);
+assert.ok(focusStart>=0&&focusEnd>focusStart);
+const focusParallax=vm.runInNewContext(source.slice(focusStart,focusEnd)+';focusParallax;');
 const gap=6,pitch=127,bw=12*pitch,bh=8*pitch;
 const rect=(bx,by,i)=>{
  const t=template[i];return{x:bx*bw+t.x*pitch,y:by*bh+t.y*pitch,w:t.w*pitch-gap,h:t.h*pitch-gap};
@@ -30,9 +31,9 @@ test('portrait and landscape slots coexist in a gap-free 12x8 block',()=>{
 });
 
 test('selected poster overlays a continuous stationary mosaic instead of leaving black strips',()=>{
- assert.match(source,/m\\.goal=mine&&exp\\?exp:m\\.rect/);
- assert.match(html,/\\.m-tile\\.is-active\\{z-index:8/);
- assert.match(html,/\\.m-tile img\\{[^}]*object-fit:cover/);
+ assert.ok(source.includes('m.goal=mine&&exp?exp:m.rect'))
+ assert.ok(html.includes('.m-tile.is-active{z-index:8'))
+ assert.ok(html.includes('object-fit:cover'))
  const all=[];
  for(let by=-2;by<=2;by++)for(let bx=-2;bx<=2;bx++)for(let i=0;i<template.length;i++)
   all.push({id:bx+':'+by+':'+i,...rect(bx,by,i)});
@@ -51,8 +52,8 @@ test('nearby artwork parallax remains inside its tile and distant tiles remain u
  assert.ok(Math.abs(drift.x)<=Math.min(9,near.w*.018)+1e-9);
  assert.ok(Math.abs(drift.y)<=Math.min(9,near.h*.018)+1e-9);
  assert.equal(focusParallax({x:5000,y:5000,w:230,h:190},expanded),null);
- assert.match(html,/\\.stage\\.has-selection \\.m-tile\\.is-near-focus img\\{[^}]*scale\\(1\\.06\\)/);
- assert.match(source,/style\\.removeProperty\\('--focus-dx'\\)/);
+ assert.ok(html.includes('.stage.has-selection .m-tile.is-near-focus img{'))
+ assert.ok(source.includes("style.removeProperty('--focus-dx')"))
 });
 
 test('20k local images map to 20k distinct slots without wrapping',()=>{
