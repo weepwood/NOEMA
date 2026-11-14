@@ -7,9 +7,9 @@ import {fileURLToPath} from 'node:url';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
-const source=html.match(/<script>([\\s\\S]*?)<\\/script>/)?.[1];
+const source=html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
 assert.ok(source);
-const raw=source.match(/const TEMPLATE=\\[([\\s\\S]*?)\\];/)?.[1];
+const raw=source.match(/const TEMPLATE=\[([\s\S]*?)\];/)?.[1];
 assert.ok(raw);
 const template=vm.runInNewContext('['+raw+']');
 const context={window:{}};
@@ -50,10 +50,10 @@ test('each of twelve expanded slots exact-covers the same fixed block at every o
 });
 
 test('re-gearing stays within its own block and the other blocks retain their seats',()=>{
- assert.match(source,/blockReflowRect\\(m\\.bx,m\\.by,activeReflow\\[m\\.slot\\]\\)/);
- assert.match(source,/m\\.bx===chosen\\.bx&&m\\.by===chosen\\.by/);
- assert.match(source,/ensureFocusBlock\\(m\\)/);
- assert.match(source,/posterWallLayout\\.reflow\\(TEMPLATE,m\\.bx,m\\.by,m\\.slot\\)/);
+ assert.match(source,/blockReflowRect\(m\.bx,m\.by,activeReflow\[m\.slot\]\)/);
+ assert.match(source,/m\.bx===chosen\.bx&&m\.by===chosen\.by/);
+ assert.match(source,/ensureFocusBlock\(m\)/);
+ assert.match(source,/posterWallLayout\.reflow\(TEMPLATE,m\.bx,m\.by,m\.slot\)/);
  assert.doesNotMatch(source,/resolveReflow|focusParallax/);
  for(const index of [0,3,5,11]){
   const before=rect(1,1,index);
@@ -72,8 +72,8 @@ test('20k local images map to 20k distinct slots without wrapping',()=>{
 
 test('full image viewer retains natural aspect ratio and original scale',()=>{
  assert.match(html,/id="inspector"[^>]*role="dialog"/);
- assert.match(source,/inspectorImage\\.naturalWidth/);
- assert.match(source,/inspectorImage\\.naturalHeight/);
- assert.match(source,/inspectorZoomAt\\(1,/);
+ assert.match(source,/inspectorImage\.naturalWidth/);
+ assert.match(source,/inspectorImage\.naturalHeight/);
+ assert.match(source,/inspectorZoomAt\(1,/);
  assert.match(html,/id="inspectorNext"/);
 });
