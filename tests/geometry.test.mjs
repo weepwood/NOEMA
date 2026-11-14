@@ -62,6 +62,17 @@ test('re-gearing stays within its own block and the other blocks retain their se
  }
 });
 
+test('transition underlay exists only during reflow and releases on settle or gallery switch',()=>{
+ assert.match(source,/function holdMotionUnderlay\(chosen\)/);
+ assert.match(source,/function settleMotionUnderlays\(\)/);
+ assert.match(source,/function clearMotionUnderlays\(\)/);
+ assert.match(source,/world\.prepend\(layer\)/);
+ assert.match(source,/layer\.setAttribute\('aria-hidden','true'\)/);
+ assert.match(source,/if\(motionUnderlays\.size\)settleMotionUnderlays\(\)/);
+ assert.match(html,/\.focus-underlay\{position:absolute;z-index:1/);
+ assert.match(html,/\.m-tile\{position:absolute;z-index:2/);
+});
+
 test('20k local images map to 20k distinct slots without wrapping',()=>{
  const code=source.slice(source.indexOf('let localColumns=1,localRows=0;'),source.indexOf('const BW=12*PITCH'));
  assert.ok(code.includes('function localArtIndex'));
