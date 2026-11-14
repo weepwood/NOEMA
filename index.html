@@ -12,11 +12,18 @@
 .stage{position:absolute;inset:0;overflow:hidden;cursor:grab;touch-action:none;outline:0;background:#070707}
 .stage.is-dragging{cursor:grabbing}
 .world{position:absolute;left:0;top:0;width:0;height:0;transform-origin:0 0;will-change:transform}
-.m-tile{position:absolute;margin:0;padding:0;display:block;background:#21201c;border:0;border-radius:0;overflow:hidden;color:#fff;text-align:left;cursor:pointer;isolation:isolate;appearance:none;transform:translateZ(0);contain:layout style paint;outline-offset:-4px}
+.m-tile{position:absolute;z-index:2;margin:0;padding:0;display:block;background:#21201c;border:0;border-radius:0;overflow:hidden;color:#fff;text-align:left;cursor:pointer;isolation:isolate;appearance:none;transform:translateZ(0);contain:layout style paint;outline-offset:-4px}
 .m-tile .tile-art{position:absolute;inset:0;background:var(--fallback,linear-gradient(145deg,#31312d,#131515));overflow:hidden}
 .m-tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;user-select:none;-webkit-user-drag:none;pointer-events:none;transition:transform .65s cubic-bezier(.18,.68,.24,1),opacity .4s ease;opacity:0}
 .m-tile img.loaded{opacity:1}.m-tile img.hi-res{opacity:0;transition:opacity .35s ease}.m-tile img.hi-res.loaded{opacity:1}
 .m-tile:hover img.low-res,.m-tile:focus-visible img.low-res{transform:scale(1.045)}
+/* Reflow frames can temporarily expose parts of the cell; a short-lived
+   screenshot-like underlay uses the previous full mosaic to avoid black flashes.
+   It is behind the moving cells and removed once their spring has settled. */
+.focus-underlay{position:absolute;z-index:1;overflow:hidden;pointer-events:none;opacity:.78;filter:brightness(.72) saturate(.86)}
+.focus-underlay.is-settled{opacity:0;transition:opacity .18s ease-out}
+.focus-underlay .ghost-cell{position:absolute;overflow:hidden;background:#242321}
+.focus-underlay .ghost-cell img{width:100%;height:100%;display:block;object-fit:cover;pointer-events:none}
 /* The twelve posters in the active 12x8 block morph into a new exact-cover layout. */
 .m-tile .tile-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.13) 0%,transparent 37%,rgba(0,0,0,.12) 55%,rgba(0,0,0,.80) 100%);pointer-events:none}
 .m-tile .tile-dimmer{position:absolute;inset:0;background:#070707;opacity:0;transition:opacity .45s ease;pointer-events:none;z-index:3}
@@ -450,7 +457,7 @@ const sceneStatus=document.getElementById('sceneStatus'),chrome=document.querySe
 const collectionTag=document.getElementById('collectionTag'),notice=document.getElementById('notice'),dropOverlay=document.getElementById('dropOverlay');
 let noticeTimer=0;function notify(message){sceneStatus.textContent=message;notice.textContent=message;notice.classList.add('visible');clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>notice.classList.remove('visible'),3800)}
 const motion=window.matchMedia('(prefers-reduced-motion: reduce)');
-const nodes=new Map(),pointers=new Map();
+const nodes=new Map(),pointers=new Map(),motionUnderlays=new Map();
 let viewport={w:innerWidth,h:innerHeight};
 let camera={x:0,y:0,s:.76},cameraGoal={...camera},last=0,raf=0,active=null,activeReflow=null,focusRestore=null;
 let drag=null,pinch=null,initialized=false,keepPlaying=false,lastCull=null,lastModalFocus=null;
@@ -467,7 +474,7 @@ function artIndex(bx,by,i){
 }
 function start(){if(!raf)raf=requestAnimationFrame(frame)}
 function zoomAt(factor,px,py){camera=canvasCore.anchoredZoom(camera,factor,px,py,.40,1.9);cameraGoal={...camera};updateGoals();updateCamera();start()}
-function reset(animate=true){if(active)releaseFullImage();const s=viewport.w<700?.70:viewport.w<1150?.76:.84;const single=localMode&&artworks.length===1?imageSlotForIndex(0)?.rect:null;const x=single?viewport.w/2-(single.x+single.w/2)*s:localMode?Math.max(20,viewport.w*.12):viewport.w*.5-BW*.46*s,y=single?viewport.h/2-(single.y+single.h/2)*s:localMode?Math.max(70,viewport.h*.10):viewport.h*.5-BH*.45*s;active=null;activeReflow=null;stage.classList.remove('has-selection');document.getElementById('closeBtn').tabIndex=-1;document.getElementById('inspectBtn').tabIndex=-1;sceneStatus.textContent='已返回画布中心';counter.innerHTML=`01<span style="font-size:.42em;color:#ffffff66"> / ${localMode?artworks.length:'∞'}</span>`;updateGoals();cameraGoal={x,y,s};if(motion.matches||!animate)camera={...cameraGoal};updateCamera();start()}
+function reset(animate=true){if(active){const old=nodes.get(active);if(old)holdMotionUnderlay(old);releaseFullImage()}const s=viewport.w<700?.70:viewport.w<1150?.76:.84;const single=localMode&&artworks.length===1?imageSlotForIndex(0)?.rect:null;const x=single?viewport.w/2-(single.x+single.w/2)*s:localMode?Math.max(20,viewport.w*.12):viewport.w*.5-BW*.46*s,y=single?viewport.h/2-(single.y+single.h/2)*s:localMode?Math.max(70,viewport.h*.10):viewport.h*.5-BH*.45*s;active=null;activeReflow=null;stage.classList.remove('has-selection');document.getElementById('closeBtn').tabIndex=-1;document.getElementById('inspectBtn').tabIndex=-1;sceneStatus.textContent='已返回画布中心';counter.innerHTML=`01<span style="font-size:.42em;color:#ffffff66"> / ${localMode?artworks.length:'∞'}</span>`;updateGoals();cameraGoal={x,y,s};if(motion.matches||!animate)camera={...cameraGoal};updateCamera();start()}
 function updateCamera(){world.style.transform=`translate3d(${camera.x}px,${camera.y}px,0) scale(${camera.s})`;if(coordinates)coordinates.textContent=`X ${slugNum(Math.round(-camera.x/camera.s))} — Y ${slugNum(Math.round(-camera.y/camera.s))} · ${String(Math.round(camera.s*100)).padStart(3,'0')}%`}
 function setImage(img,src){
  img.onload=async()=>{
@@ -501,6 +508,56 @@ function makeTile(id,rect,index){const a=artworks[index],button=document.createE
  nodes.set(id,m);place(m);if(observer)observer.observe(button);else loadThumbnail(m);return m;
 }
 function place(m){const p=m.cur,b=m.button;b.style.left=`${p.x.toFixed(2)}px`;b.style.top=`${p.y.toFixed(2)}px`;b.style.width=`${Math.max(1,p.w).toFixed(2)}px`;b.style.height=`${Math.max(1,p.h).toFixed(2)}px`}
+function clearMotionUnderlays(){
+ for(const entry of motionUnderlays.values()){
+  clearTimeout(entry.timer);entry.el.remove();
+ }
+ motionUnderlays.clear();
+}
+function holdMotionUnderlay(chosen){
+ if(!chosen)return;
+ const key=`${chosen.bx}:${chosen.by}`;
+ const previous=motionUnderlays.get(key);
+ if(previous){
+  clearTimeout(previous.timer);
+  previous.timer=0;previous.el.classList.remove('is-settled');
+  return;
+ }
+ const layer=document.createElement('div');
+ layer.className='focus-underlay';
+ layer.setAttribute('aria-hidden','true');
+ layer.style.cssText=`left:${chosen.bx*BW}px;top:${chosen.by*BH}px;width:${BW}px;height:${BH}px`;
+ for(const m of nodes.values()){
+  if(m.bx!==chosen.bx||m.by!==chosen.by)continue;
+  const ghost=document.createElement('div');
+  ghost.className='ghost-cell';
+  const t=m.rect;
+  ghost.style.cssText=`left:${t.x-chosen.bx*BW}px;top:${t.y-chosen.by*BH}px;width:${t.w}px;height:${t.h}px;background:${m.art.color||'#242321'}`;
+  const src=m.low.getAttribute('src')||(!m.art.file?photo(m.art.img,780):null);
+  if(src){
+   const img=document.createElement('img');
+   img.src=src;img.alt='';img.decoding='async';
+   ghost.appendChild(img);
+  }
+  layer.appendChild(ghost);
+ }
+ world.prepend(layer);
+ motionUnderlays.set(key,{key,bx:chosen.bx,by:chosen.by,el:layer,timer:0});
+}
+function settleMotionUnderlays(){
+ for(const entry of motionUnderlays.values()){
+  if(entry.timer)continue;
+  const members=[...nodes.values()].filter(m=>m.bx===entry.bx&&m.by===entry.by);
+  const stillMoving=members.some(m=>['x','y','w','h'].some(p=>
+   Math.abs(m.cur[p]-m.goal[p])>.08||Math.abs(m.vel[p])>.08));
+  if(stillMoving)continue;
+  entry.el.classList.add('is-settled');
+  entry.timer=setTimeout(()=>{
+   if(motionUnderlays.get(entry.key)!==entry)return;
+   entry.el.remove();motionUnderlays.delete(entry.key);
+  },200);
+ }
+}
 function blockReflowRect(bx,by,slot){
  return{x:bx*BW+slot.x*PITCH,y:by*BH+slot.y*PITCH,
         w:slot.w*PITCH-GAP,h:slot.h*PITCH-GAP};
@@ -582,9 +639,13 @@ function syncVisible(force=false){
  if(changed){updateGoals();evictThumbnails()}
 }
 function select(id){if(!nodes.has(id))return;const already=active===id;if(already){close();return}
- if(active!==null&&active!==id)releaseFullImage();
+ if(active!==null&&active!==id){
+  holdMotionUnderlay(nodes.get(active));
+  releaseFullImage();
+ }
  const m=nodes.get(id);
  ensureFocusBlock(m);
+ holdMotionUnderlay(m);
  active=id;
  activeReflow=posterWallLayout.reflow(TEMPLATE,m.bx,m.by,m.slot);
  stage.classList.add('has-selection');document.getElementById('closeBtn').tabIndex=0;document.getElementById('inspectBtn').tabIndex=0;
@@ -593,7 +654,7 @@ function select(id){if(!nodes.has(id))return;const already=active===id;if(alread
  counter.innerHTML=`${String(artworks.indexOf(m.art)+1).padStart(2,'0')}<span style="font-size:.42em;color:#ffffff66"> / ${localMode?artworks.length:'∞'}</span>`;sceneStatus.textContent=`已展开 ${m.art.title}。按 Escape 收起作品。`;
  updateGoals();start()
 }
-function close(){if(!active)return;releaseFullImage();active=null;activeReflow=null;stage.classList.remove('has-selection');document.getElementById('closeBtn').tabIndex=-1;document.getElementById('inspectBtn').tabIndex=-1;updateGoals();counter.innerHTML=`01<span style="font-size:.42em;color:#ffffff66"> / ${localMode?artworks.length:'∞'}</span>`;if(focusRestore?.isConnected)focusRestore.focus({preventScroll:true});else stage.focus({preventScroll:true});focusRestore=null;sceneStatus.textContent='作品已收起';start()}
+function close(){if(!active)return;holdMotionUnderlay(nodes.get(active));releaseFullImage();active=null;activeReflow=null;stage.classList.remove('has-selection');document.getElementById('closeBtn').tabIndex=-1;document.getElementById('inspectBtn').tabIndex=-1;updateGoals();counter.innerHTML=`01<span style="font-size:.42em;color:#ffffff66"> / ${localMode?artworks.length:'∞'}</span>`;if(focusRestore?.isConnected)focusRestore.focus({preventScroll:true});else stage.focus({preventScroll:true});focusRestore=null;sceneStatus.textContent='作品已收起';start()}
 function spring(m,dt){
  // Close to critically damped: all twelve frames move and resize together, without overshoot.
  const k=300,damp=34;let isMoving=false,changed=false;
@@ -610,6 +671,7 @@ function spring(m,dt){
 function frame(now){raf=0;const dt=last?Math.min(.034,(now-last)/1000):.016;last=now;let moving=false;
  if(motion.matches)camera={...cameraGoal};else for(const key of ['x','y','s']){const delta=cameraGoal[key]-camera[key];if(Math.abs(delta)>.04){camera[key]+=delta*(1-Math.exp(-10*dt));moving=true}else camera[key]=cameraGoal[key]}
  updateCamera();syncVisible();for(const m of nodes.values())if(spring(m,dt))moving=true;
+ if(motionUnderlays.size)settleMotionUnderlays();
  if(moving||keepPlaying)start();else last=0
 }
 function point(e){const r=stage.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
@@ -909,7 +971,7 @@ function applyLocalView(items,query=''){
  if(!inspector.hidden)closeInspector();
  close();releaseFullImage();
  for(const m of nodes.values()){if(observer)observer.unobserve(m.button);m.button.remove()}
- nodes.clear();clearThumbnailCache();
+ nodes.clear();clearMotionUnderlays();clearThumbnailCache();
  artworks=items;activeFilterQuery=query;configureLocalAtlas();lastCull=null;focusRestore=null;
  // Keep physical files in allLocalArtworks, while layout and inspector use only filtered items.
  const collectionLabel=collectionTag.querySelector('span');
@@ -1071,7 +1133,7 @@ async function importFiles(input,displayName='LOCAL COLLECTION',task=beginImport
  if(!alive(task))return false;
  close();releaseFullImage();
  for(const m of nodes.values()){if(observer)observer.unobserve(m.button);m.button.remove()}
- nodes.clear();clearThumbnailCache();localMode=true;
+ nodes.clear();clearMotionUnderlays();clearThumbnailCache();localMode=true;
  artworks=limited.map((file,index)=>({img:String(index),title:titleFromFile(file),category:'PERSONAL ARCHIVE',desc:file.__noemaPath||file.webkitRelativePath||file.name,color:['#243138','#374033','#53473d','#38424b'][index%4],ratio:file.__noemaRatio||1,file}));
  allLocalArtworks=artworks;activeFilterQuery='';
  document.getElementById('filterBanner').hidden=true;
@@ -1092,7 +1154,7 @@ async function importFiles(input,displayName='LOCAL COLLECTION',task=beginImport
 function restoreDemo(){
  if(!inspector.hidden)closeInspector();
  close();releaseFullImage();for(const m of nodes.values()){if(observer)observer.unobserve(m.button);m.button.remove()}
- nodes.clear();clearThumbnailCache();artworks=demoArtworks;allLocalArtworks=null;activeFilterQuery='';document.getElementById('filterBanner').hidden=true;localMode=false;localRows=0;localSlotMaps.clear();lastCull=null;
+ nodes.clear();clearMotionUnderlays();clearThumbnailCache();artworks=demoArtworks;allLocalArtworks=null;activeFilterQuery='';document.getElementById('filterBanner').hidden=true;localMode=false;localRows=0;localSlotMaps.clear();lastCull=null;
  collectionTag.hidden=true;document.getElementById('app').classList.remove('local-collection');collectionTag.replaceChildren();
  document.querySelector('.top-middle .eyebrow').textContent='AN INFINITE COLLECTION';
  document.querySelector('.top-middle .subline').textContent='An exploration of image, atmosphere & form';
@@ -1170,7 +1232,7 @@ document.addEventListener('keydown',e=>{
 });
 function measure(){const r=stage.getBoundingClientRect(),w=r.width,h=r.height;if(!w||!h)return;const old=viewport;viewport={w,h};if(!initialized){initialized=true;reset(false)}else{camera.x+=(w-old.w)/2;camera.y+=(h-old.h)/2;cameraGoal={...camera};updateGoals();start();syncVisible(true)}}
 new ResizeObserver(measure).observe(stage);measure();
-window.addEventListener('pagehide',()=>{metricsMonitor?.stop();cancelImport();closeInspector();releaseFullImage();clearThumbnailCache();thumbnailWorker?.terminate();thumbnailWorker=null});
+window.addEventListener('pagehide',()=>{clearMotionUnderlays();metricsMonitor?.stop();cancelImport();closeInspector();releaseFullImage();clearThumbnailCache();thumbnailWorker?.terminate();thumbnailWorker=null});
 })();
 </script>
 </body>
