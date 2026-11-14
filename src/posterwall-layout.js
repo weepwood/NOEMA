@@ -92,7 +92,8 @@
  }
  function reflow(template,bx,by,focusIndex){
   if(!Array.isArray(template)||template.length!==12||focusIndex<0||focusIndex>=12)return null;
-  const key=`${bx}:${by}:${focusIndex}`;
+  // Only four reflected orientations exist; identical orientations share a plan.
+  const key=`${orientation(bx,by)}:${focusIndex}`;
   if(cache.has(key))return cache.get(key);
   const source=orient(template,bx,by);
   const original=center(source[focusIndex]);
