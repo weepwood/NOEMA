@@ -17,17 +17,19 @@
 .m-tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;user-select:none;-webkit-user-drag:none;pointer-events:none;transition:transform .65s cubic-bezier(.18,.68,.24,1),opacity .4s ease;opacity:0}
 .m-tile img.loaded{opacity:1}.m-tile img.hi-res{opacity:0;transition:opacity .35s ease}.m-tile img.hi-res.loaded{opacity:1}
 .m-tile:hover img.low-res,.m-tile:focus-visible img.low-res{transform:scale(1.045)}
+/* Internal art parallax lets nearby tiles react without ever moving the mosaic cells. */
+.stage.has-selection .m-tile.is-near-focus img{transform:translate3d(var(--focus-dx,0px),var(--focus-dy,0px),0) scale(1.06)}
 .m-tile .tile-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.13) 0%,transparent 37%,rgba(0,0,0,.12) 55%,rgba(0,0,0,.80) 100%);pointer-events:none}
 .m-tile .tile-dimmer{position:absolute;inset:0;background:#070707;opacity:0;transition:opacity .45s ease;pointer-events:none;z-index:3}
-.stage.has-selection .m-tile:not(.is-active) .tile-dimmer{opacity:.68}
+.stage.has-selection .m-tile:not(.is-active) .tile-dimmer{opacity:.46}
 .m-tile .tile-info{position:absolute;z-index:2;left:22px;right:20px;bottom:19px;pointer-events:none;display:flex;flex-direction:column;align-items:flex-start;gap:10px}
 .m-tile .tile-kicker{font-size:10px;letter-spacing:.20em;text-transform:uppercase;font-weight:650;color:rgba(255,255,255,.76);text-shadow:0 1px 9px #0006}
 .m-tile .tile-title{margin:0;max-width:92%;font-size:clamp(24px,4.3cqw,67px);letter-spacing:-.055em;line-height:.94;font-weight:670;overflow-wrap:break-word;text-wrap:balance;text-shadow:0 2px 22px #0007}
 .m-tile{container-type:inline-size}.m-tile .tile-index{position:absolute;right:20px;top:18px;font-size:10px;letter-spacing:.13em;font-weight:650;color:#fff9;z-index:2;text-shadow:0 1px 10px #000a}
 .m-tile .tile-arrow{position:absolute;bottom:22px;right:20px;z-index:2;width:31px;height:31px;border:1px solid rgba(255,255,255,.55);border-radius:50%;display:grid;place-items:center;color:#fff;opacity:0;transform:translateY(5px);transition:opacity .2s,transform .2s;pointer-events:none}
 .m-tile:hover .tile-arrow,.m-tile:focus-visible .tile-arrow{opacity:1;transform:none}
-.m-tile.is-active{z-index:8;box-shadow:0 26px 100px #0009;contain:layout style paint}
-.m-tile.is-active .tile-shade{background:linear-gradient(180deg,rgba(0,0,0,.2) 0%,transparent 28%,rgba(0,0,0,.2) 45%,rgba(0,0,0,.95) 100%)}
+.m-tile.is-active{z-index:8;box-shadow:0 18px 58px #0008;contain:layout style paint}
+.m-tile.is-active .tile-shade{background:linear-gradient(180deg,rgba(0,0,0,.08) 0%,transparent 28%,rgba(0,0,0,.12) 55%,rgba(0,0,0,.82) 100%)}
 .m-tile.is-active .tile-info{left:42px;right:32px;bottom:40px;gap:17px}.m-tile.is-active .tile-title{font-size:clamp(46px,8cqw,92px);max-width:80%;line-height:.91}
 .m-tile.is-active .tile-index{top:28px;right:32px}
 .m-tile .detail{display:none;margin-top:3px;max-width:460px;color:rgba(255,255,255,.75);font-size:14px;line-height:1.65;font-weight:400;letter-spacing:.008em}
@@ -495,22 +497,37 @@ function makeTile(id,rect,index){const a=artworks[index],button=document.createE
 }
 function place(m){const p=m.cur,b=m.button;b.style.left=`${p.x.toFixed(2)}px`;b.style.top=`${p.y.toFixed(2)}px`;b.style.width=`${Math.max(1,p.w).toFixed(2)}px`;b.style.height=`${Math.max(1,p.h).toFixed(2)}px`}
 function getExpansion(rect){const maxW=Math.max(rect.w,(viewport.w-38)/camera.s);const maxH=Math.max(rect.h,(viewport.h-68)/camera.s);const w=Math.min(Math.max(rect.w,690),maxW),h=Math.min(Math.max(rect.h,530),maxH);return{x:rect.x+(rect.w-w)*.5,y:rect.y+(rect.h-h)*.5,w,h}}
-function resolveReflow(rect,expanded,original){
- // Monotone, globally separating coordinate transform. Disjoint source rectangles
- // remain disjoint: ordered x intervals cannot cross after monotone x offsets,
- // and likewise for y. Every tile outside original clears the expanded rectangle.
- const centerX=original.x+original.w/2,centerY=original.y+original.h/2;
- const left=original.x-expanded.x+GAP*1.5;
- const right=expanded.x+expanded.w-original.x-original.w+GAP*1.5;
- const top=original.y-expanded.y+GAP*1.5;
- const bottom=expanded.y+expanded.h-original.y-original.h+GAP*1.5;
- const dx=(rect.x+rect.w/2)<centerX?-left:right;
- const dy=(rect.y+rect.h/2)<centerY?-top:bottom;
- return{x:rect.x+dx,y:rect.y+dy,w:rect.w,h:rect.h};
+function focusParallax(rect,expanded){
+ // Moving every row and column aside used to expose cross-shaped black strips.
+ // The focused tile now overlays the unchanged mosaic; only imagery shifts.
+ const dx=rect.x+rect.w/2-expanded.x-expanded.w/2;
+ const dy=rect.y+rect.h/2-expanded.y-expanded.h/2;
+ const gapX=Math.max(0,Math.abs(dx)-(expanded.w+rect.w)/2);
+ const gapY=Math.max(0,Math.abs(dy)-(expanded.h+rect.h)/2);
+ const radius=Math.max(110,Math.min(380,Math.max(expanded.w,expanded.h)*.55));
+ const intensity=Math.max(0,1-Math.hypot(gapX,gapY)/radius);
+ if(!intensity)return null;
+ const length=Math.hypot(dx,dy)||1;
+ // Max 1.8% movement per axis: the 6% artwork scale-up safely covers it.
+ return{x:dx/length*Math.min(9,rect.w*.018)*intensity,
+        y:dy/length*Math.min(9,rect.h*.018)*intensity};
 }
-function updateGoals(){const chosen=active&&nodes.get(active);const exp=chosen?getExpansion(chosen.rect):null;const original=chosen?.rect||null;
- for(const m of nodes.values()){const mine=m.id===active;if(mine&&exp)m.goal=exp;else if(exp)m.goal=resolveReflow(m.rect,exp,original);else m.goal=m.rect;
- m.button.classList.toggle('is-active',mine);if(m.button.getAttribute('aria-expanded')!==String(mine))m.button.setAttribute('aria-expanded',String(mine));if(mine)loadOriginal(m);
+function updateGoals(){const chosen=active&&nodes.get(active);const exp=chosen?getExpansion(chosen.rect):null;
+ for(const m of nodes.values()){
+  const mine=m.id===active;
+  m.goal=mine&&exp?exp:m.rect;
+  const drift=exp&&!mine?focusParallax(m.rect,exp):null;
+  m.button.classList.toggle('is-near-focus',Boolean(drift));
+  if(drift){
+   m.button.style.setProperty('--focus-dx',`${drift.x.toFixed(2)}px`);
+   m.button.style.setProperty('--focus-dy',`${drift.y.toFixed(2)}px`);
+  }else{
+   m.button.style.removeProperty('--focus-dx');
+   m.button.style.removeProperty('--focus-dy');
+  }
+  m.button.classList.toggle('is-active',mine);
+  if(m.button.getAttribute('aria-expanded')!==String(mine))m.button.setAttribute('aria-expanded',String(mine));
+  if(mine)loadOriginal(m);
  }
 }
 function syncVisible(force=false){
