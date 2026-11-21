@@ -74,11 +74,13 @@ test('local image rendering escapes filenames before inserting HTML', () => {
   assert.match(script, /escapeHTML\(a\.desc\)/);
 });
 
-test('local thumbnail pipeline is bounded and revokes object URLs', () => {
-  assert.match(script, /thumbnailWorkers<3/);
+test('local thumbnail pipeline bounds decoding, cache and object URL lifetimes', () => {
+  assert.match(script, /thumbnailWorkers<\(workerDisabled\|\|location\.protocol==='file:'/);
   assert.match(script, /MAX_THUMB_CACHE=260/);
-  assert.match(script, /resizeWidth:THUMB_SIZE/);
-  assert.doesNotMatch(script, /resizeHeight:THUMB_SIZE/);
+  assert.match(script, /THUMB_EDGE=Math\.min\(1024/);
+  assert.match(script, /const resize=Number\.isFinite\(ratio\)/);
+  assert.match(script, /const previewCache=new Map\(\),MAX_PREVIEW_CACHE=3/);
+  assert.match(script, /previewCache\.clear\(\)/);
   assert.match(script, /URL\.revokeObjectURL\(url\)/);
   assert.match(script, /function releaseFullImage\(/);
   assert.match(script, /window\.addEventListener\('pagehide'/);

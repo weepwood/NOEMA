@@ -88,7 +88,10 @@
 .inspector[hidden]{display:none}
 .inspector-viewport{position:absolute;inset:80px 0 84px;overflow:hidden;touch-action:none;cursor:grab;outline:none}
 .inspector-viewport.is-panning{cursor:grabbing}
-.inspector-image{position:absolute;left:50%;top:50%;width:1px;height:1px;max-width:none;max-height:none;user-select:none;-webkit-user-drag:none;pointer-events:none;transform:translate(calc(-50% + var(--pan-x,0px)),calc(-50% + var(--pan-y,0px)));object-fit:fill}
+.inspector-image{position:absolute;left:50%;top:50%;width:1px;height:1px;max-width:none;max-height:none;user-select:none;-webkit-user-drag:none;pointer-events:none;transform:translate(calc(-50% + var(--pan-x,0px)),calc(-50% + var(--pan-y,0px)));object-fit:fill;z-index:2}
+.inspector-preview{left:0;top:0;width:100%;height:100%;transform:none;object-fit:contain;z-index:1}
+.inspector-preview[hidden]{display:none}
+.inspector-viewport.has-preview .inspector-spinner{top:auto;bottom:14px;left:50%;transform:translateX(-50%);padding:7px 11px;border-radius:4px;background:#070707c9;z-index:3}
 .inspector-top{position:absolute;left:0;right:0;top:0;min-height:80px;display:flex;justify-content:space-between;align-items:center;gap:14px;padding:18px 32px;background:linear-gradient(180deg,#070707fa,#070707cb 65%,transparent);z-index:2}
 .inspector-title{min-width:0;display:flex;flex-direction:column;gap:7px}
 .inspector-title strong{font-weight:640;font-size:16px;letter-spacing:-.025em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:min(64vw,750px)}
@@ -192,7 +195,8 @@
       <button class="round-btn" id="inspectorClose" aria-label="返回画布" title="返回画布 (Esc)"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </header>
     <div class="inspector-viewport" id="inspectorViewport" tabindex="0" aria-label="原图查看区域，可拖动或滚轮缩放">
-      <img class="inspector-image" id="inspectorImage" alt="" draggable="false" />
+      <img class="inspector-image inspector-preview" id="inspectorPreview" alt="" aria-hidden="true" draggable="false" hidden />
+       <img class="inspector-image" id="inspectorImage" alt="" draggable="false" decoding="async" />
       <div class="inspector-spinner" id="inspectorLoading" role="status">LOADING IMAGE</div>
     </div>
     <footer class="inspector-bottom">
@@ -273,12 +277,12 @@ function getThumbnailWorker(){
   thumbnailWorker=worker;return worker;
  }catch{workerDisabled=true;return null}
 }
-function thumbnailInBackground(file){
- const worker=getThumbnailWorker();if(!worker)return makeThumbnailBlob(file);
+function thumbnailInBackground(file,maxEdge=THUMB_EDGE,ratio=1){
+ const worker=getThumbnailWorker();if(!worker)return makeThumbnailBlob(file,maxEdge,ratio);
  return new Promise((resolve,reject)=>{
   const id=++workerId;workerPending.set(id,{resolve,reject});
-  try{worker.postMessage({id,file,maxEdge:THUMB_SIZE*DPR})}catch(e){workerPending.delete(id);reject(e)}
- }).catch(()=>makeThumbnailBlob(file));
+  try{worker.postMessage({id,file,maxEdge,ratio})}catch(e){workerPending.delete(id);reject(e)}
+ }).catch(()=>makeThumbnailBlob(file,maxEdge,ratio));
 }
 function rememberThumbnail(art,url,bytes){
  if(thumbCache.has(art)){const previous=thumbCache.get(art);if(previous&&previous!==url)URL.revokeObjectURL(previous);thumbCacheBytes-=art.thumbBytes||0;thumbCache.delete(art)}
@@ -289,7 +293,8 @@ function rememberThumbnail(art,url,bytes){
 const supportedImage=file=>Boolean(file&&(/^(?:image\/(?:jpeg|png|webp|avif|gif|bmp|x-ms-bmp))$/i.test(file.type||'')||/\.(?:jpe?g|png|webp|avif|gif|bmp)$/i.test(file.name)));
 const thumbCache=new Map();
 const thumbnailQueue=[];
-let thumbnailWorkers=0;
+const previewCache=new Map(),MAX_PREVIEW_CACHE=3;
+let thumbnailWorkers=0,activePreviewToken=0;
 let activeFullUrl=null;
 function escapeHTML(text){return String(text).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]))}
 function titleFromFile(file){return (file.name.replace(/\.[^.]+$/, '').replace(/[_]+/g,' ').trim()||'Untitled').slice(0,110)}
@@ -341,48 +346,103 @@ async function readAspectsLater(version){
   await new Promise(done=>setTimeout(done,0));
  }
 }
-function scheduleThumbnail(art){
+function thumbnailPriority(m){
+ const sx=(m.rect.x+m.rect.w*.5)*camera.s+camera.x;
+ const sy=(m.rect.y+m.rect.h*.5)*camera.s+camera.y;
+ const visible=intersects(m.rect,canvasCore.viewportBounds(camera,viewport));
+ return (visible?100000:0)-Math.hypot(sx-viewport.w/2,sy-viewport.h/2);
+}
+function queueImageTask(task){
+ thumbnailQueue.push(task);
+ thumbnailQueue.sort((a,b)=>(b.preview?1:0)-(a.preview?1:0)||(b.priority||0)-(a.priority||0));
+ pumpThumbnails();
+}
+function scheduleThumbnail(art,priority=0){
  if(!art.file)return Promise.resolve(photo(art.img,780));
  if(art.thumbUrl){thumbCache.delete(art);thumbCache.set(art,art.thumbUrl);return Promise.resolve(art.thumbUrl)}
- if(art.thumbPromise)return art.thumbPromise;
+ if(art.thumbPromise){
+  for(const task of thumbnailQueue)if(task.art===art&&!task.preview)
+   task.priority=Math.max(task.priority||0,priority);
+  thumbnailQueue.sort((a,b)=>(b.preview?1:0)-(a.preview?1:0)||(b.priority||0)-(a.priority||0));
+  return art.thumbPromise;
+ }
  const version=collectionVersion;
- art.thumbPromise=new Promise((resolve,reject)=>{thumbnailQueue.push({art,version,resolve,reject});pumpThumbnails()});
+ art.thumbPromise=new Promise(resolve=>queueImageTask({art,version,resolve,priority}));
  return art.thumbPromise;
 }
-async function makeThumbnailBlob(file){
+function schedulePreview(art){
+ const cached=previewCache.get(art);
+ if(cached){previewCache.delete(art);previewCache.set(art,cached);return Promise.resolve(cached)}
+ if(art.previewPromise)return art.previewPromise;
+ const version=collectionVersion;
+ art.previewPromise=new Promise(resolve=>queueImageTask({art,version,resolve,preview:true,priority:Infinity}))
+  .then(blob=>{
+   if(version!==collectionVersion||!blob)return null;
+   previewCache.delete(art);previewCache.set(art,blob);
+   while(previewCache.size>MAX_PREVIEW_CACHE)previewCache.delete(previewCache.keys().next().value);
+   return blob;
+  }).finally(()=>{art.previewPromise=null});
+ return art.previewPromise;
+}
+async function makeThumbnailBlob(file,maxEdge=THUMB_EDGE,ratio=1){
  let bitmap;
  try{
-  if(typeof createImageBitmap==='function')bitmap=await createImageBitmap(file,{resizeWidth:THUMB_SIZE*DPR,resizeQuality:'medium'});
-  if(!bitmap)throw Error('ImageBitmap unavailable');
-  const ratio=Math.min(1,THUMB_SIZE/Math.max(bitmap.width,bitmap.height));
-  const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(bitmap.width*ratio));canvas.height=Math.max(1,Math.round(bitmap.height*ratio));
+  if(typeof createImageBitmap!=='function')throw Error('ImageBitmap unavailable');
+  const edge=Math.max(64,Math.min(2048,Math.round(maxEdge)));
+  const resize=Number.isFinite(ratio)&&ratio>0&&ratio<1?{resizeHeight:edge}:{resizeWidth:edge};
+  bitmap=await createImageBitmap(file,{...resize,resizeQuality:'medium'});
+  const scale=Math.min(1,edge/Math.max(bitmap.width,bitmap.height));
+  const canvas=document.createElement('canvas');
+  canvas.width=Math.max(1,Math.round(bitmap.width*scale));
+  canvas.height=Math.max(1,Math.round(bitmap.height*scale));
   const ctx=canvas.getContext('2d',{alpha:false});if(!ctx)throw Error('Canvas unavailable');
   ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);
-  const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/webp',.78));
+  const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/webp',edge>1024?.84:.76));
   if(!blob)throw Error('Cannot encode thumbnail');
   return blob;
- }finally{if(bitmap)bitmap.close()}
+ }finally{bitmap?.close?.()}
 }
 function pumpThumbnails(){
- while(thumbnailWorkers<3&&thumbnailQueue.length){
+ // Bound simultaneous decodes of large originals; main-thread fallback is serial.
+ while(thumbnailWorkers<(workerDisabled||location.protocol==='file:'||!('Worker' in window)||!('OffscreenCanvas' in window)?1:2)&&thumbnailQueue.length){
   const task=thumbnailQueue.shift();
   if(task.version!==collectionVersion){task.resolve(null);continue}
   thumbnailWorkers++;
   (async()=>{
    try{
+    if(task.preview){
+     const key=await getPersistentKey(task.art);
+     if(task.version!==collectionVersion){task.resolve(null);return}
+     const previewKey=key?'p1:'+key:null;
+     let blob=previewKey?await persistentStore.get(previewKey):null;
+     const cached=Boolean(blob);
+     if(task.version!==collectionVersion){task.resolve(null);return}
+     if(!blob)blob=await thumbnailInBackground(task.art.file,PREVIEW_EDGE,task.art.ratio);
+     if(task.version!==collectionVersion){task.resolve(null);return}
+     task.resolve(blob);
+     // Persistent storage is best-effort and capped by the shared 96 MiB budget.
+     if(!cached&&previewKey&&blob?.type==='image/webp')void persistentStore.put(previewKey,blob);
+     return;
+    }
     const key=await getPersistentKey(task.art);
     if(task.version!==collectionVersion){task.resolve(null);return}
     let blob=key?await persistentStore.get(key):null;
     const cacheHit=Boolean(blob);
     if(task.version!==collectionVersion){task.resolve(null);return}
-    if(!blob)blob=await thumbnailInBackground(task.art.file);
+    if(!blob)blob=await thumbnailInBackground(task.art.file,THUMB_EDGE,task.art.ratio);
     if(task.version!==collectionVersion){task.resolve(null);return}
     const url=URL.createObjectURL(blob);rememberThumbnail(task.art,url,blob.size);task.resolve(url);
     if(!cacheHit&&key&&blob.type==='image/webp')void persistentStore.put(key,blob);
    }catch(error){
-    if(task.version===collectionVersion){task.art.thumbFailed=true;console.warn('缩略图生成失败，尝试直接显示原图:',task.art.title,error);
-     const fallback=URL.createObjectURL(task.art.file);rememberThumbnail(task.art,fallback,task.art.file.size);task.resolve(fallback)}
-    else task.resolve(null);
+    if(task.version!==collectionVersion){task.resolve(null);return}
+    if(task.preview){task.resolve(null);return}
+    task.art.thumbFailed=true;
+    console.warn('缩略图生成失败:',task.art.title,error);
+    // Avoid decoding huge originals directly on the visible mosaic as fallback.
+    if(task.art.file.size<=8*1024*1024){
+     const fallback=URL.createObjectURL(task.art.file);
+     rememberThumbnail(task.art,fallback,task.art.file.size);task.resolve(fallback);
+    }else task.resolve(null);
    }finally{thumbnailWorkers--;pumpThumbnails()}
   })();
  }
@@ -399,10 +459,11 @@ function evictThumbnails(){
 function clearThumbnailCache(){
  collectionVersion++;
  for(const [art,url] of thumbCache){URL.revokeObjectURL(url);art.thumbUrl=null;art.thumbPromise=null;art.thumbBytes=0}
- thumbCache.clear();thumbCacheBytes=0;
+ thumbCache.clear();thumbCacheBytes=0;previewCache.clear();
  while(thumbnailQueue.length){thumbnailQueue.shift().resolve(null)}
 }
 function releaseFullImage(){
+ activePreviewToken++;
  if(activeFullUrl){URL.revokeObjectURL(activeFullUrl);activeFullUrl=null}
  for(const node of nodes.values()){node.hi.removeAttribute('src');node.hi.classList.remove('loaded');node.fullRequested=false}
 }
@@ -465,6 +526,8 @@ const BW=12*PITCH,BH=8*PITCH,MAX=220,OVERSCAN=650;
 const CAMERA_HOME={x:34,y:80};
 const ENTRANCE_STAGGER=0.03,ENTRANCE_MAX_DELAY=0.34,ENTRANCE_WINDOW=1100;
 const DPR=Math.max(1,window.devicePixelRatio||1);
+const THUMB_EDGE=Math.min(1024,Math.max(500,Math.round(THUMB_SIZE*Math.min(DPR,2))));
+const PREVIEW_EDGE=Math.min(1600,Math.max(960,Math.round(760*Math.min(DPR,2))));
 const posterWallLayout=window.NOEMAPosterWallLayout,wallMotion=window.NOEMAWallMotion;
 const stage=document.getElementById('stage'),world=document.getElementById('world'),modal=document.getElementById('helpModal');
 const counter=document.getElementById('counter'),coordinates=document.getElementById('coordinates');
@@ -507,14 +570,24 @@ const observer=('IntersectionObserver' in window)?new IntersectionObserver(entri
 async function loadThumbnail(m){
  if(m.thumbRequested)return;m.thumbRequested=true;
  const version=collectionVersion,art=m.art;
- const url=art.file?await scheduleThumbnail(art):photo(art.img,780);
- if(version!==collectionVersion||!m.button.isConnected||m.art!==art){return}
- if(url)setImage(m.low,url);
+ const url=art.file?await scheduleThumbnail(art,thumbnailPriority(m)):photo(art.img,780);
+ if(version!==collectionVersion||!m.button.isConnected||m.art!==art)return;
+ if(url){m.low.loading='eager';setImage(m.low,url)}
 }
 function loadOriginal(m){
- if(m.fullRequested)return;m.fullRequested=true;
- if(m.art.file){releaseFullImage();m.fullRequested=true;activeFullUrl=URL.createObjectURL(m.art.file);setImage(m.hi,activeFullUrl)}
- else setImage(m.hi,photo(m.art.img,1800));
+ if(m.fullRequested)return;
+ m.fullRequested=true;
+ if(!m.art.file){m.hi.loading='eager';setImage(m.hi,photo(m.art.img,1800));return}
+ // A user-clicked tile only needs screen-sized pixels. Full files are decoded
+ // exclusively by the dedicated original-image inspector.
+ const token=++activePreviewToken;
+ void schedulePreview(m.art).then(blob=>{
+  if(!blob||token!==activePreviewToken||active!==m.id||!m.button.isConnected)return;
+  const url=URL.createObjectURL(blob);
+  if(activeFullUrl)URL.revokeObjectURL(activeFullUrl);
+  activeFullUrl=url;
+  m.hi.loading='eager';setImage(m.hi,url);
+ }).catch(error=>console.warn('预览失败，保留缩略图:',error));
 }
 function clearMotionUnderlays(){
  for(const entry of motionUnderlays.values()){
@@ -746,9 +819,10 @@ stage.addEventListener('dblclick',e=>{if(e.target.closest('.m-tile'))return;cons
 const inspector=document.getElementById('inspector');
 const inspectorView=document.getElementById('inspectorViewport');
 const inspectorImage=document.getElementById('inspectorImage');
+const inspectorPreview=document.getElementById('inspectorPreview');
 const inspectorLoading=document.getElementById('inspectorLoading');
 const inspectorPointers=new Map();
-let inspectorIndex=-1,inspectorUrl=null,inspectorToken=0;
+let inspectorIndex=-1,inspectorUrl=null,inspectorPreviewUrl=null,inspectorToken=0,inspectorOriginalLoaded=false;
 let inspectorNatural={w:1,h:1},inspectorFit=1,inspectorZoom=1,inspectorPan={x:0,y:0},inspectorGesture=null;
 let inspectorFocus=null;
 function applyInspector(){
@@ -774,15 +848,29 @@ function inspectorZoomAt(target,clientX,clientY){
  inspectorPan.y=y-(y-inspectorPan.y)*factor;
  inspectorZoom=clamped;applyInspector();
 }
+function clearInspectorPreview(){
+ inspectorPreview.hidden=true;inspectorPreview.removeAttribute('src');
+ inspectorView.classList.remove('has-preview');
+ if(inspectorPreviewUrl){URL.revokeObjectURL(inspectorPreviewUrl);inspectorPreviewUrl=null}
+}
+function setInspectorPreview(blob,token){
+ if(!blob||token!==inspectorToken||inspector.hidden||inspectorOriginalLoaded)return;
+ clearInspectorPreview();
+ inspectorPreviewUrl=URL.createObjectURL(blob);
+ inspectorPreview.src=inspectorPreviewUrl;inspectorPreview.hidden=false;
+ inspectorView.classList.add('has-preview');
+ inspectorLoading.textContent='预览已显示 · 正在加载完整原图';
+}
 function loadInspectorIndex(index){
  if(index<0||index>=artworks.length)return;
  inspectorIndex=index;const art=artworks[index];
  if(inspectorUrl){URL.revokeObjectURL(inspectorUrl);inspectorUrl=null}
  const token=++inspectorToken;
+ inspectorOriginalLoaded=false;clearInspectorPreview();
  inspectorImage.onload=()=>{
   if(token!==inspectorToken||inspector.hidden)return;
   inspectorNatural={w:inspectorImage.naturalWidth||1,h:inspectorImage.naturalHeight||1};
-  inspectorLoading.hidden=true;
+  inspectorOriginalLoaded=true;clearInspectorPreview();inspectorLoading.hidden=true;
   document.getElementById('inspectorMeta').textContent=`${inspectorNatural.w} × ${inspectorNatural.h} PX · ${art.file?((art.file.size/1024/1024).toFixed(1)+' MB'):'NOEMA ARCHIVE'}`;
   inspectorFitToView();
  };
@@ -792,8 +880,15 @@ function loadInspectorIndex(index){
  inspectorImage.alt=art.title;
  document.getElementById('inspectorTitle').textContent=art.title;
  document.getElementById('inspectorCount').textContent=`${index+1} / ${artworks.length}`;
- if(art.file){inspectorUrl=URL.createObjectURL(art.file);inspectorImage.src=inspectorUrl}
- else inspectorImage.src=photo(art.img,1800);
+ if(art.file){
+  // A small image paints immediately while the original decodes.
+  if(art.thumbUrl){inspectorPreview.src=art.thumbUrl;inspectorPreview.hidden=false;inspectorView.classList.add('has-preview')}
+  const cached=previewCache.get(art);
+  if(cached)setInspectorPreview(cached,token);
+  else void schedulePreview(art).then(blob=>setInspectorPreview(blob,token)).catch(()=>{});
+  inspectorUrl=URL.createObjectURL(art.file);
+  inspectorImage.src=inspectorUrl;
+ }else inspectorImage.src=photo(art.img,1800);
  // Keep gallery selection and camera in sync with inspector navigation.
  if(localMode){
   const slot=imageSlotForIndex(index);
@@ -814,6 +909,7 @@ function closeInspector(){
  inspectorToken++;
  inspector.hidden=true;inspectorPointers.clear();inspectorGesture=null;
  inspectorImage.onload=null;inspectorImage.onerror=null;inspectorImage.removeAttribute('src');
+ clearInspectorPreview();
  if(inspectorUrl){URL.revokeObjectURL(inspectorUrl);inspectorUrl=null}
  stage.inert=false;chrome.inert=false;
  const target=inspectorFocus?.isConnected?inspectorFocus:document.getElementById('inspectBtn');
@@ -923,7 +1019,7 @@ document.getElementById('clearCacheBtn').addEventListener('click',async e=>{
  cacheClearing=true;const button=e.currentTarget;button.setAttribute('aria-busy','true');
  try{
   const success=Boolean(await persistentStore?.clear());
-  notify(success?'已清除保存在此浏览器中的缩略图，当前图库保持不变':'无法清除缓存，可能是浏览器限制');
+  if(success)previewCache.clear();notify(success?'已清除持久缩略图及预览图缓存，当前图库保持不变':'无法清除缓存，可能是浏览器限制');
   if(!modal.hidden)await refreshCacheStatus();
  }finally{cacheClearing=false;button.removeAttribute('aria-busy')}
 });

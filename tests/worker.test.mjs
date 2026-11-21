@@ -61,3 +61,50 @@ test('cache maintains a count and a compressed-byte budget',()=>{
   assert.match(html,/thumbCacheBytes\+=bytes/);
   assert.match(html,/thumbCacheBytes-=art\.thumbBytes\|\|0/);
 });
+
+
+test('large portrait photos are downsampled by height before canvas allocation',async()=>{
+ const posts=[],requested=[],canvases=[];let closed=false;
+ class FakeCanvas{
+  constructor(width,height){canvases.push({width,height})}
+  getContext(){return {drawImage(){}}}
+  async convertToBlob(){return {size:31000,type:'image/webp'}}
+ }
+ const sandbox={
+  self:{postMessage(message){posts.push(message)}},
+  createImageBitmap:async(file,opts)=>{
+   requested.push(opts);
+   return {width:450,height:900,close(){closed=true}};
+  },
+  OffscreenCanvas:FakeCanvas,Math,Number,Error
+ };
+ vm.runInNewContext(workerSource,sandbox);
+ await sandbox.self.onmessage({data:{id:9,file:{name:'80-megapixel.jpg'},maxEdge:900,ratio:.5}});
+ assert.equal(requested.length,1);
+ assert.equal(requested[0].resizeHeight,900,'portrait input bounds the long edge');
+ assert.equal(requested[0].resizeWidth,undefined);
+ assert.deepEqual(canvases,[{width:450,height:900}]);
+ assert.equal(posts[0].blob.type,'image/webp');
+ assert.ok(closed);
+});
+
+test('worker clamps unreasonable preview sizes to avoid giant canvas allocations',async()=>{
+ let opts;
+ const posts=[];
+ class FakeCanvas{
+  constructor(width,height){assert.ok(width<=2048&&height<=2048)}
+  getContext(){return {drawImage(){}}}
+  async convertToBlob(){return {size:1000,type:'image/webp'}}
+ }
+ const sandbox={
+  self:{postMessage(message){posts.push(message)}},
+  createImageBitmap:async(file,options)=>{
+   opts=options;return {width:2048,height:2048,close(){}};
+  },
+  OffscreenCanvas:FakeCanvas,Math,Number,Error
+ };
+ vm.runInNewContext(workerSource,sandbox);
+ await sandbox.self.onmessage({data:{id:11,file:{name:'large.png'},maxEdge:12000,ratio:1.6}});
+ assert.equal(opts.resizeWidth,2048);
+ assert.equal(posts[0].error,undefined);
+});
