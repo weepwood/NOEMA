@@ -404,7 +404,7 @@ async function makeThumbnailBlob(file,maxEdge=THUMB_EDGE,ratio=1){
 }
 function pumpThumbnails(){
  // Bound simultaneous decodes of large originals; main-thread fallback is serial.
- while(thumbnailWorkers<(workerDisabled?1:2)&&thumbnailQueue.length){
+ while(thumbnailWorkers<(workerDisabled||location.protocol==='file:'||!('Worker' in window)||!('OffscreenCanvas' in window)?1:2)&&thumbnailQueue.length){
   const task=thumbnailQueue.shift();
   if(task.version!==collectionVersion){task.resolve(null);continue}
   thumbnailWorkers++;
