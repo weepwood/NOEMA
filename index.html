@@ -411,8 +411,17 @@ function pumpThumbnails(){
   (async()=>{
    try{
     if(task.preview){
-     const blob=await thumbnailInBackground(task.art.file,PREVIEW_EDGE,task.art.ratio);
-     task.resolve(task.version===collectionVersion?blob:null);
+     const key=await getPersistentKey(task.art);
+     if(task.version!==collectionVersion){task.resolve(null);return}
+     const previewKey=key?'p1:'+key:null;
+     let blob=previewKey?await persistentStore.get(previewKey):null;
+     const cached=Boolean(blob);
+     if(task.version!==collectionVersion){task.resolve(null);return}
+     if(!blob)blob=await thumbnailInBackground(task.art.file,PREVIEW_EDGE,task.art.ratio);
+     if(task.version!==collectionVersion){task.resolve(null);return}
+     task.resolve(blob);
+     // Persistent storage is best-effort and capped by the shared 96 MiB budget.
+     if(!cached&&previewKey&&blob?.type==='image/webp')void persistentStore.put(previewKey,blob);
      return;
     }
     const key=await getPersistentKey(task.art);
