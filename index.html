@@ -22,10 +22,9 @@
 /* Reflow frames can temporarily expose parts of the cell; a short-lived
    screenshot-like underlay uses the previous full mosaic to avoid black flashes.
    It is behind the moving cells and removed once their spring has settled. */
-.focus-underlay{position:absolute;z-index:1;overflow:hidden;pointer-events:none;opacity:1}
-.focus-underlay.is-settled{opacity:0;transition:opacity .18s ease-out}
-.focus-underlay .ghost-cell{position:absolute;overflow:hidden;background:#242321}
-.focus-underlay .ghost-cell img{width:100%;height:100%;display:block;object-fit:cover;pointer-events:none}
+/* The opaque block occluder prevents moving tiles from exposing old photos through gaps. */
+.focus-underlay{position:absolute;z-index:4;overflow:hidden;pointer-events:none;background:#070707;opacity:1}
+.m-tile.is-reflowing{z-index:6}
 /* Internal art parallax lets nearby tiles react without ever moving the mosaic cells. */
 .stage.has-selection .m-tile.is-near-focus img{transform:translate3d(var(--focus-dx,0px),var(--focus-dy,0px),0) scale(1.06)}
 .m-tile .tile-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.13) 0%,transparent 37%,rgba(0,0,0,.12) 55%,rgba(0,0,0,.80) 100%);pointer-events:none}
@@ -522,49 +521,44 @@ function clearMotionUnderlays(){
   clearTimeout(entry.timer);entry.el.remove();
  }
  motionUnderlays.clear();
+ for(const m of nodes.values())m.button.classList.remove('is-reflowing');
 }
+// An opaque occluder, NOT a snapshot of the old posters. It sits above
+// ordinary tiles and below the moving tiles for the duration of reflow.
 function holdMotionUnderlay(chosen){
  if(!chosen)return;
  const key=`${chosen.bx}:${chosen.by}`;
  const previous=motionUnderlays.get(key);
  if(previous){
   clearTimeout(previous.timer);
-  previous.timer=0;previous.el.classList.remove('is-settled');
+  previous.timer=0;
   return;
  }
  const layer=document.createElement('div');
  layer.className='focus-underlay';
  layer.setAttribute('aria-hidden','true');
  layer.style.cssText=`left:${chosen.bx*BW}px;top:${chosen.by*BH}px;width:${BW}px;height:${BH}px`;
- for(const m of nodes.values()){
-  if(m.bx!==chosen.bx||m.by!==chosen.by)continue;
-  const ghost=document.createElement('div');
-  ghost.className='ghost-cell';
-  const t=m.rect;
-  ghost.style.cssText=`left:${t.x-chosen.bx*BW}px;top:${t.y-chosen.by*BH}px;width:${t.w}px;height:${t.h}px;background:${m.art.color||'#242321'}`;
-  const src=m.low.getAttribute('src')||(!m.art.file?photo(m.art.img,780):null);
-  if(src){
-   const img=document.createElement('img');
-   img.src=src;img.alt='';img.decoding='async';
-   ghost.appendChild(img);
-  }
-  layer.appendChild(ghost);
- }
  world.prepend(layer);
  motionUnderlays.set(key,{key,bx:chosen.bx,by:chosen.by,el:layer,timer:0});
 }
 function settleMotionUnderlays(){
  for(const entry of motionUnderlays.values()){
   if(entry.timer)continue;
+  const selected=active&&nodes.get(active);
+  // Keep the mask during the expanded state as well as while moving.
+  if(selected&&selected.bx===entry.bx&&selected.by===entry.by)continue;
   const members=[...nodes.values()].filter(m=>m.bx===entry.bx&&m.by===entry.by);
-  const stillMoving=members.some(m=>['x','y','w','h'].some(p=>
+  const moving=members.some(m=>['x','y','w','h'].some(p=>
    Math.abs(m.cur[p]-m.goal[p])>.08||Math.abs(m.vel[p])>.08));
-  if(stillMoving)continue;
-  entry.el.classList.add('is-settled');
+  if(moving)continue;
   entry.timer=setTimeout(()=>{
    if(motionUnderlays.get(entry.key)!==entry)return;
    entry.el.remove();motionUnderlays.delete(entry.key);
-  },200);
+   const current=active&&nodes.get(active);
+   if(current&&current.bx===entry.bx&&current.by===entry.by)return;
+   for(const m of nodes.values())if(m.bx===entry.bx&&m.by===entry.by)
+    m.button.classList.remove('is-reflowing');
+  },120);
  }
 }
 function waveDelay(rect){
@@ -617,6 +611,7 @@ function updateGoals(){
   const sameBlock=chosen&&m.bx===chosen.bx&&m.by===chosen.by;
   m.goal=mine&&activeFocusRect&&!activeReflow?activeFocusRect:sameBlock&&activeReflow?blockReflowRect(m.bx,m.by,activeReflow[m.slot]):m.rect;
   m.button.classList.toggle('is-active',mine);
+  m.button.classList.toggle('is-reflowing',Boolean(sameBlock||motionUnderlays.has(`${m.bx}:${m.by}`)));
   if(m.button.getAttribute('aria-expanded')!==String(mine))m.button.setAttribute('aria-expanded',String(mine));
   if(mine)loadOriginal(m);
  }
