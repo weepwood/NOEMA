@@ -40,6 +40,7 @@
 
  function cubicBezier(position){
   const p=clamp(position,0,1);
+  if(p===0||p===1)return p;
   // Ease 0.22,1,0.36,1: solve the x coordinate by binary search.
   const cubic=(t,a,b)=>3*(1-t)*(1-t)*t*a+3*(1-t)*t*t*b+t*t*t;
   let lo=0,hi=1;
