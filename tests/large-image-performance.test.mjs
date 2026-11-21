@@ -54,6 +54,9 @@ test('a clicked local tile loads a bounded preview rather than full-resolution o
  assert.match(script,/activePreviewToken\+\+/);
  assert.match(script,/thumbnailWorkers<\(workerDisabled\|\|location\.protocol==='file:'/);
  assert.match(script,/task\.art\.file\.size<=8\*1024\*1024/);
+ assert.match(script,/const previewKey=key\?'p1:'\+key:null/);
+ assert.match(script,/persistentStore\.get\(previewKey\)/);
+ assert.match(script,/persistentStore\.put\(previewKey,blob\)/);
 });
 
 test('full-resolution inspector displays a preview then the original image',()=>{
