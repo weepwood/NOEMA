@@ -125,14 +125,21 @@ test('real page bootstrap, first paint, selection, controls and keyboard navigat
   });
   // This module runs before the inline page code in the actual HTML.
   vm.runInContext(fs.readFileSync(path.join(root, 'src/posterwall-layout.js'), 'utf8'), context);
+  vm.runInContext(fs.readFileSync(path.join(root, 'src/wall-motion.js'), 'utf8'), context);
   vm.runInContext(inlineScript, context, { timeout: 2000 });
   for (let i = 0; i < 3 && queuedFrames.length; i++) queuedFrames.shift()(16 * (i + 1));
   const wall = getNode('world');
   const tiles = wall.children.filter(child => child.className === 'm-tile');
   assert.ok(tiles.length > 0, 'the initial view creates visible tiles');
   const tile = tiles[0];
+  const scaleBefore=Number(getNode('world').style.transform.match(/scale\(([^)]+)\)/)[1]);
   tile.dispatch('click', { detail: 0 });
   assert.equal(tile.getAttribute('aria-expanded'), 'true', 'selection expands the clicked tile');
+  let time=48;
+  for(let i=0;i<40&&queuedFrames.length;i++)queuedFrames.shift()(time+=16);
+  const scaleAfter=Number(getNode('world').style.transform.match(/scale\(([^)]+)\)/)[1]);
+  assert.ok(Math.abs(scaleBefore-scaleAfter)<1e-8,'expanding a poster never zooms the wall');
+  assert.ok(parseFloat(tile.style.width)>500,'the selected poster expands into the 6x6 gear');
   getNode('closeBtn').dispatch('click');
   assert.equal(tile.getAttribute('aria-expanded'), 'false', 'close restores the wall');
   getNode('plusBtn').dispatch('click');
