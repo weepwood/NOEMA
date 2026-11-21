@@ -53,6 +53,7 @@ function runLocalCase(totalImages,focusIndex) {
  const selection={add(){},remove(){}};
  Object.assign(env,{
   localMode:true,nodes,active:null,activeReflow:null,TEMPLATE:template,
+  camera:{x:0,y:0,s:.76},cameraGoal:{x:0,y:0,s:.76},cameraFlight:null,
   posterWallLayout:layout,artworks:images,motionUnderlays:new Map(),
   ensureFocusBlock(){},holdMotionUnderlay(){},releaseFullImage(){},
   loadOriginal(){},focusRestore:null,
