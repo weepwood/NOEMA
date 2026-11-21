@@ -79,6 +79,8 @@
 
 /* Local galleries place the photograph first; metadata appears on intent, not continuously. */
 .local-collection .m-tile:not(.is-active) .tile-shade{opacity:.30;transition:opacity .24s ease}
+/* Match the demo's focus contrast while retaining the local gallery's quiet idle state. */
+.local-collection .stage.has-selection .m-tile:not(.is-active) .tile-shade{opacity:1}
 .local-collection .m-tile:not(.is-active) .tile-info{opacity:0;transform:translateY(9px);transition:opacity .24s ease,transform .24s ease}
 .local-collection .m-tile:not(.is-active):is(:hover,:focus-visible) .tile-info{opacity:1;transform:none}
 .local-collection .m-tile:not(.is-active):is(:hover,:focus-visible) .tile-shade{opacity:1}
@@ -537,7 +539,7 @@ let noticeTimer=0;function notify(message){sceneStatus.textContent=message;notic
 const motion=window.matchMedia('(prefers-reduced-motion: reduce)');
 const nodes=new Map(),pointers=new Map(),motionUnderlays=new Map();
 let viewport={w:innerWidth,h:innerHeight};
-let camera={x:0,y:0,s:.76},cameraGoal={...camera},cameraFlight=null,last=0,raf=0,active=null,activeReflow=null,activeFocusRect=null,focusRestore=null;
+let camera={x:0,y:0,s:.76},cameraGoal={...camera},cameraFlight=null,last=0,raf=0,active=null,activeReflow=null,focusRestore=null;
 let drag=null,pinch=null,coastRaf=null,initialized=false,keepPlaying=false,lastCull=null,lastModalFocus=null;
 let cullRuns=0,lastCandidateCount=0,lastClippedCount=0;
 // Wave state
@@ -557,7 +559,7 @@ function artIndex(bx,by,i){
 }
 function start(){if(!raf)raf=requestAnimationFrame(frame)}
 function zoomAt(factor,px,py){cameraFlight=null;camera=canvasCore.anchoredZoom(camera,factor,px,py,.40,1.9);cameraGoal={...camera};updateGoals();updateCamera();start()}
-function reset(animate=true){cameraFlight=null;activeFocusRect=null;if(active){const old=nodes.get(active);if(old)holdMotionUnderlay(old);releaseFullImage()}const s=viewport.w<700?.70:viewport.w<1150?.76:.84;const single=localMode&&artworks.length===1?imageSlotForIndex(0)?.rect:null;const x=single?viewport.w/2-(single.x+single.w/2)*s:localMode?Math.max(20,viewport.w*.12):viewport.w*.5-BW*.46*s,y=single?viewport.h/2-(single.y+single.h/2)*s:localMode?Math.max(70,viewport.h*.10):viewport.h*.5-BH*.45*s;active=null;activeReflow=null;stage.classList.remove('has-selection');document.getElementById('closeBtn').tabIndex=-1;document.getElementById('inspectBtn').tabIndex=-1;sceneStatus.textContent='已返回画布中心';counter.innerHTML=`01<span style="font-size:.42em;color:#ffffff66"> / ${localMode?artworks.length:'∞'}</span>`;updateGoals();cameraGoal={x,y,s};if(motion.matches||!animate)camera={...cameraGoal};updateCamera();start()}
+function reset(animate=true){cameraFlight=null;if(active){const old=nodes.get(active);if(old)holdMotionUnderlay(old);releaseFullImage()}const s=viewport.w<700?.70:viewport.w<1150?.76:.84;const single=localMode&&artworks.length===1?imageSlotForIndex(0)?.rect:null;const x=single?viewport.w/2-(single.x+single.w/2)*s:localMode?Math.max(20,viewport.w*.12):viewport.w*.5-BW*.46*s,y=single?viewport.h/2-(single.y+single.h/2)*s:localMode?Math.max(70,viewport.h*.10):viewport.h*.5-BH*.45*s;active=null;activeReflow=null;stage.classList.remove('has-selection');document.getElementById('closeBtn').tabIndex=-1;document.getElementById('inspectBtn').tabIndex=-1;sceneStatus.textContent='已返回画布中心';counter.innerHTML=`01<span style="font-size:.42em;color:#ffffff66"> / ${localMode?artworks.length:'∞'}</span>`;updateGoals();cameraGoal={x,y,s};if(motion.matches||!animate)camera={...cameraGoal};updateCamera();start()}
 function updateCamera(){world.style.transform=`translate3d(${camera.x}px,${camera.y}px,0) scale(${camera.s})`;if(coordinates)coordinates.textContent=`X ${slugNum(Math.round(-camera.x/camera.s))} — Y ${slugNum(Math.round(-camera.y/camera.s))} · ${String(Math.round(camera.s*100)).padStart(3,'0')}%`}
 function setImage(img,src){
  img.onload=async()=>{
@@ -682,7 +684,7 @@ function updateGoals(){
  for(const m of nodes.values()){
   const mine=m.id===active;
   const sameBlock=chosen&&m.bx===chosen.bx&&m.by===chosen.by;
-  m.goal=mine&&activeFocusRect&&!activeReflow?activeFocusRect:sameBlock&&activeReflow?blockReflowRect(m.bx,m.by,activeReflow[m.slot]):m.rect;
+  m.goal=sameBlock&&activeReflow?blockReflowRect(m.bx,m.by,activeReflow[m.slot]):m.rect;
   m.button.classList.toggle('is-active',mine);
   m.button.classList.toggle('is-reflowing',Boolean(sameBlock||motionUnderlays.has(`${m.bx}:${m.by}`)));
   if(m.button.getAttribute('aria-expanded')!==String(mine))m.button.setAttribute('aria-expanded',String(mine));
@@ -740,22 +742,17 @@ function select(id){if(!nodes.has(id))return;const already=active===id;if(alread
  ensureFocusBlock(m);
  holdMotionUnderlay(m);
  active=id;
- // In a sparse local block, there are not enough images to fill a 12-slot reflow.
- const complete=!localMode||TEMPLATE.every((_,i)=>localArtIndex(m.bx,m.by,i)>=0);
- activeReflow=complete?posterWallLayout.reflow(TEMPLATE,m.bx,m.by,m.slot):null;
- const edge=6*PITCH-GAP;
- const expanded=activeReflow?blockReflowRect(m.bx,m.by,activeReflow[m.slot]):{
-  x:clamp(m.rect.x+(m.rect.w-edge)/2,m.bx*BW,(m.bx+1)*BW-edge),
-  y:clamp(m.rect.y+(m.rect.h-edge)/2,m.by*BH,(m.by+1)*BH-edge),
-  w:edge,h:edge
- };
- activeFocusRect=expanded;
+ // Demo and local folders share the same exact-cover reflow. A partially
+ // populated local block simply has vacant seats; its existing posters still
+ // move to the corresponding reflow goals instead of overlapping the focus.
+ activeReflow=posterWallLayout.reflow(TEMPLATE,m.bx,m.by,m.slot);
+ const expanded=blockReflowRect(m.bx,m.by,activeReflow[m.slot]);
  stage.classList.add('has-selection');document.getElementById('closeBtn').tabIndex=0;document.getElementById('inspectBtn').tabIndex=0;
  flyToFocus(expanded);
  counter.innerHTML=`${String(artworks.indexOf(m.art)+1).padStart(2,'0')}<span style="font-size:.42em;color:#ffffff66"> / ${localMode?artworks.length:'∞'}</span>`;sceneStatus.textContent=`已展开 ${m.art.title}。按 Escape 收起作品。`;
  updateGoals();start()
 }
-function close(){if(!active)return;holdMotionUnderlay(nodes.get(active));releaseFullImage();cameraFlight=null;cameraGoal={...camera};active=null;activeReflow=null;activeFocusRect=null;stage.classList.remove('has-selection');document.getElementById('closeBtn').tabIndex=-1;document.getElementById('inspectBtn').tabIndex=-1;updateGoals();counter.innerHTML=`01<span style="font-size:.42em;color:#ffffff66"> / ${localMode?artworks.length:'∞'}</span>`;if(focusRestore?.isConnected)focusRestore.focus({preventScroll:true});else stage.focus({preventScroll:true});focusRestore=null;sceneStatus.textContent='作品已收起';start()}
+function close(){if(!active)return;holdMotionUnderlay(nodes.get(active));releaseFullImage();cameraFlight=null;cameraGoal={...camera};active=null;activeReflow=null;stage.classList.remove('has-selection');document.getElementById('closeBtn').tabIndex=-1;document.getElementById('inspectBtn').tabIndex=-1;updateGoals();counter.innerHTML=`01<span style="font-size:.42em;color:#ffffff66"> / ${localMode?artworks.length:'∞'}</span>`;if(focusRestore?.isConnected)focusRestore.focus({preventScroll:true});else stage.focus({preventScroll:true});focusRestore=null;sceneStatus.textContent='作品已收起';start()}
 function spring(m,dt){
  let moving=false,changed=false;
  for(const key of ['x','y','w','h']){
