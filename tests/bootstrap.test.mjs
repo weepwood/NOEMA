@@ -155,4 +155,15 @@ test('real page bootstrap, first paint, selection, controls and keyboard navigat
   getNode('homeBtn').dispatch('click');
   doc.dispatch('keydown', { key: 'ArrowRight' });
   assert.ok(doc.activeElement, 'keyboard focus-walk selects a poster');
+  const app=getNode('app'),modeButton=getNode('immersiveBtn');
+  modeButton.dispatch('click');
+  assert.ok(app.classList.contains('is-immersive'), 'immersive button hides the chrome');
+  assert.equal(modeButton.getAttribute('aria-pressed'),'true','button exposes pressed state');
+  assert.equal(modeButton.querySelector('use').getAttribute('href'),'#lucide-shrink');
+  doc.dispatch('keydown',{key:'Escape'});
+  assert.ok(!app.classList.contains('is-immersive'),'Escape exits image-only mode');
+  doc.dispatch('keydown',{key:'f'});
+  assert.ok(app.classList.contains('is-immersive'),'F enters immersive mode');
+  doc.dispatch('keydown',{key:'f'});
+  assert.ok(!app.classList.contains('is-immersive'),'F toggles back to normal');
 });
