@@ -62,15 +62,23 @@ test('re-gearing stays within its own block and the other blocks retain their se
  }
 });
 
-test('transition underlay exists only during reflow and releases on settle or gallery switch',()=>{
+test('a solid opaque reflow occluder prevents old image content leaking through moving gaps',()=>{
  assert.match(source,/function holdMotionUnderlay\(chosen\)/);
  assert.match(source,/function settleMotionUnderlays\(\)/);
  assert.match(source,/function clearMotionUnderlays\(\)/);
  assert.match(source,/world\.prepend\(layer\)/);
  assert.match(source,/layer\.setAttribute\('aria-hidden','true'\)/);
  assert.match(source,/if\(motionUnderlays\.size\)settleMotionUnderlays\(\)/);
- assert.match(html,/\.focus-underlay\{position:absolute;z-index:1/);
+ // The opaque layer must be above other tiles and below reflowed tiles.
+ assert.match(html,/\.focus-underlay\{position:absolute;z-index:4;[^}]*background:#070707;opacity:1\}/);
  assert.match(html,/\.m-tile\{position:absolute;z-index:2/);
+ assert.match(html,/\.m-tile\.is-reflowing\{z-index:6\}/);
+ assert.match(source,/classList\.toggle\('is-reflowing'/);
+ // Until the selected block closes, its opaque mask cannot be released.
+ assert.match(source,/selected&&selected\.bx===entry\.bx&&selected\.by===entry\.by/);
+ // No stale image or cell screenshot can appear behind the moving tiles.
+ assert.doesNotMatch(source,/ghost-cell|ghost\.appendChild|layer\.appendChild\(ghost\)/);
+ assert.doesNotMatch(html,/\.focus-underlay \.ghost-cell/);
 });
 
 test('20k local images map to 20k distinct slots without wrapping',()=>{
