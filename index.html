@@ -1019,7 +1019,7 @@ document.getElementById('clearCacheBtn').addEventListener('click',async e=>{
  cacheClearing=true;const button=e.currentTarget;button.setAttribute('aria-busy','true');
  try{
   const success=Boolean(await persistentStore?.clear());
-  notify(success?'已清除保存在此浏览器中的缩略图，当前图库保持不变':'无法清除缓存，可能是浏览器限制');
+  if(success)previewCache.clear();notify(success?'已清除持久缩略图及预览图缓存，当前图库保持不变':'无法清除缓存，可能是浏览器限制');
   if(!modal.hidden)await refreshCacheStatus();
  }finally{cacheClearing=false;button.removeAttribute('aria-busy')}
 });
