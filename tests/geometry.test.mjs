@@ -12,48 +12,65 @@ assert.ok(source);
 const raw=source.match(/const TEMPLATE=\[([\s\S]*?)\];/)?.[1];
 assert.ok(raw);
 const template=vm.runInNewContext('['+raw+']');
-const focusStart=source.indexOf('function focusParallax(');
-const focusEnd=source.indexOf('\nfunction updateGoals()',focusStart);
-assert.ok(focusStart>=0&&focusEnd>focusStart);
-const focusParallax=vm.runInNewContext(source.slice(focusStart,focusEnd)+';focusParallax;');
+const context={window:{}};
+vm.runInNewContext(fs.readFileSync(path.join(root,'src/posterwall-layout.js'),'utf8'),context);
+const layout=context.window.NOEMAPosterWallLayout;
 const gap=6,pitch=127,bw=12*pitch,bh=8*pitch;
-const rect=(bx,by,i)=>{
- const t=template[i];return{x:bx*bw+t.x*pitch,y:by*bh+t.y*pitch,w:t.w*pitch-gap,h:t.h*pitch-gap};
+const rect=(bx,by,slot)=>{
+ const t=layout.orient(template,bx,by)[slot];
+ return{x:bx*bw+t.x*pitch,y:by*bh+t.y*pitch,w:t.w*pitch-gap,h:t.h*pitch-gap};
 };
-const overlap=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
+const overlaps=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
 
-test('portrait and landscape slots coexist in a gap-free 12x8 block',()=>{
+test('the NOEMA twelve-poster base template fills every cell in its 12x8 block',()=>{
+ assert.equal(template.length,12);
  assert.ok(template.some(t=>t.h>=t.w*1.5));
  assert.ok(template.some(t=>t.w>=t.h*1.5));
- const cover=Array.from({length:8},()=>Array(12).fill(0));
- for(const t of template)for(let y=t.y;y<t.y+t.h;y++)for(let x=t.x;x<t.x+t.w;x++)cover[y][x]++;
- assert.ok(cover.every(row=>row.every(x=>x===1)));
-});
-
-test('selected poster overlays a continuous stationary mosaic instead of leaving black strips',()=>{
- assert.ok(source.includes('m.goal=mine&&exp?exp:m.rect'))
- assert.ok(html.includes('.m-tile.is-active{z-index:8'))
- assert.ok(html.includes('object-fit:cover'))
- const all=[];
- for(let by=-2;by<=2;by++)for(let bx=-2;bx<=2;bx++)for(let i=0;i<template.length;i++)
-  all.push({id:bx+':'+by+':'+i,...rect(bx,by,i)});
- for(let i=0;i<all.length;i++)for(let j=i+1;j<all.length;j++)
-  assert.ok(!overlap(all[i],all[j]),'base mosaic must not overlap');
- for(const chosen of all.filter(t=>t.id.startsWith('0:0:'))){
-  const expanded={x:chosen.x-250,y:chosen.y-200,w:chosen.w+500,h:chosen.h+400};
-  assert.ok(all.some(t=>t.id!==chosen.id&&overlap(expanded,t)), 'focus overlays its neighbors');
+ for(const [bx,by] of [[0,0],[1,0],[0,1],[-1,-2],[3,4]]){
+  assert.equal(layout.exactCover(layout.orient(template,bx,by)),true);
  }
 });
 
-test('nearby artwork parallax remains inside its tile and distant tiles remain untouched',()=>{
- const expanded={x:0,y:0,w:690,h:530},near={x:680,y:180,w:230,h:190};
- const drift=focusParallax(near,expanded);
- assert.ok(drift);
- assert.ok(Math.abs(drift.x)<=Math.min(9,near.w*.018)+1e-9);
- assert.ok(Math.abs(drift.y)<=Math.min(9,near.h*.018)+1e-9);
- assert.equal(focusParallax({x:5000,y:5000,w:230,h:190},expanded),null);
- assert.ok(html.includes('.stage.has-selection .m-tile.is-near-focus img{'))
- assert.ok(source.includes("style.removeProperty('--focus-dx')"))
+test('each of twelve expanded slots exact-covers the same fixed block at every orientation',()=>{
+ for(const [bx,by] of [[0,0],[1,0],[0,1],[-1,-2],[3,4]]){
+  for(let focus=0;focus<template.length;focus++){
+   const grown=layout.reflow(template,bx,by,focus);
+   assert.equal(grown.length,12);
+   assert.equal(layout.exactCover(grown),true,`block ${bx},${by}, focus ${focus}`);
+   assert.equal(grown[focus].w,6);assert.equal(grown[focus].h,6);
+   const original=layout.orient(template,bx,by);
+   assert.ok(grown.some((s,i)=>i!==focus&&(s.x!==original[i].x||s.y!==original[i].y||s.w!==original[i].w||s.h!==original[i].h)),
+     'surrounding posters must actually reflow');
+   const rectangles=grown.map(s=>({x:bx*bw+s.x*pitch,y:by*bh+s.y*pitch,w:s.w*pitch-gap,h:s.h*pitch-gap}));
+   for(let i=0;i<12;i++)for(let j=i+1;j<12;j++){
+    assert.ok(!overlaps(rectangles[i],rectangles[j]),`collision ${bx},${by}, focus ${focus}`);
+   }
+  }
+ }
+});
+
+test('re-gearing stays within its own block and the other blocks retain their seats',()=>{
+ assert.match(source,/blockReflowRect\(m\.bx,m\.by,activeReflow\[m\.slot\]\)/);
+ assert.match(source,/m\.bx===chosen\.bx&&m\.by===chosen\.by/);
+ assert.match(source,/ensureFocusBlock\(m\)/);
+ assert.match(source,/posterWallLayout\.reflow\(TEMPLATE,m\.bx,m\.by,m\.slot\)/);
+ assert.doesNotMatch(source,/resolveReflow|focusParallax/);
+ for(const index of [0,3,5,11]){
+  const before=rect(1,1,index);
+  const after=rect(1,1,index);
+  assert.deepEqual(after,before);
+ }
+});
+
+test('transition underlay exists only during reflow and releases on settle or gallery switch',()=>{
+ assert.match(source,/function holdMotionUnderlay\(chosen\)/);
+ assert.match(source,/function settleMotionUnderlays\(\)/);
+ assert.match(source,/function clearMotionUnderlays\(\)/);
+ assert.match(source,/world\.prepend\(layer\)/);
+ assert.match(source,/layer\.setAttribute\('aria-hidden','true'\)/);
+ assert.match(source,/if\(motionUnderlays\.size\)settleMotionUnderlays\(\)/);
+ assert.match(html,/\.focus-underlay\{position:absolute;z-index:1/);
+ assert.match(html,/\.m-tile\{position:absolute;z-index:2/);
 });
 
 test('20k local images map to 20k distinct slots without wrapping',()=>{

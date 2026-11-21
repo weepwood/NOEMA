@@ -12,17 +12,24 @@
 .stage{position:absolute;inset:0;overflow:hidden;cursor:grab;touch-action:none;outline:0;background:#070707}
 .stage.is-dragging{cursor:grabbing}
 .world{position:absolute;left:0;top:0;width:0;height:0;transform-origin:0 0;will-change:transform}
-.m-tile{position:absolute;margin:0;padding:0;display:block;background:#21201c;border:0;border-radius:0;overflow:hidden;color:#fff;text-align:left;cursor:pointer;isolation:isolate;appearance:none;transform:translateZ(0);contain:layout style paint;outline-offset:-4px}
+.m-tile{position:absolute;z-index:2;margin:0;padding:0;display:block;background:#21201c;border:0;border-radius:0;overflow:hidden;color:#fff;text-align:left;cursor:pointer;isolation:isolate;appearance:none;transform:translateZ(0);contain:layout style paint;outline-offset:-4px}
 .m-tile .tile-art{position:absolute;inset:0;background:var(--fallback,linear-gradient(145deg,#31312d,#131515));overflow:hidden}
 .m-tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;user-select:none;-webkit-user-drag:none;pointer-events:none;transition:transform .65s cubic-bezier(.18,.68,.24,1),opacity .4s ease;opacity:0}
 .m-tile img.loaded{opacity:1}.m-tile img.hi-res{opacity:0;transition:opacity .35s ease}.m-tile img.hi-res.loaded{opacity:1}
-.m-tile:hover,.m-tile:focus-visible{transform:translateZ(0) scale(1.045);z-index:2}
+.m-tile:hover,.m-tile:focus-visible{transform:translateZ(0) scale(1.045);z-index:3}
 .m-tile.is-focus-ring{outline:2px solid var(--paper);outline-offset:4px}
+/* Reflow frames can temporarily expose parts of the cell; a short-lived
+   screenshot-like underlay uses the previous full mosaic to avoid black flashes.
+   It is behind the moving cells and removed once their spring has settled. */
+.focus-underlay{position:absolute;z-index:1;overflow:hidden;pointer-events:none;opacity:.78;filter:brightness(.72) saturate(.86)}
+.focus-underlay.is-settled{opacity:0;transition:opacity .18s ease-out}
+.focus-underlay .ghost-cell{position:absolute;overflow:hidden;background:#242321}
+.focus-underlay .ghost-cell img{width:100%;height:100%;display:block;object-fit:cover;pointer-events:none}
 /* Internal art parallax lets nearby tiles react without ever moving the mosaic cells. */
 .stage.has-selection .m-tile.is-near-focus img{transform:translate3d(var(--focus-dx,0px),var(--focus-dy,0px),0) scale(1.06)}
 .m-tile .tile-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.13) 0%,transparent 37%,rgba(0,0,0,.12) 55%,rgba(0,0,0,.80) 100%);pointer-events:none}
 .m-tile .tile-dimmer{position:absolute;inset:0;background:#070707;opacity:0;transition:opacity .45s ease;pointer-events:none;z-index:3}
-.stage.has-selection .m-tile:not(.is-active) .tile-dimmer{opacity:.46}
+.stage.has-selection .m-tile:not(.is-active) .tile-dimmer{opacity:.30}
 .m-tile .tile-info{position:absolute;z-index:2;left:22px;right:20px;bottom:19px;pointer-events:none;display:flex;flex-direction:column;align-items:flex-start;gap:10px}
 .m-tile .tile-kicker{font-size:10px;letter-spacing:.20em;text-transform:uppercase;font-weight:650;color:rgba(255,255,255,.76);text-shadow:0 1px 9px #0006}
 .m-tile .tile-title{margin:0;max-width:92%;font-size:clamp(24px,4.3cqw,67px);letter-spacing:-.055em;line-height:.94;font-weight:670;overflow-wrap:break-word;text-wrap:balance;text-shadow:0 2px 22px #0007}
@@ -207,6 +214,7 @@
 <script src="./thumbnail-store.js"></script>
 <script src="./library-index.js"></script>
 <script src="./src/canvas-core.js"></script>
+<script src="./src/posterwall-layout.js"></script>
 <script src="./src/search-core.js"></script>
 <script src="./src/directory-scanner.js"></script>
 <script src="./src/performance-monitor.js"></script>
@@ -401,9 +409,11 @@ function releaseFullImage(){
 // Fixed 12 × 8 geometry, including portrait slots. Exact coverage; never Masonry.
 const UNIT=121, GAP=6, PITCH=UNIT+GAP;
 const TEMPLATE=[
- {x:0,y:0,w:4,h:3}, {x:0,y:3,w:2,h:5}, {x:2,y:3,w:2,h:5},
- {x:4,y:0,w:5,h:2}, {x:4,y:2,w:3,h:3}, {x:7,y:2,w:2,h:3},
- {x:4,y:5,w:5,h:3}, {x:9,y:0,w:3,h:5}, {x:9,y:5,w:3,h:3}
+// Original NOEMA geometry split into 12 independently reflowable pieces.
+ {x:0,y:0,w:4,h:3}, {x:0,y:3,w:2,h:3}, {x:0,y:6,w:2,h:2},
+ {x:2,y:3,w:2,h:5}, {x:4,y:0,w:3,h:2}, {x:7,y:0,w:2,h:2},
+ {x:4,y:2,w:3,h:3}, {x:7,y:2,w:2,h:3}, {x:4,y:5,w:3,h:3},
+ {x:7,y:5,w:2,h:3}, {x:9,y:0,w:3,h:5}, {x:9,y:5,w:3,h:3}
 ];
 // The demo remains periodic. Local files occupy a finite, unique rectangular atlas.
 let localColumns=1,localRows=0;
@@ -421,7 +431,7 @@ function localBlockSlots(block){
  const available=Array.from({length:Math.min(TEMPLATE.length,Math.max(0,artworks.length-offset))},(_,j)=>offset+j);
  const mapping=Array(TEMPLATE.length).fill(-1);
  // Preserve the group's nine-image membership, but favor portrait sources for tall slots.
- const preferred=available.length===1&&artworks[available[0]].ratio<.83?[1]:[0,3,1,4,7,2,5,6,8];
+ const preferred=available.length===1&&artworks[available[0]].ratio<.83?[3]:Array.from({length:TEMPLATE.length},(_,i)=>i);
  const slots=preferred.slice(0,available.length).map(i=>({i,ratio:slotRatio(TEMPLATE[i])})).sort((a,b)=>a.ratio-b.ratio);
  for(const slot of slots){
   if(!available.length)break;
@@ -454,15 +464,16 @@ const BW=12*PITCH,BH=8*PITCH,MAX=220,OVERSCAN=650;
 const CAMERA_HOME={x:34,y:80};
 const ENTRANCE_STAGGER=0.03,ENTRANCE_MAX_DELAY=0.34,ENTRANCE_WINDOW=1100;
 const DPR=Math.max(1,window.devicePixelRatio||1);
+const posterWallLayout=window.NOEMAPosterWallLayout;
 const stage=document.getElementById('stage'),world=document.getElementById('world'),modal=document.getElementById('helpModal');
 const counter=document.getElementById('counter'),coordinates=document.getElementById('coordinates');
 const sceneStatus=document.getElementById('sceneStatus'),chrome=document.querySelector('.chrome');
 const collectionTag=document.getElementById('collectionTag'),notice=document.getElementById('notice'),dropOverlay=document.getElementById('dropOverlay');
 let noticeTimer=0;function notify(message){sceneStatus.textContent=message;notice.textContent=message;notice.classList.add('visible');clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>notice.classList.remove('visible'),3800)}
 const motion=window.matchMedia('(prefers-reduced-motion: reduce)');
-const nodes=new Map(),pointers=new Map();
+const nodes=new Map(),pointers=new Map(),motionUnderlays=new Map();
 let viewport={w:innerWidth,h:innerHeight};
-let camera={x:0,y:0,s:.76},cameraGoal={...camera},last=0,raf=0,active=null,focusRestore=null;
+let camera={x:0,y:0,s:.76},cameraGoal={...camera},last=0,raf=0,active=null,activeReflow=null,focusRestore=null;
 let drag=null,pinch=null,coastRaf=null,initialized=false,keepPlaying=false,lastCull=null,lastModalFocus=null;
 let cullRuns=0,lastCandidateCount=0,lastClippedCount=0;
 // Wave state
@@ -473,88 +484,74 @@ let focusedId=null;
 const clamp=(v,min,max)=>Math.min(max,Math.max(min,v));
 const dist=(p,q)=>Math.hypot(p.x-q.x,p.y-q.y);
 const intersects=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
-const getRect=(bx,by,i)=>{const t=TEMPLATE[i];return{x:bx*BW+t.x*PITCH,y:by*BH+t.y*PITCH,w:t.w*PITCH-GAP,h:t.h*PITCH-GAP}};
-const slugNum=(n)=>('000'+(Math.abs(n)%1000)).slice(-3);
-function artIndex(bx,by,i){
- if(localMode)return localArtIndex(bx,by,i);
- const n=(bx*17+by*29+i*7+100000*24)%artworks.length;
- return(n+artworks.length)%artworks.length;
+const getRect=(bx,by,i)=>{const t=posterWallLayout.orient(TEMPLATE,bx,by)[i];return{x:bx*BW+t.x*PITCH,y:by*BH+t.y*PITCH,w:t.w*PITCH-GAP,h:t.h*PITCH-GAP}};
+function clearMotionUnderlays(){
+ for(const entry of motionUnderlays.values()){
+  clearTimeout(entry.timer);entry.el.remove();
+ }
+ motionUnderlays.clear();
 }
-function start(){if(!raf)raf=requestAnimationFrame(frame)}
-function zoomAt(factor,px,py){camera=canvasCore.anchoredZoom(camera,factor,px,py,.40,1.9);cameraGoal={...camera};updateGoals();updateCamera();start()}
-function reset(animate=true){if(active)releaseFullImage();const s=viewport.w<700?.70:viewport.w<1150?.76:.84;const single=localMode&&artworks.length===1?imageSlotForIndex(0)?.rect:null;const x=single?viewport.w/2-(single.x+single.w/2)*s:localMode?Math.max(20,viewport.w*.12):viewport.w*.5-BW*.46*s,y=single?viewport.h/2-(single.y+single.h/2)*s:localMode?Math.max(70,viewport.h*.10):viewport.h*.5-BH*.45*s;active=null;stage.classList.remove('has-selection');document.getElementById('closeBtn').tabIndex=-1;document.getElementById('inspectBtn').tabIndex=-1;sceneStatus.textContent='已返回画布中心';counter.innerHTML=`01<span style="font-size:.42em;color:#ffffff66"> / ${localMode?artworks.length:'∞'}</span>`;updateGoals();cameraGoal={x,y,s};if(motion.matches||!animate)camera={...cameraGoal};updateCamera();start()}
-function updateCamera(){world.style.transform=`translate3d(${camera.x}px,${camera.y}px,0) scale(${camera.s})`;if(coordinates)coordinates.textContent=`X ${slugNum(Math.round(-camera.x/camera.s))} — Y ${slugNum(Math.round(-camera.y/camera.s))} · ${String(Math.round(camera.s*100)).padStart(3,'0')}%`}
-function setImage(img,src){
- img.onload=async()=>{
-   try{if(img.decode)await img.decode()}catch{ /* onload already confirmed this asset */ }
-   if(img.isConnected&&img.getAttribute('src')===src)img.classList.add('loaded');
- };
- img.onerror=()=>img.classList.remove('loaded');img.src=src;
+function holdMotionUnderlay(chosen){
+ if(!chosen)return;
+ const key=`${chosen.bx}:${chosen.by}`;
+ const previous=motionUnderlays.get(key);
+ if(previous){
+  clearTimeout(previous.timer);
+  previous.timer=0;previous.el.classList.remove('is-settled');
+  return;
+ }
+ const layer=document.createElement('div');
+ layer.className='focus-underlay';
+ layer.setAttribute('aria-hidden','true');
+ layer.style.cssText=`left:${chosen.bx*BW}px;top:${chosen.by*BH}px;width:${BW}px;height:${BH}px`;
+ for(const m of nodes.values()){
+  if(m.bx!==chosen.bx||m.by!==chosen.by)continue;
+  const ghost=document.createElement('div');
+  ghost.className='ghost-cell';
+  const t=m.rect;
+  ghost.style.cssText=`left:${t.x-chosen.bx*BW}px;top:${t.y-chosen.by*BH}px;width:${t.w}px;height:${t.h}px;background:${m.art.color||'#242321'}`;
+  const src=m.low.getAttribute('src')||(!m.art.file?photo(m.art.img,780):null);
+  if(src){
+   const img=document.createElement('img');
+   img.src=src;img.alt='';img.decoding='async';
+   ghost.appendChild(img);
+  }
+  layer.appendChild(ghost);
+ }
+ world.prepend(layer);
+ motionUnderlays.set(key,{key,bx:chosen.bx,by:chosen.by,el:layer,timer:0});
 }
-const observer=('IntersectionObserver' in window)?new IntersectionObserver(entries=>{for(const en of entries){if(!en.isIntersecting)continue;const m=nodes.get(en.target.dataset.instance);if(m)loadThumbnail(m);observer.unobserve(en.target)}},{root:stage,rootMargin:'280px'}):null;
-async function loadThumbnail(m){
- if(m.thumbRequested)return;m.thumbRequested=true;
- const version=collectionVersion,art=m.art;
- const url=art.file?await scheduleThumbnail(art):photo(art.img,780);
- if(version!==collectionVersion||!m.button.isConnected||m.art!==art){return}
- if(url)setImage(m.low,url);
+function settleMotionUnderlays(){
+ for(const entry of motionUnderlays.values()){
+  if(entry.timer)continue;
+  const members=[...nodes.values()].filter(m=>m.bx===entry.bx&&m.by===entry.by);
+  const stillMoving=members.some(m=>['x','y','w','h'].some(p=>
+   Math.abs(m.cur[p]-m.goal[p])>.08||Math.abs(m.vel[p])>.08));
+  if(stillMoving)continue;
+  entry.el.classList.add('is-settled');
+  entry.timer=setTimeout(()=>{
+   if(motionUnderlays.get(entry.key)!==entry)return;
+   entry.el.remove();motionUnderlays.delete(entry.key);
+  },200);
+ }
 }
-function loadOriginal(m){
- if(m.fullRequested)return;m.fullRequested=true;
- if(m.art.file){releaseFullImage();m.fullRequested=true;activeFullUrl=URL.createObjectURL(m.art.file);setImage(m.hi,activeFullUrl)}
- else setImage(m.hi,photo(m.art.img,1800));
-}
-function waveDelay(rect){
- const steps=Math.max(0,rect.x-CAMERA_HOME.x)+Math.max(0,rect.y-CAMERA_HOME.y);
- const delay=Math.min(ENTRANCE_MAX_DELAY,(steps/(UNIT+GAP))*ENTRANCE_STAGGER);
- return Date.now()-entranceStart<ENTRANCE_WINDOW&&!entranceDone&&!exitStarted&&!motion.matches?delay*1000:null;
-}
-function exitWaveDelay(rect){
- // Reverse wave: tiles farther from the home corner leave first.
- const steps=Math.max(0,rect.x-CAMERA_HOME.x)+Math.max(0,rect.y-CAMERA_HOME.y);
- const entranceDelay=Math.min(ENTRANCE_MAX_DELAY,(steps/(UNIT+GAP))*ENTRANCE_STAGGER);
- return Math.max(0,ENTRANCE_MAX_DELAY-entranceDelay)*1000;
-}
-function makeTile(id,rect,index){const a=artworks[index],button=document.createElement('button');button.type='button';button.className='m-tile';button.dataset.instance=id;button.setAttribute('data-instance-id',id);button.setAttribute('aria-label',`${a.title}，${a.category}，按回车展开`);button.setAttribute('aria-expanded','false');button.style.setProperty('--fallback',`linear-gradient(145deg,${a.color},#101114)`);
+function makeTile(id,rect,index){const a=artworks[index],button=document.createElement('button');
+ const position=localMode?imageSlotForIndex(index):(()=>{const [bx,by,i]=id.split(':').map(Number);return{bx,by,i}})();
+ if(!position)return null;button.type='button';button.className='m-tile';button.dataset.instance=id;button.setAttribute('aria-label',`${a.title}，${a.category}，按回车展开`);button.setAttribute('aria-expanded','false');button.style.setProperty('--fallback',`linear-gradient(145deg,${a.color},#101114)`);
  button.innerHTML=`<div class="tile-art"><img class="low-res" alt="" loading="lazy" decoding="async" draggable="false"><img class="hi-res" alt="" decoding="async" draggable="false"></div><div class="tile-shade"></div><div class="tile-index">NO. ${String(index+1).padStart(2,'0')}</div><div class="tile-info"><div class="tile-kicker">${escapeHTML(a.category)} &nbsp; / &nbsp; STUDY ${String(index+1).padStart(2,'0')}</div><h2 class="tile-title">${escapeHTML(a.title)}</h2><div class="detail"><span class="detail-line"></span>${escapeHTML(a.desc)}<span class="detail-link">CLICK TO CLOSE <span aria-hidden="true">↙</span></span></div></div><div class="tile-arrow" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></div><div class="tile-dimmer"></div>`;
  button.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();focusRestore=button;select(id)}});
- // Assistive technology may dispatch click without a preceding pointer sequence.
  button.addEventListener('click',e=>{if(e.detail===0){focusRestore=button;select(id)}});
- button.addEventListener('dblclick',e=>{e.preventDefault();e.stopPropagation();select(id)});
  world.appendChild(button);
- const m={id,rect,art:a,button,low:button.querySelector('.low-res'),hi:button.querySelector('.hi-res'),thumbRequested:false,fullRequested:false,cur:{...rect},vel:{x:0,y:0,w:0,h:0},goal:{...rect}};
+ const m={id,rect,bx:position.bx,by:position.by,slot:position.i,art:a,button,low:button.querySelector('.low-res'),hi:button.querySelector('.hi-res'),thumbRequested:false,fullRequested:false,cur:{...rect},vel:{x:0,y:0,w:0,h:0},goal:{...rect}};
  nodes.set(id,m);place(m);if(observer)observer.observe(button);else loadThumbnail(m);return m;
 }
 function place(m){const p=m.cur,b=m.button;b.style.left=`${p.x.toFixed(2)}px`;b.style.top=`${p.y.toFixed(2)}px`;b.style.width=`${Math.max(1,p.w).toFixed(2)}px`;b.style.height=`${Math.max(1,p.h).toFixed(2)}px`}
-function getExpansion(rect){const maxW=Math.max(rect.w,(viewport.w-38)/camera.s);const maxH=Math.max(rect.h,(viewport.h-68)/camera.s);const w=Math.min(Math.max(rect.w,690),maxW),h=Math.min(Math.max(rect.h,530),maxH);return{x:rect.x+(rect.w-w)*.5,y:rect.y+(rect.h-h)*.5,w,h}}
-function focusParallax(rect,expanded){
- // Moving every row and column aside used to expose cross-shaped black strips.
- // The focused tile now overlays the unchanged mosaic; only imagery shifts.
- const dx=rect.x+rect.w/2-expanded.x-expanded.w/2;
- const dy=rect.y+rect.h/2-expanded.y-expanded.h/2;
- const gapX=Math.max(0,Math.abs(dx)-(expanded.w+rect.w)/2);
- const gapY=Math.max(0,Math.abs(dy)-(expanded.h+rect.h)/2);
- const radius=Math.max(110,Math.min(380,Math.max(expanded.w,expanded.h)*.55));
- const intensity=Math.max(0,1-Math.hypot(gapX,gapY)/radius);
- if(!intensity)return null;
- const length=Math.hypot(dx,dy)||1;
- // Max 1.8% movement per axis: the 6% artwork scale-up safely covers it.
- return{x:dx/length*Math.min(9,rect.w*.018)*intensity,
-        y:dy/length*Math.min(9,rect.h*.018)*intensity};
-}
-function updateGoals(){const chosen=active&&nodes.get(active);const exp=chosen?getExpansion(chosen.rect):null;
+function updateGoals(){
+ const chosen=active&&nodes.get(active);
  for(const m of nodes.values()){
   const mine=m.id===active;
-  m.goal=mine&&exp?exp:m.rect;
-  const drift=exp&&!mine?focusParallax(m.rect,exp):null;
-  m.button.classList.toggle('is-near-focus',Boolean(drift));
-  if(drift){
-   m.button.style.setProperty('--focus-dx',`${drift.x.toFixed(2)}px`);
-   m.button.style.setProperty('--focus-dy',`${drift.y.toFixed(2)}px`);
-  }else{
-   m.button.style.removeProperty('--focus-dx');
-   m.button.style.removeProperty('--focus-dy');
-  }
+  const sameBlock=chosen&&m.bx===chosen.bx&&m.by===chosen.by;
+  m.goal=sameBlock&&activeReflow?blockReflowRect(m.bx,m.by,activeReflow[m.slot]):m.rect;
   m.button.classList.toggle('is-active',mine);
   if(m.button.getAttribute('aria-expanded')!==String(mine))m.button.setAttribute('aria-expanded',String(mine));
   if(mine)loadOriginal(m);
@@ -584,6 +581,10 @@ function syncVisible(force=false){
   wanted.add(candidate.id);
   if(!nodes.has(candidate.id)){makeTile(candidate.id,candidate.rect,candidate.index);changed=true}
  }
+if(active){
+  const chosen=nodes.get(active);
+  for(const [id,m] of nodes)if(m.bx===chosen?.bx&&m.by===chosen?.by)wanted.add(id);
+ }
  if(active)wanted.add(active);
  for(const [id,m] of nodes){if(wanted.has(id))continue;if(observer)observer.unobserve(m.button);
   if(document.activeElement===m.button)stage.focus({preventScroll:true});
@@ -593,20 +594,29 @@ function syncVisible(force=false){
   const focusable=m.id===active||intersects(m.rect,actual);
   const tab=focusable?0:-1;if(m.button.tabIndex!==tab)m.button.tabIndex=tab;
   m.button.classList.toggle('is-focus-ring',m.id===focusedId);
- }
- if(changed){updateGoals();evictThumbnails()}
+  }
+  if(changed){updateGoals();evictThumbnails()}
 }
 function select(id){if(!nodes.has(id))return;const already=active===id;if(already){close();return}
- if(active!==null&&active!==id)releaseFullImage();
- active=id;stage.classList.add('has-selection');document.getElementById('closeBtn').tabIndex=0;document.getElementById('inspectBtn').tabIndex=0;const m=nodes.get(id);
- // Keep the grown card at its window position (Folia: expansion overlays, camera follows if re-seated).
+ if(active!==null&&active!==id){
+  holdMotionUnderlay(nodes.get(active));
+  releaseFullImage();
+ }
+ const m=nodes.get(id);
+ ensureFocusBlock(m);
+ holdMotionUnderlay(m);
+ active=id;
+ activeReflow=posterWallLayout.reflow(TEMPLATE,m.bx,m.by,m.slot);
+ stage.classList.add('has-selection');document.getElementById('closeBtn').tabIndex=0;document.getElementById('inspectBtn').tabIndex=0;
+ const expanded=blockReflowRect(m.bx,m.by,activeReflow[m.slot]);
+ cameraGoal=focusCameraFor(expanded);
  counter.innerHTML=`${String(artworks.indexOf(m.art)+1).padStart(2,'0')}<span style="font-size:.42em;color:#ffffff66"> / ${localMode?artworks.length:'∞'}</span>`;sceneStatus.textContent=`已展开 ${m.art.title}。按 Escape 收起作品。`;
  updateGoals();start()
 }
-function close(){if(!active)return;releaseFullImage();active=null;stage.classList.remove('has-selection');exitStarted=true;document.getElementById('closeBtn').tabIndex=-1;document.getElementById('inspectBtn').tabIndex=-1;updateGoals();counter.innerHTML=`01<span style="font-size:.42em;color:#ffffff66"> / ${localMode?artworks.length:'∞'}</span>`;if(focusRestore?.isConnected)focusRestore.focus({preventScroll:true});else stage.focus({preventScroll:true});focusRestore=null;sceneStatus.textContent='作品已收起';start();setTimeout(()=>{exitStarted=false;entranceDone=true;for(const [id,m] of nodes){if(observer)observer.unobserve(m.button);m.button.remove()}nodes.clear();if(focusRestore?.isConnected)focusRestore.focus({preventScroll:true});else stage.focus({preventScroll:true});focusRestore=null;start()},300)}
+function close(){if(!active)return;holdMotionUnderlay(nodes.get(active));releaseFullImage();active=null;activeReflow=null;stage.classList.remove('has-selection');document.getElementById('closeBtn').tabIndex=-1;document.getElementById('inspectBtn').tabIndex=-1;updateGoals();counter.innerHTML=`01<span style="font-size:.42em;color:#ffffff66"> / ${localMode?artworks.length:'∞'}</span>`;if(focusRestore?.isConnected)focusRestore.focus({preventScroll:true});else stage.focus({preventScroll:true});focusRestore=null;sceneStatus.textContent='作品已收起';start()}
 function spring(m,dt){
- const k=170,damp=22;let isMoving=false,changed=false;
- for(const p of ['x','y','w','h']){
+ // Close to critically damped: all twelve frames move and resize together, without overshoot.
+ const k=300,damp=34;let isMoving=false,changed=false; for(const p of ['x','y','w','h']){
   let value=m.cur[p],v=m.vel[p],goal=m.goal[p];
   if(motion.matches){if(value!==goal){m.cur[p]=goal;changed=true}m.vel[p]=0;continue}
   if(Math.abs(value-goal)<.025&&Math.abs(v)<.04){if(value!==goal){m.cur[p]=goal;changed=true}m.vel[p]=0;continue}
@@ -619,6 +629,7 @@ function spring(m,dt){
 function frame(now){raf=0;const dt=last?Math.min(.034,(now-last)/1000):.016;last=now;let moving=false;
  if(motion.matches)camera={...cameraGoal};else for(const key of ['x','y','s']){const delta=cameraGoal[key]-camera[key];if(Math.abs(delta)>.04){camera[key]+=delta*(1-Math.exp(-10*dt));moving=true}else camera[key]=cameraGoal[key]}
  updateCamera();syncVisible();for(const m of nodes.values())if(spring(m,dt))moving=true;
+ if(motionUnderlays.size)settleMotionUnderlays();
  if(moving||keepPlaying)start();else last=0
 }
 function point(e){const r=stage.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
@@ -631,15 +642,11 @@ stage.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return;co
  if(pointers.size>=2){if(!pinch)pinch=pinchState();const arr=[...pointers.values()],mid={x:(arr[0].x+arr[1].x)/2,y:(arr[0].y+arr[1].y)/2};const targetS=clamp(pinch.scale*dist(arr[0],arr[1])/pinch.dist,.40,1.9);camera.s=targetS;camera.x=mid.x-pinch.world.x*targetS;camera.y=mid.y-pinch.world.y*targetS;cameraGoal={...camera};updateGoals();updateCamera();start();return}
  if(drag&&drag.id===e.pointerId){const deltaX=p.x-old.x,deltaY=p.y-old.y;drag.travel=dist(p,drag.start);drag.vx=deltaX;drag.vy=deltaY;drag.lastTime=performance.now();if(drag.travel>5){camera.x+=deltaX;camera.y+=deltaY;cameraGoal={...camera};updateCamera();start()}}
 });
-function pointerEnd(e){const p=point(e),d=drag;const wasClick=d&&d.id===e.pointerId&&d.travel<=7&&dist(p,d.start)<=9;
- pointers.delete(e.pointerId);if(pointers.size===0){stage.classList.remove('is-dragging');keepPlaying=false;
-  // Inertia coast after a drag (Folia: continue along release velocity).
-  if(d&&d.travel>5){const now=performance.now();const dt=Math.max(1,now-(d.lastTime||now))/1000;const speed=Math.hypot(d.vx||0,d.vy||0);if(speed>60){const vx=(d.vx||0)/speed,vy=(d.vy||0)/speed;const power=0.9,timeConstant=0.4;let t=0;const from={x:camera.x,y:camera.y};const coast=()=>{t+=1/60;const k=1-Math.exp(-t/timeConstant);const dist=speed*power*(1-Math.exp(-t/timeConstant))/100*60;camera.x=from.x+vx*dist;camera.y=from.y+vy*dist;cameraGoal={...camera};updateCamera();if(t<timeConstant*3){coastRaf=requestAnimationFrame(coast)}else{coastRaf=0;last=0}};coastRaf=requestAnimationFrame(coast);start()}}
-  drag=null;pinch=null
- }else if(pointers.size===1){const [id,v]=[...pointers.entries()][0];drag={id,point:v,start:v,travel:100,tile:null};pinch=null}
- if(wasClick&&d.tile){focusRestore=nodes.get(d.tile)?.button||null;select(d.tile)}start()
-}
-stage.addEventListener('pointerup',pointerEnd);stage.addEventListener('pointercancel',e=>{pointers.delete(e.pointerId);
+stage.addEventListener('pointerup',e=>{pointers.delete(e.pointerId);stage.releasePointerCapture(e.pointerId);
+ if(pointers.size===0){const wasClick=drag&&drag.travel<5;const d=drag;drag=null;pinch=null;
+  if(wasClick&&d.tile){focusRestore=nodes.get(d.tile)?.button||null;select(d.tile)}
+  stage.classList.remove('is-dragging');start()}});
+stage.addEventListener('pointercancel',e=>{pointers.delete(e.pointerId);
  if(pointers.size===1){const [id,p]=pointers.entries().next().value;drag={id,point:p,start:p,travel:100,tile:null};pinch=null}
  else if(pointers.size>=2){drag=null;pinch=pinchState()}
  else{drag=null;pinch=null;keepPlaying=false;stage.classList.remove('is-dragging')}
@@ -966,7 +973,7 @@ function applyLocalView(items,query=''){
  if(!inspector.hidden)closeInspector();
  close();releaseFullImage();
  for(const m of nodes.values()){if(observer)observer.unobserve(m.button);m.button.remove()}
- nodes.clear();clearThumbnailCache();
+ nodes.clear();clearMotionUnderlays();clearThumbnailCache();
  artworks=items;activeFilterQuery=query;configureLocalAtlas();lastCull=null;focusRestore=null;
  // Keep physical files in allLocalArtworks, while layout and inspector use only filtered items.
  const collectionLabel=collectionTag.querySelector('span');
@@ -1128,7 +1135,7 @@ async function importFiles(input,displayName='LOCAL COLLECTION',task=beginImport
  if(!alive(task))return false;
  close();releaseFullImage();
  for(const m of nodes.values()){if(observer)observer.unobserve(m.button);m.button.remove()}
- nodes.clear();clearThumbnailCache();localMode=true;
+ nodes.clear();clearMotionUnderlays();clearThumbnailCache();localMode=true;
  artworks=limited.map((file,index)=>({img:String(index),title:titleFromFile(file),category:'PERSONAL ARCHIVE',desc:file.__noemaPath||file.webkitRelativePath||file.name,color:['#243138','#374033','#53473d','#38424b'][index%4],ratio:file.__noemaRatio||1,file}));
  allLocalArtworks=artworks;activeFilterQuery='';
  document.getElementById('filterBanner').hidden=true;
@@ -1149,7 +1156,7 @@ async function importFiles(input,displayName='LOCAL COLLECTION',task=beginImport
 function restoreDemo(){
  if(!inspector.hidden)closeInspector();
  close();releaseFullImage();for(const m of nodes.values()){if(observer)observer.unobserve(m.button);m.button.remove()}
- nodes.clear();clearThumbnailCache();artworks=demoArtworks;allLocalArtworks=null;activeFilterQuery='';document.getElementById('filterBanner').hidden=true;localMode=false;localRows=0;localSlotMaps.clear();lastCull=null;
+ nodes.clear();clearMotionUnderlays();clearThumbnailCache();artworks=demoArtworks;allLocalArtworks=null;activeFilterQuery='';document.getElementById('filterBanner').hidden=true;localMode=false;localRows=0;localSlotMaps.clear();lastCull=null;
  collectionTag.hidden=true;document.getElementById('app').classList.remove('local-collection');collectionTag.replaceChildren();
  document.querySelector('.top-middle .eyebrow').textContent='AN INFINITE COLLECTION';
  document.querySelector('.top-middle .subline').textContent='An exploration of image, atmosphere & form';
@@ -1227,8 +1234,7 @@ document.addEventListener('keydown',e=>{
 });
 function measure(){const r=stage.getBoundingClientRect(),w=r.width,h=r.height;if(!w||!h)return;const old=viewport;viewport={w,h};if(!initialized){initialized=true;reset(false)}else{camera.x+=(w-old.w)/2;camera.y+=(h-old.h)/2;cameraGoal={...camera};updateGoals();start();syncVisible(true)}}
 new ResizeObserver(measure).observe(stage);measure();
-window.addEventListener('pagehide',()=>{metricsMonitor?.stop();cancelImport();closeInspector();releaseFullImage();clearThumbnailCache();if(coastRaf)cancelAnimationFrame(coastRaf);thumbnailWorker?.terminate();thumbnailWorker=null});
-})();
+window.addEventListener('pagehide',()=>{clearMotionUnderlays();metricsMonitor?.stop();cancelImport();closeInspector();releaseFullImage();clearThumbnailCache();if(coastRaf)cancelAnimationFrame(coastRaf);thumbnailWorker?.terminate();thumbnailWorker=null});})();
 </script>
 </body>
 </html>

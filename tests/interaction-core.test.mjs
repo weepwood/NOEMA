@@ -88,7 +88,7 @@ test('metrics monitor only schedules frames while enabled and stops on request',
 });
 
 test('filter is reversible and new external modules load before the inline application',()=>{
- for(const name of ['canvas-core','search-core','directory-scanner','performance-monitor']){
+ for(const name of ['canvas-core','posterwall-layout','search-core','directory-scanner','performance-monitor']){
   const filename=`src/${name}.js`;
   assert.match(html,new RegExp(filename.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')));
  }
