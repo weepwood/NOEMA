@@ -953,7 +953,7 @@ function walkFocus(key){
   const next=candidates.reduce((best,m)=>{
    const sc=Math.abs((m.rect.x+m.rect.w/2)-(current.rect.x+current.rect.w/2))+Math.abs((m.rect.y+m.rect.h/2)-(current.rect.y+current.rect.h/2));
    const bc=Math.abs((best.rect.x+best.rect.w/2)-(current.rect.x+current.rect.w/2))+Math.abs((best.rect.y+best.rect.h/2)-(current.rect.y+current.rect.h/2));
-   return sc<bc
+   return sc<bc?m:best
   },candidates[0]);
   focusedId=next.id;
   next.button.focus({preventScroll:true});
