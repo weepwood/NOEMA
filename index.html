@@ -88,7 +88,10 @@
 .inspector[hidden]{display:none}
 .inspector-viewport{position:absolute;inset:80px 0 84px;overflow:hidden;touch-action:none;cursor:grab;outline:none}
 .inspector-viewport.is-panning{cursor:grabbing}
-.inspector-image{position:absolute;left:50%;top:50%;width:1px;height:1px;max-width:none;max-height:none;user-select:none;-webkit-user-drag:none;pointer-events:none;transform:translate(calc(-50% + var(--pan-x,0px)),calc(-50% + var(--pan-y,0px)));object-fit:fill}
+.inspector-image{position:absolute;left:50%;top:50%;width:1px;height:1px;max-width:none;max-height:none;user-select:none;-webkit-user-drag:none;pointer-events:none;transform:translate(calc(-50% + var(--pan-x,0px)),calc(-50% + var(--pan-y,0px)));object-fit:fill;z-index:2}
+.inspector-preview{left:0;top:0;width:100%;height:100%;transform:none;object-fit:contain;z-index:1}
+.inspector-preview[hidden]{display:none}
+.inspector-viewport.has-preview .inspector-spinner{top:auto;bottom:14px;left:50%;transform:translateX(-50%);padding:7px 11px;border-radius:4px;background:#070707c9;z-index:3}
 .inspector-top{position:absolute;left:0;right:0;top:0;min-height:80px;display:flex;justify-content:space-between;align-items:center;gap:14px;padding:18px 32px;background:linear-gradient(180deg,#070707fa,#070707cb 65%,transparent);z-index:2}
 .inspector-title{min-width:0;display:flex;flex-direction:column;gap:7px}
 .inspector-title strong{font-weight:640;font-size:16px;letter-spacing:-.025em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:min(64vw,750px)}
@@ -192,7 +195,8 @@
       <button class="round-btn" id="inspectorClose" aria-label="返回画布" title="返回画布 (Esc)"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </header>
     <div class="inspector-viewport" id="inspectorViewport" tabindex="0" aria-label="原图查看区域，可拖动或滚轮缩放">
-      <img class="inspector-image" id="inspectorImage" alt="" draggable="false" />
+      <img class="inspector-image inspector-preview" id="inspectorPreview" alt="" aria-hidden="true" draggable="false" hidden />
+       <img class="inspector-image" id="inspectorImage" alt="" draggable="false" decoding="async" />
       <div class="inspector-spinner" id="inspectorLoading" role="status">LOADING IMAGE</div>
     </div>
     <footer class="inspector-bottom">
@@ -806,9 +810,10 @@ stage.addEventListener('dblclick',e=>{if(e.target.closest('.m-tile'))return;cons
 const inspector=document.getElementById('inspector');
 const inspectorView=document.getElementById('inspectorViewport');
 const inspectorImage=document.getElementById('inspectorImage');
+const inspectorPreview=document.getElementById('inspectorPreview');
 const inspectorLoading=document.getElementById('inspectorLoading');
 const inspectorPointers=new Map();
-let inspectorIndex=-1,inspectorUrl=null,inspectorToken=0;
+let inspectorIndex=-1,inspectorUrl=null,inspectorPreviewUrl=null,inspectorToken=0,inspectorOriginalLoaded=false;
 let inspectorNatural={w:1,h:1},inspectorFit=1,inspectorZoom=1,inspectorPan={x:0,y:0},inspectorGesture=null;
 let inspectorFocus=null;
 function applyInspector(){
@@ -834,15 +839,29 @@ function inspectorZoomAt(target,clientX,clientY){
  inspectorPan.y=y-(y-inspectorPan.y)*factor;
  inspectorZoom=clamped;applyInspector();
 }
+function clearInspectorPreview(){
+ inspectorPreview.hidden=true;inspectorPreview.removeAttribute('src');
+ inspectorView.classList.remove('has-preview');
+ if(inspectorPreviewUrl){URL.revokeObjectURL(inspectorPreviewUrl);inspectorPreviewUrl=null}
+}
+function setInspectorPreview(blob,token){
+ if(!blob||token!==inspectorToken||inspector.hidden||inspectorOriginalLoaded)return;
+ clearInspectorPreview();
+ inspectorPreviewUrl=URL.createObjectURL(blob);
+ inspectorPreview.src=inspectorPreviewUrl;inspectorPreview.hidden=false;
+ inspectorView.classList.add('has-preview');
+ inspectorLoading.textContent='预览已显示 · 正在加载完整原图';
+}
 function loadInspectorIndex(index){
  if(index<0||index>=artworks.length)return;
  inspectorIndex=index;const art=artworks[index];
  if(inspectorUrl){URL.revokeObjectURL(inspectorUrl);inspectorUrl=null}
  const token=++inspectorToken;
+ inspectorOriginalLoaded=false;clearInspectorPreview();
  inspectorImage.onload=()=>{
   if(token!==inspectorToken||inspector.hidden)return;
   inspectorNatural={w:inspectorImage.naturalWidth||1,h:inspectorImage.naturalHeight||1};
-  inspectorLoading.hidden=true;
+  inspectorOriginalLoaded=true;clearInspectorPreview();inspectorLoading.hidden=true;
   document.getElementById('inspectorMeta').textContent=`${inspectorNatural.w} × ${inspectorNatural.h} PX · ${art.file?((art.file.size/1024/1024).toFixed(1)+' MB'):'NOEMA ARCHIVE'}`;
   inspectorFitToView();
  };
@@ -852,8 +871,15 @@ function loadInspectorIndex(index){
  inspectorImage.alt=art.title;
  document.getElementById('inspectorTitle').textContent=art.title;
  document.getElementById('inspectorCount').textContent=`${index+1} / ${artworks.length}`;
- if(art.file){inspectorUrl=URL.createObjectURL(art.file);inspectorImage.src=inspectorUrl}
- else inspectorImage.src=photo(art.img,1800);
+ if(art.file){
+  // A small image paints immediately while the original decodes.
+  if(art.thumbUrl){inspectorPreview.src=art.thumbUrl;inspectorPreview.hidden=false;inspectorView.classList.add('has-preview')}
+  const cached=previewCache.get(art);
+  if(cached)setInspectorPreview(cached,token);
+  else void schedulePreview(art).then(blob=>setInspectorPreview(blob,token)).catch(()=>{});
+  inspectorUrl=URL.createObjectURL(art.file);
+  inspectorImage.src=inspectorUrl;
+ }else inspectorImage.src=photo(art.img,1800);
  // Keep gallery selection and camera in sync with inspector navigation.
  if(localMode){
   const slot=imageSlotForIndex(index);
@@ -874,6 +900,7 @@ function closeInspector(){
  inspectorToken++;
  inspector.hidden=true;inspectorPointers.clear();inspectorGesture=null;
  inspectorImage.onload=null;inspectorImage.onerror=null;inspectorImage.removeAttribute('src');
+ clearInspectorPreview();
  if(inspectorUrl){URL.revokeObjectURL(inspectorUrl);inspectorUrl=null}
  stage.inert=false;chrome.inert=false;
  const target=inspectorFocus?.isConnected?inspectorFocus:document.getElementById('inspectBtn');
