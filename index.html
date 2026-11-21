@@ -18,10 +18,11 @@
 .m-tile img.loaded{opacity:1}.m-tile img.hi-res{opacity:0;transition:opacity .35s ease}.m-tile img.hi-res.loaded{opacity:1}
 .m-tile:hover,.m-tile:focus-visible{transform:translateZ(0) scale(1.045);z-index:3}
 .m-tile.is-focus-ring{outline:2px solid var(--paper);outline-offset:4px}
+.stage.has-selection .m-tile:is(:hover,:focus-visible,.is-active){transform:translateZ(0)}
 /* Reflow frames can temporarily expose parts of the cell; a short-lived
    screenshot-like underlay uses the previous full mosaic to avoid black flashes.
    It is behind the moving cells and removed once their spring has settled. */
-.focus-underlay{position:absolute;z-index:1;overflow:hidden;pointer-events:none;opacity:.78;filter:brightness(.72) saturate(.86)}
+.focus-underlay{position:absolute;z-index:1;overflow:hidden;pointer-events:none;opacity:1}
 .focus-underlay.is-settled{opacity:0;transition:opacity .18s ease-out}
 .focus-underlay .ghost-cell{position:absolute;overflow:hidden;background:#242321}
 .focus-underlay .ghost-cell img{width:100%;height:100%;display:block;object-fit:cover;pointer-events:none}
@@ -215,6 +216,7 @@
 <script src="./library-index.js"></script>
 <script src="./src/canvas-core.js"></script>
 <script src="./src/posterwall-layout.js"></script>
+<script src="./src/wall-motion.js"></script>
 <script src="./src/search-core.js"></script>
 <script src="./src/directory-scanner.js"></script>
 <script src="./src/performance-monitor.js"></script>
@@ -464,7 +466,7 @@ const BW=12*PITCH,BH=8*PITCH,MAX=220,OVERSCAN=650;
 const CAMERA_HOME={x:34,y:80};
 const ENTRANCE_STAGGER=0.03,ENTRANCE_MAX_DELAY=0.34,ENTRANCE_WINDOW=1100;
 const DPR=Math.max(1,window.devicePixelRatio||1);
-const posterWallLayout=window.NOEMAPosterWallLayout;
+const posterWallLayout=window.NOEMAPosterWallLayout,wallMotion=window.NOEMAWallMotion;
 const stage=document.getElementById('stage'),world=document.getElementById('world'),modal=document.getElementById('helpModal');
 const counter=document.getElementById('counter'),coordinates=document.getElementById('coordinates');
 const sceneStatus=document.getElementById('sceneStatus'),chrome=document.querySelector('.chrome');
@@ -473,7 +475,7 @@ let noticeTimer=0;function notify(message){sceneStatus.textContent=message;notic
 const motion=window.matchMedia('(prefers-reduced-motion: reduce)');
 const nodes=new Map(),pointers=new Map(),motionUnderlays=new Map();
 let viewport={w:innerWidth,h:innerHeight};
-let camera={x:0,y:0,s:.76},cameraGoal={...camera},last=0,raf=0,active=null,activeReflow=null,focusRestore=null;
+let camera={x:0,y:0,s:.76},cameraGoal={...camera},cameraFlight=null,last=0,raf=0,active=null,activeReflow=null,activeFocusRect=null,focusRestore=null;
 let drag=null,pinch=null,coastRaf=null,initialized=false,keepPlaying=false,lastCull=null,lastModalFocus=null;
 let cullRuns=0,lastCandidateCount=0,lastClippedCount=0;
 // Wave state
@@ -492,8 +494,8 @@ function artIndex(bx,by,i){
  return(n+artworks.length)%artworks.length;
 }
 function start(){if(!raf)raf=requestAnimationFrame(frame)}
-function zoomAt(factor,px,py){camera=canvasCore.anchoredZoom(camera,factor,px,py,.40,1.9);cameraGoal={...camera};updateGoals();updateCamera();start()}
-function reset(animate=true){if(active){const old=nodes.get(active);if(old)holdMotionUnderlay(old);releaseFullImage()}const s=viewport.w<700?.70:viewport.w<1150?.76:.84;const single=localMode&&artworks.length===1?imageSlotForIndex(0)?.rect:null;const x=single?viewport.w/2-(single.x+single.w/2)*s:localMode?Math.max(20,viewport.w*.12):viewport.w*.5-BW*.46*s,y=single?viewport.h/2-(single.y+single.h/2)*s:localMode?Math.max(70,viewport.h*.10):viewport.h*.5-BH*.45*s;active=null;activeReflow=null;stage.classList.remove('has-selection');document.getElementById('closeBtn').tabIndex=-1;document.getElementById('inspectBtn').tabIndex=-1;sceneStatus.textContent='已返回画布中心';counter.innerHTML=`01<span style="font-size:.42em;color:#ffffff66"> / ${localMode?artworks.length:'∞'}</span>`;updateGoals();cameraGoal={x,y,s};if(motion.matches||!animate)camera={...cameraGoal};updateCamera();start()}
+function zoomAt(factor,px,py){cameraFlight=null;camera=canvasCore.anchoredZoom(camera,factor,px,py,.40,1.9);cameraGoal={...camera};updateGoals();updateCamera();start()}
+function reset(animate=true){cameraFlight=null;activeFocusRect=null;if(active){const old=nodes.get(active);if(old)holdMotionUnderlay(old);releaseFullImage()}const s=viewport.w<700?.70:viewport.w<1150?.76:.84;const single=localMode&&artworks.length===1?imageSlotForIndex(0)?.rect:null;const x=single?viewport.w/2-(single.x+single.w/2)*s:localMode?Math.max(20,viewport.w*.12):viewport.w*.5-BW*.46*s,y=single?viewport.h/2-(single.y+single.h/2)*s:localMode?Math.max(70,viewport.h*.10):viewport.h*.5-BH*.45*s;active=null;activeReflow=null;stage.classList.remove('has-selection');document.getElementById('closeBtn').tabIndex=-1;document.getElementById('inspectBtn').tabIndex=-1;sceneStatus.textContent='已返回画布中心';counter.innerHTML=`01<span style="font-size:.42em;color:#ffffff66"> / ${localMode?artworks.length:'∞'}</span>`;updateGoals();cameraGoal={x,y,s};if(motion.matches||!animate)camera={...cameraGoal};updateCamera();start()}
 function updateCamera(){world.style.transform=`translate3d(${camera.x}px,${camera.y}px,0) scale(${camera.s})`;if(coordinates)coordinates.textContent=`X ${slugNum(Math.round(-camera.x/camera.s))} — Y ${slugNum(Math.round(-camera.y/camera.s))} · ${String(Math.round(camera.s*100)).padStart(3,'0')}%`}
 function setImage(img,src){
  img.onload=async()=>{
@@ -601,29 +603,19 @@ function ensureFocusBlock(chosen){
   if(!nodes.has(id))makeTile(id,getRect(chosen.bx,chosen.by,i),index);
  }
 }
-function focusCameraFor(rect){
- const padX=viewport.w<640?18:36;
- const top=viewport.w<640?78:104,bottom=viewport.w<640?74:78;
- const scale=Math.min(camera.s,(viewport.w-padX*2)/rect.w,
-                       (viewport.h-top-bottom)/rect.h);
- const s=clamp(scale,.28,1.9);
- // Minimal pan to reveal the fully expanded card; do not needlessly reset zoom.
- let x=camera.x,y=camera.y;
- const oldCenter={x:(viewport.w/2-camera.x)/camera.s,y:(viewport.h/2-camera.y)/camera.s};
- x=viewport.w/2-oldCenter.x*s;
- y=viewport.h/2-oldCenter.y*s;
- if(rect.x*s+x<padX)x=padX-rect.x*s;
- if((rect.x+rect.w)*s+x>viewport.w-padX)x=viewport.w-padX-(rect.x+rect.w)*s;
- if(rect.y*s+y<top)y=top-rect.y*s;
- if((rect.y+rect.h)*s+y>viewport.h-bottom)y=viewport.h-bottom-(rect.y+rect.h)*s;
- return{x,y,s};
+function focusCameraFor(rect){return wallMotion.focusCamera(rect,camera,viewport)}
+function flyToFocus(rect){
+ const goal=focusCameraFor(rect);
+ cameraFlight={from:{...camera},to:goal,elapsed:0};
+ cameraGoal={...goal};
+ if(motion.matches){camera={...goal};cameraFlight=null;updateCamera()}
 }
 function updateGoals(){
  const chosen=active&&nodes.get(active);
  for(const m of nodes.values()){
   const mine=m.id===active;
   const sameBlock=chosen&&m.bx===chosen.bx&&m.by===chosen.by;
-  m.goal=sameBlock&&activeReflow?blockReflowRect(m.bx,m.by,activeReflow[m.slot]):m.rect;
+  m.goal=mine&&activeFocusRect&&!activeReflow?activeFocusRect:sameBlock&&activeReflow?blockReflowRect(m.bx,m.by,activeReflow[m.slot]):m.rect;
   m.button.classList.toggle('is-active',mine);
   if(m.button.getAttribute('aria-expanded')!==String(mine))m.button.setAttribute('aria-expanded',String(mine));
   if(mine)loadOriginal(m);
@@ -658,6 +650,8 @@ if(active){
   for(const [id,m] of nodes)if(m.bx===chosen?.bx&&m.by===chosen?.by)wanted.add(id);
  }
  if(active)wanted.add(active);
+ // Preserve the full changing block through closing and interrupted motion.
+ for(const [id,m] of nodes)if(motionUnderlays.has(`${m.bx}:${m.by}`))wanted.add(id);
  for(const [id,m] of nodes){if(wanted.has(id))continue;if(observer)observer.unobserve(m.button);
   if(document.activeElement===m.button)stage.focus({preventScroll:true});
   if(exitStarted){m.button.classList.add('is-exiting');m.button.style.setProperty('--wave-dy','90px');m.button.style.setProperty('--wave-dur','0.28s');m.button.style.setProperty('--wave-delay',(exitWaveDelay(m.rect))+'ms');}else{m.button.remove();nodes.delete(id);}changed=true;
@@ -678,35 +672,62 @@ function select(id){if(!nodes.has(id))return;const already=active===id;if(alread
  ensureFocusBlock(m);
  holdMotionUnderlay(m);
  active=id;
- activeReflow=posterWallLayout.reflow(TEMPLATE,m.bx,m.by,m.slot);
+ // In a sparse local block, there are not enough images to fill a 12-slot reflow.
+ const complete=!localMode||TEMPLATE.every((_,i)=>localArtIndex(m.bx,m.by,i)>=0);
+ activeReflow=complete?posterWallLayout.reflow(TEMPLATE,m.bx,m.by,m.slot):null;
+ const edge=6*PITCH-GAP;
+ const expanded=activeReflow?blockReflowRect(m.bx,m.by,activeReflow[m.slot]):{
+  x:clamp(m.rect.x+(m.rect.w-edge)/2,m.bx*BW,(m.bx+1)*BW-edge),
+  y:clamp(m.rect.y+(m.rect.h-edge)/2,m.by*BH,(m.by+1)*BH-edge),
+  w:edge,h:edge
+ };
+ activeFocusRect=expanded;
  stage.classList.add('has-selection');document.getElementById('closeBtn').tabIndex=0;document.getElementById('inspectBtn').tabIndex=0;
- const expanded=blockReflowRect(m.bx,m.by,activeReflow[m.slot]);
- cameraGoal=focusCameraFor(expanded);
+ flyToFocus(expanded);
  counter.innerHTML=`${String(artworks.indexOf(m.art)+1).padStart(2,'0')}<span style="font-size:.42em;color:#ffffff66"> / ${localMode?artworks.length:'∞'}</span>`;sceneStatus.textContent=`已展开 ${m.art.title}。按 Escape 收起作品。`;
  updateGoals();start()
 }
-function close(){if(!active)return;holdMotionUnderlay(nodes.get(active));releaseFullImage();active=null;activeReflow=null;stage.classList.remove('has-selection');document.getElementById('closeBtn').tabIndex=-1;document.getElementById('inspectBtn').tabIndex=-1;updateGoals();counter.innerHTML=`01<span style="font-size:.42em;color:#ffffff66"> / ${localMode?artworks.length:'∞'}</span>`;if(focusRestore?.isConnected)focusRestore.focus({preventScroll:true});else stage.focus({preventScroll:true});focusRestore=null;sceneStatus.textContent='作品已收起';start()}
+function close(){if(!active)return;holdMotionUnderlay(nodes.get(active));releaseFullImage();cameraFlight=null;cameraGoal={...camera};active=null;activeReflow=null;activeFocusRect=null;stage.classList.remove('has-selection');document.getElementById('closeBtn').tabIndex=-1;document.getElementById('inspectBtn').tabIndex=-1;updateGoals();counter.innerHTML=`01<span style="font-size:.42em;color:#ffffff66"> / ${localMode?artworks.length:'∞'}</span>`;if(focusRestore?.isConnected)focusRestore.focus({preventScroll:true});else stage.focus({preventScroll:true});focusRestore=null;sceneStatus.textContent='作品已收起';start()}
 function spring(m,dt){
- // Close to critically damped: all twelve frames move and resize together, without overshoot.
- const k=300,damp=34;let isMoving=false,changed=false; for(const p of ['x','y','w','h']){
-  let value=m.cur[p],v=m.vel[p],goal=m.goal[p];
-  if(motion.matches){if(value!==goal){m.cur[p]=goal;changed=true}m.vel[p]=0;continue}
-  if(Math.abs(value-goal)<.025&&Math.abs(v)<.04){if(value!==goal){m.cur[p]=goal;changed=true}m.vel[p]=0;continue}
-  v+=(goal-value)*k*dt;v*=Math.exp(-damp*dt);value+=v*dt;
-  if(Math.abs(goal-value)<.025&&Math.abs(v)<.04){value=goal;v=0}else isMoving=true;
-  if(value!==m.cur[p])changed=true;m.cur[p]=value;m.vel[p]=v;
+ let moving=false,changed=false;
+ for(const key of ['x','y','w','h']){
+  const before=m.cur[key];
+  const next=wallMotion.springAxis(before,m.vel[key],m.goal[key],dt,motion.matches);
+  m.cur[key]=next.value;m.vel[key]=next.velocity;
+  if(next.moving)moving=true;
+  if(before!==next.value)changed=true;
  }
- if(changed)place(m);return isMoving
+ if(changed)place(m);
+ return moving;
 }
-function frame(now){raf=0;const dt=last?Math.min(.034,(now-last)/1000):.016;last=now;let moving=false;
- if(motion.matches)camera={...cameraGoal};else for(const key of ['x','y','s']){const delta=cameraGoal[key]-camera[key];if(Math.abs(delta)>.04){camera[key]+=delta*(1-Math.exp(-10*dt));moving=true}else camera[key]=cameraGoal[key]}
- updateCamera();syncVisible();for(const m of nodes.values())if(spring(m,dt))moving=true;
+function frame(now){
+ raf=0;
+ const dt=last?Math.min(.034,(now-last)/1000):.016;
+ last=now;
+ let moving=false;
+ if(cameraFlight){
+  cameraFlight.elapsed+=dt;
+  const sample=wallMotion.panFrame(cameraFlight.from,cameraFlight.to,cameraFlight.elapsed,motion.matches);
+  camera=sample.camera;
+  if(sample.done){camera={...cameraFlight.to};cameraFlight=null}
+  else moving=true;
+ }else if(motion.matches){
+  camera={...cameraGoal};
+ }else{
+  for(const key of ['x','y','s']){
+   const delta=cameraGoal[key]-camera[key];
+   if(Math.abs(delta)>.04){camera[key]+=delta*(1-Math.exp(-10*dt));moving=true}
+   else camera[key]=cameraGoal[key];
+  }
+ }
+ updateCamera();syncVisible();
+ for(const m of nodes.values())if(spring(m,dt))moving=true;
  if(motionUnderlays.size)settleMotionUnderlays();
- if(moving||keepPlaying)start();else last=0
+ if(moving||keepPlaying)start();else last=0;
 }
 function point(e){const r=stage.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
 function pinchState(){const a=[...pointers.values()];if(a.length<2)return null;const mid={x:(a[0].x+a[1].x)/2,y:(a[0].y+a[1].y)/2};return{dist:Math.max(1,dist(a[0],a[1])),mid,scale:camera.s,world:{x:(mid.x-camera.x)/camera.s,y:(mid.y-camera.y)/camera.s}}}
-stage.addEventListener('pointerdown',e=>{if(e.button!==0&&e.pointerType==='mouse')return;const p=point(e);pointers.set(e.pointerId,p);stage.setPointerCapture(e.pointerId);stage.classList.add('is-dragging');keepPlaying=true;
+stage.addEventListener('pointerdown',e=>{if(e.button!==0&&e.pointerType==='mouse')return;cameraFlight=null;cameraGoal={...camera};const p=point(e);pointers.set(e.pointerId,p);stage.setPointerCapture(e.pointerId);stage.classList.add('is-dragging');keepPlaying=true;
  if(pointers.size===1){drag={id:e.pointerId,point:p,start:p,travel:0,tile:e.target.closest('.m-tile')?.dataset.instance||null};pinch=null}
  else{pinch=pinchState();drag=null}
 });
