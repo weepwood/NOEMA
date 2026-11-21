@@ -485,6 +485,36 @@ const clamp=(v,min,max)=>Math.min(max,Math.max(min,v));
 const dist=(p,q)=>Math.hypot(p.x-q.x,p.y-q.y);
 const intersects=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
 const getRect=(bx,by,i)=>{const t=posterWallLayout.orient(TEMPLATE,bx,by)[i];return{x:bx*BW+t.x*PITCH,y:by*BH+t.y*PITCH,w:t.w*PITCH-GAP,h:t.h*PITCH-GAP}};
+const slugNum=(n)=>('000'+(Math.abs(n)%1000)).slice(-3);
+function artIndex(bx,by,i){
+ if(localMode)return localArtIndex(bx,by,i);
+ const n=(bx*17+by*29+i*7+100000*24)%artworks.length;
+ return(n+artworks.length)%artworks.length;
+}
+function start(){if(!raf)raf=requestAnimationFrame(frame)}
+function zoomAt(factor,px,py){camera=canvasCore.anchoredZoom(camera,factor,px,py,.40,1.9);cameraGoal={...camera};updateGoals();updateCamera();start()}
+function reset(animate=true){if(active){const old=nodes.get(active);if(old)holdMotionUnderlay(old);releaseFullImage()}const s=viewport.w<700?.70:viewport.w<1150?.76:.84;const single=localMode&&artworks.length===1?imageSlotForIndex(0)?.rect:null;const x=single?viewport.w/2-(single.x+single.w/2)*s:localMode?Math.max(20,viewport.w*.12):viewport.w*.5-BW*.46*s,y=single?viewport.h/2-(single.y+single.h/2)*s:localMode?Math.max(70,viewport.h*.10):viewport.h*.5-BH*.45*s;active=null;activeReflow=null;stage.classList.remove('has-selection');document.getElementById('closeBtn').tabIndex=-1;document.getElementById('inspectBtn').tabIndex=-1;sceneStatus.textContent='已返回画布中心';counter.innerHTML=`01<span style="font-size:.42em;color:#ffffff66"> / ${localMode?artworks.length:'∞'}</span>`;updateGoals();cameraGoal={x,y,s};if(motion.matches||!animate)camera={...cameraGoal};updateCamera();start()}
+function updateCamera(){world.style.transform=`translate3d(${camera.x}px,${camera.y}px,0) scale(${camera.s})`;if(coordinates)coordinates.textContent=`X ${slugNum(Math.round(-camera.x/camera.s))} — Y ${slugNum(Math.round(-camera.y/camera.s))} · ${String(Math.round(camera.s*100)).padStart(3,'0')}%`}
+function setImage(img,src){
+ img.onload=async()=>{
+   try{if(img.decode)await img.decode()}catch{ /* onload already confirmed this asset */ }
+   if(img.isConnected&&img.getAttribute('src')===src)img.classList.add('loaded');
+ };
+ img.onerror=()=>img.classList.remove('loaded');img.src=src;
+}
+const observer=('IntersectionObserver' in window)?new IntersectionObserver(entries=>{for(const en of entries){if(!en.isIntersecting)continue;const m=nodes.get(en.target.dataset.instance);if(m)loadThumbnail(m);observer.unobserve(en.target)}},{root:stage,rootMargin:'280px'}):null;
+async function loadThumbnail(m){
+ if(m.thumbRequested)return;m.thumbRequested=true;
+ const version=collectionVersion,art=m.art;
+ const url=art.file?await scheduleThumbnail(art):photo(art.img,780);
+ if(version!==collectionVersion||!m.button.isConnected||m.art!==art){return}
+ if(url)setImage(m.low,url);
+}
+function loadOriginal(m){
+ if(m.fullRequested)return;m.fullRequested=true;
+ if(m.art.file){releaseFullImage();m.fullRequested=true;activeFullUrl=URL.createObjectURL(m.art.file);setImage(m.hi,activeFullUrl)}
+ else setImage(m.hi,photo(m.art.img,1800));
+}
 function clearMotionUnderlays(){
  for(const entry of motionUnderlays.values()){
   clearTimeout(entry.timer);entry.el.remove();
@@ -535,6 +565,17 @@ function settleMotionUnderlays(){
   },200);
  }
 }
+function waveDelay(rect){
+ const steps=Math.max(0,rect.x-CAMERA_HOME.x)+Math.max(0,rect.y-CAMERA_HOME.y);
+ const delay=Math.min(ENTRANCE_MAX_DELAY,(steps/(UNIT+GAP))*ENTRANCE_STAGGER);
+ return Date.now()-entranceStart<ENTRANCE_WINDOW&&!entranceDone&&!exitStarted&&!motion.matches?delay*1000:null;
+}
+function exitWaveDelay(rect){
+ // Reverse wave: tiles farther from the home corner leave first.
+ const steps=Math.max(0,rect.x-CAMERA_HOME.x)+Math.max(0,rect.y-CAMERA_HOME.y);
+ const entranceDelay=Math.min(ENTRANCE_MAX_DELAY,(steps/(UNIT+GAP))*ENTRANCE_STAGGER);
+ return Math.max(0,ENTRANCE_MAX_DELAY-entranceDelay)*1000;
+}
 function makeTile(id,rect,index){const a=artworks[index],button=document.createElement('button');
  const position=localMode?imageSlotForIndex(index):(()=>{const [bx,by,i]=id.split(':').map(Number);return{bx,by,i}})();
  if(!position)return null;button.type='button';button.className='m-tile';button.dataset.instance=id;button.setAttribute('aria-label',`${a.title}，${a.category}，按回车展开`);button.setAttribute('aria-expanded','false');button.style.setProperty('--fallback',`linear-gradient(145deg,${a.color},#101114)`);
@@ -546,6 +587,37 @@ function makeTile(id,rect,index){const a=artworks[index],button=document.createE
  nodes.set(id,m);place(m);if(observer)observer.observe(button);else loadThumbnail(m);return m;
 }
 function place(m){const p=m.cur,b=m.button;b.style.left=`${p.x.toFixed(2)}px`;b.style.top=`${p.y.toFixed(2)}px`;b.style.width=`${Math.max(1,p.w).toFixed(2)}px`;b.style.height=`${Math.max(1,p.h).toFixed(2)}px`}
+function blockReflowRect(bx,by,slot){
+ return{x:bx*BW+slot.x*PITCH,y:by*BH+slot.y*PITCH,
+        w:slot.w*PITCH-GAP,h:slot.h*PITCH-GAP};
+}
+function ensureFocusBlock(chosen){
+ // Culling normally operates on the base atlas; keep all twelve pieces of the
+ // expanded block alive even when some are just outside the viewport.
+ for(let i=0;i<TEMPLATE.length;i++){
+  const index=artIndex(chosen.bx,chosen.by,i);
+  if(index<0)continue;
+  const id=localMode?`local:${index}`:`${chosen.bx}:${chosen.by}:${i}`;
+  if(!nodes.has(id))makeTile(id,getRect(chosen.bx,chosen.by,i),index);
+ }
+}
+function focusCameraFor(rect){
+ const padX=viewport.w<640?18:36;
+ const top=viewport.w<640?78:104,bottom=viewport.w<640?74:78;
+ const scale=Math.min(camera.s,(viewport.w-padX*2)/rect.w,
+                       (viewport.h-top-bottom)/rect.h);
+ const s=clamp(scale,.28,1.9);
+ // Minimal pan to reveal the fully expanded card; do not needlessly reset zoom.
+ let x=camera.x,y=camera.y;
+ const oldCenter={x:(viewport.w/2-camera.x)/camera.s,y:(viewport.h/2-camera.y)/camera.s};
+ x=viewport.w/2-oldCenter.x*s;
+ y=viewport.h/2-oldCenter.y*s;
+ if(rect.x*s+x<padX)x=padX-rect.x*s;
+ if((rect.x+rect.w)*s+x>viewport.w-padX)x=viewport.w-padX-(rect.x+rect.w)*s;
+ if(rect.y*s+y<top)y=top-rect.y*s;
+ if((rect.y+rect.h)*s+y>viewport.h-bottom)y=viewport.h-bottom-(rect.y+rect.h)*s;
+ return{x,y,s};
+}
 function updateGoals(){
  const chosen=active&&nodes.get(active);
  for(const m of nodes.values()){
@@ -645,7 +717,7 @@ stage.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return;co
 stage.addEventListener('pointerup',e=>{pointers.delete(e.pointerId);stage.releasePointerCapture(e.pointerId);
  if(pointers.size===0){const wasClick=drag&&drag.travel<5;const d=drag;drag=null;pinch=null;
   if(wasClick&&d.tile){focusRestore=nodes.get(d.tile)?.button||null;select(d.tile)}
-  stage.classList.remove('is-dragging');start()}});
+  keepPlaying=false;stage.classList.remove('is-dragging');start()}});
 stage.addEventListener('pointercancel',e=>{pointers.delete(e.pointerId);
  if(pointers.size===1){const [id,p]=pointers.entries().next().value;drag={id,point:p,start:p,travel:100,tile:null};pinch=null}
  else if(pointers.size>=2){drag=null;pinch=pinchState()}
