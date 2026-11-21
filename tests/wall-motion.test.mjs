@@ -60,7 +60,8 @@ test('no forced zoom and no mid-transition tile culling regressions in applicati
  assert.match(html,/wallMotion\.focusCamera\(rect,camera,viewport\)/);
  assert.match(html,/wallMotion\.springAxis\(before,m\.vel\[key\],m\.goal\[key\],dt,motion\.matches\)/);
  assert.match(html,/motionUnderlays\.has\(\x60\$\{m\.bx\}:\$\{m\.by\}\x60\)/);
- assert.match(html,/\.focus-underlay\{position:absolute;z-index:1;overflow:hidden;pointer-events:none;opacity:1\}/);
+ assert.match(html,/\.focus-underlay\{position:absolute;z-index:4;overflow:hidden;pointer-events:none;background:#070707;opacity:1\}/);
+ assert.match(html,/\.m-tile\.is-reflowing\{z-index:6\}/);
  assert.match(html,/const complete=!localMode\|\|TEMPLATE\.every/);
  assert.doesNotMatch(html,/function focusCameraFor\(rect\)\{[\s\S]{0,250}Math\.min\(camera\.s,/);
 });
