@@ -135,6 +135,15 @@ test('real page bootstrap, first paint, selection, controls and keyboard navigat
   const scaleBefore=Number(getNode('world').style.transform.match(/scale\(([^)]+)\)/)[1]);
   tile.dispatch('click', { detail: 0 });
   assert.equal(tile.getAttribute('aria-expanded'), 'true', 'selection expands the clicked tile');
+  const occluders = wall.children.filter(child => child.className === 'focus-underlay' && child.isConnected);
+  assert.equal(occluders.length, 1, 'one occluder is created for the selected block');
+  assert.equal(occluders[0].getAttribute('aria-hidden'), 'true', 'occluder is decorative');
+  assert.equal(occluders[0].children.length, 0, 'the occluder never contains ghost image snapshots');
+  const block = tile.dataset.instance.split(':').slice(0, 2).join(':');
+  const members = wall.children.filter(child => child.className === 'm-tile' && child.isConnected && child.dataset.instance.startsWith(block + ':'));
+  assert.equal(members.length, 12, 'the selected 12x8 block is fully retained');
+  assert.ok(members.every(child => child.classList.contains('is-reflowing')),
+    'all moving tiles render above the opaque occluder');
   let time=48;
   for(let i=0;i<40&&queuedFrames.length;i++)queuedFrames.shift()(time+=16);
   const scaleAfter=Number(getNode('world').style.transform.match(/scale\(([^)]+)\)/)[1]);
