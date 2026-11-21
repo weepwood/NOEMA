@@ -62,6 +62,12 @@
 .brand-name{font-size:15px;letter-spacing:.18em;font-weight:800;line-height:1}.brand-sub{font-size:9px;letter-spacing:.15em;font-weight:550;color:rgba(247,244,238,.57);margin-top:6px}
 .top-middle{text-align:center;margin-top:4px}.top-middle .eyebrow{font-size:10px;letter-spacing:.28em;font-weight:750}.top-middle .subline{font-size:10px;letter-spacing:.09em;color:rgba(255,255,255,.55);margin-top:9px}
 .top-tools{display:flex;align-items:center;justify-content:flex-end;gap:17px;min-width:220px}.edition{font-size:10px;font-weight:650;letter-spacing:.16em;color:#fff9;white-space:nowrap}.round-btn{display:grid;place-items:center;width:43px;height:43px;flex:0 0 auto;appearance:none;background:rgba(12,12,12,.77);backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);border:1px solid rgba(255,255,255,.21);border-radius:50%;color:var(--paper);cursor:pointer;transition:background .2s,border-color .2s,transform .2s}.round-btn:hover{background:rgba(50,50,50,.88);border-color:#fffc;transform:scale(1.05)}.round-btn:active{transform:scale(.94)}.round-btn svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+/* All UI icons share Lucide's 24-unit grid, stroke and scale. */
+.lucide-icon{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.search-field .lucide-icon{width:18px;height:18px}
+#searchClose .lucide-icon{width:13px;height:13px;vertical-align:middle;margin-left:5px}
+.m-tile .tile-arrow .lucide-icon{width:16px;height:16px}
+
 .bottom-left{position:absolute;left:39px;bottom:29px;display:flex;gap:22px;align-items:end}.bottom-left .number{font-size:46px;letter-spacing:-.09em;font-weight:650;line-height:.9}.bottom-left .bottom-meta{font-size:9px;letter-spacing:.14em;color:#fffa;line-height:1.8;font-weight:600}
 .bottom-center{position:absolute;bottom:29px;left:50%;transform:translateX(-50%);text-align:center;white-space:nowrap}.bottom-center .hint{display:flex;gap:12px;align-items:center;font-size:10px;letter-spacing:.1em;color:#fffa}.hint i{display:inline-block;width:20px;height:1px;background:#fff5}.bottom-center .mini{margin-top:9px;font-size:9px;letter-spacing:.17em;color:#fff6}
 .floating-controls{position:absolute;right:32px;bottom:27px;display:flex;gap:9px}.floating-controls .round-btn{width:44px;height:44px}
@@ -147,10 +153,63 @@
 @media(max-width:520px){.search-overlay{padding:76px 10px 16px}.search-panel{max-height:calc(100dvh - 100px)}.search-field input{font-size:16px}.search-footer{font-size:9px;padding:12px 14px}.floating-controls{gap:5px}.floating-controls .round-btn{width:42px;height:42px}.bottom-left .number{font-size:27px}}
 .sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important;scroll-behavior:auto!important}}
+
+/* Immersive canvas: no metadata, toolbar, UI chrome or image overlays.
+   The exit hit target remains keyboard reachable and reveals on hover/focus. */
+#app.is-immersive .topbar{height:0;padding:0;background:none;pointer-events:none}
+#app.is-immersive .topbar .brand,
+#app.is-immersive .topbar .top-middle{display:none}
+#app.is-immersive .top-tools{position:absolute;right:24px;top:20px;min-width:0;gap:0;pointer-events:none}
+#app.is-immersive .top-tools>:not(#immersiveBtn){display:none!important}
+#app.is-immersive #immersiveBtn{opacity:0;pointer-events:auto;transform:none;transition:opacity .18s ease,background .18s ease,border-color .18s ease}
+#app.is-immersive #immersiveBtn:is(:hover,:focus-visible){opacity:1}
+#app.is-immersive .corner-index,
+#app.is-immersive .bottom-left,
+#app.is-immersive .bottom-center,
+#app.is-immersive .floating-controls,
+#app.is-immersive .selection-exit,
+#app.is-immersive .selection-inspect,
+#app.is-immersive .stage-vignette,
+#app.is-immersive .grain,
+#app.is-immersive .toast,
+#app.is-immersive .filter-banner,
+#app.is-immersive .metrics-hud{visibility:hidden!important;opacity:0!important;pointer-events:none!important}
+#app.is-immersive .m-tile .tile-shade,
+#app.is-immersive .m-tile .tile-dimmer,
+#app.is-immersive .m-tile .tile-index,
+#app.is-immersive .m-tile .tile-info,
+#app.is-immersive .m-tile .tile-arrow{display:none!important}
+#app.is-immersive .m-tile.is-active{box-shadow:none}
+#app.is-immersive .inspector-top,
+#app.is-immersive .inspector-bottom{visibility:hidden;pointer-events:none}
+#app.is-immersive .inspector-viewport{inset:0}
+@media(hover:none){#app.is-immersive #immersiveBtn{opacity:.4}}
+@media(max-width:760px){#app.is-immersive .top-tools{top:16px;right:16px}}
 </style>
 </head>
 <body>
 <div id="app">
+  <!-- Lucide Icons (ISC): locally embedded symbols; no CDN or JS icon runtime. -->
+  <svg class="lucide-definitions" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" width="0" height="0" style="position:absolute;width:0;height:0;overflow:hidden;pointer-events:none">
+    <symbol id="lucide-folder-clock" viewBox="0 0 24 24"><path d="M17 15.5v1.7l1 .625" /><path d="M8.512 20H4a2 2 0 01-2-2V5a2 2 0 012-2h3.9a2 2 0 011.69.9l.81 1.2a2 2 0 001.67.9H20a2 2 0 012 2v1.516" /><circle cx="17" cy="17" r="5" /></symbol>
+    <symbol id="lucide-folder-open" viewBox="0 0 24 24"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2" /></symbol>
+    <symbol id="lucide-image-plus" viewBox="0 0 24 24"><path d="M16 5h6" /><path d="M19 2v6" /><path d="M21 11.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7.5" /><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" /><circle cx="9" cy="9" r="2" /></symbol>
+    <symbol id="lucide-circle-question-mark" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M9 9.5a3 2.5 0 016 0c0 2-2 2-3 3.5" /><path d="M12 17h.01" /></symbol>
+    <symbol id="lucide-scan" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2" /><path d="M17 3h2a2 2 0 0 1 2 2v2" /><path d="M21 17v2a2 2 0 0 1-2 2h-2" /><path d="M7 21H5a2 2 0 0 1-2-2v-2" /></symbol>
+    <symbol id="lucide-x" viewBox="0 0 24 24"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></symbol>
+    <symbol id="lucide-minus" viewBox="0 0 24 24"><path d="M5 12h14" /></symbol>
+    <symbol id="lucide-plus" viewBox="0 0 24 24"><path d="M5 12h14" /><path d="M12 5v14" /></symbol>
+    <symbol id="lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34" /><circle cx="11" cy="11" r="8" /></symbol>
+    <symbol id="lucide-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z" /></symbol>
+    <symbol id="lucide-crosshair" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><line x1="22" x2="18" y1="12" y2="12" /><line x1="6" x2="2" y1="12" y2="12" /><line x1="12" x2="12" y1="6" y2="2" /><line x1="12" x2="12" y1="22" y2="18" /></symbol>
+    <symbol id="lucide-chevron-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6" /></symbol>
+    <symbol id="lucide-chevron-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></symbol>
+    <symbol id="lucide-maximize" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3" /><path d="M21 8V5a2 2 0 0 0-2-2h-3" /><path d="M3 16v3a2 2 0 0 0 2 2h3" /><path d="M16 21h3a2 2 0 0 0 2-2v-3" /></symbol>
+    <symbol id="lucide-minimize" viewBox="0 0 24 24"><path d="M8 3v3a2 2 0 0 1-2 2H3" /><path d="M21 8h-3a2 2 0 0 1-2-2V3" /><path d="M3 16h3a2 2 0 0 1 2 2v3" /><path d="M16 21v-3a2 2 0 0 1 2-2h3" /></symbol>
+    <symbol id="lucide-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></symbol>
+    <symbol id="lucide-expand" viewBox="0 0 24 24"><path d="m15 15 6 6" /><path d="m15 9 6-6" /><path d="M21 16v5h-5" /><path d="M21 8V3h-5" /><path d="M3 16v5h5" /><path d="m3 21 6-6" /><path d="M3 8V3h5" /><path d="M9 9 3 3" /></symbol>
+    <symbol id="lucide-shrink" viewBox="0 0 24 24"><path d="m15 15 6 6m-6-6v4.8m0-4.8h4.8" /><path d="M9 19.8V15m0 0H4.2M9 15l-6 6" /><path d="M15 4.2V9m0 0h4.8M15 9l6-6" /><path d="M9 4.2V9m0 0H4.2M9 9 3 3" /></symbol>
+  </svg>
   <div class="stage" id="stage" tabindex="0" role="region" aria-label="可拖动和缩放的图片马赛克画布；按问号查看操作指南">
     <div class="world" id="world"></div>
     <div class="stage-vignette"></div>
@@ -160,23 +219,23 @@
     <header class="topbar">
       <div class="brand" aria-label="Noema 视觉档案"><div class="brand-mark"><span class="cross-h"></span><span class="cross-v"></span></div><div><div class="brand-name">N O E M A</div><div class="brand-sub">THE VISUAL ARCHIVE</div></div></div>
       <div class="top-middle"><div class="eyebrow">AN INFINITE COLLECTION</div><div class="subline">An exploration of image, atmosphere &amp; form</div></div>
-      <div class="top-tools"><span class="edition">VOLUME 001 — 2026</span><span class="collection-tag" id="collectionTag" hidden></span><button class="round-btn" id="recentBtn" hidden aria-label="重新打开最近文件夹" title="恢复最近文件夹"><svg viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/><path d="M7 13a5 5 0 1 1 3 4.6M7 10v3h3"/></svg></button><button class="round-btn import-btn" id="folderBtn" aria-label="打开本地图片文件夹" title="打开本地图片文件夹"><svg viewBox="0 0 24 24"><path d="M3 7V5.5A2 2 0 0 1 5 3.5h4l2.3 2.5H19a2 2 0 0 1 2 2v10.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10h18"/></svg></button><button class="round-btn" id="fileBtn" aria-label="选择图片文件" title="添加图片文件"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 16l3-4 2 2 2-3 3 5"/><circle cx="9" cy="8" r="1"/></svg></button><button class="round-btn" id="infoBtn" aria-label="操作指南" title="操作指南 (?)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.8 9a2.4 2.4 0 1 1 4.4 1.2c-.7 1-2.2 1.4-2.2 3.2M12 17.4h.01"/></svg></button></div>
+      <div class="top-tools"><span class="edition">VOLUME 001 — 2026</span><span class="collection-tag" id="collectionTag" hidden></span><button class="round-btn" id="recentBtn" hidden aria-label="重新打开最近文件夹" title="恢复最近文件夹"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-folder-clock"></use></svg></button><button class="round-btn import-btn" id="folderBtn" aria-label="打开本地图片文件夹" title="打开本地图片文件夹"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-folder-open"></use></svg></button><button class="round-btn" id="fileBtn" aria-label="选择图片文件" title="添加图片文件"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-image-plus"></use></svg></button><button class="round-btn" id="infoBtn" aria-label="操作指南" title="操作指南 (?)"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-circle-question-mark"></use></svg></button><button class="round-btn" id="immersiveBtn" type="button" aria-label="进入沉浸模式" title="沉浸模式 (F)" aria-keyshortcuts="F" aria-pressed="false"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-expand"></use></svg></button></div>
     </header>
     <div class="corner-index"><span class="accent"></span>CURATED IN SPACE<br>FREEFORM EXPLORATION</div>
-    <button class="round-btn selection-inspect" id="inspectBtn" tabindex="-1" aria-label="完整查看原图" title="完整查看原图 (I)"><svg viewBox="0 0 24 24"><path d="M8 3H4a1 1 0 0 0-1 1v4M16 3h4a1 1 0 0 1 1 1v4M21 16v4a1 1 0 0 1-1 1h-4M8 21H4a1 1 0 0 1-1-1v-4"/><path d="M8 12h8M12 8v8"/></svg></button>
-    <button class="round-btn selection-exit" id="closeBtn" tabindex="-1" aria-label="关闭展开的作品" title="关闭作品 (Esc)"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <button class="round-btn selection-inspect" id="inspectBtn" tabindex="-1" aria-label="完整查看原图" title="完整查看原图 (I)"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-scan"></use></svg></button>
+    <button class="round-btn selection-exit" id="closeBtn" tabindex="-1" aria-label="关闭展开的作品" title="关闭作品 (Esc)"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-x"></use></svg></button>
     <div class="bottom-left"><div class="number" id="counter">01<span style="font-size:.42em;color:#ffffff66"> / ∞</span></div><div class="bottom-meta">UNBOUND STORIES<br>ENDLESS FRAMES</div></div>
     <div class="bottom-center"><div class="hint"><span>DRAG TO EXPLORE</span><i></i><span>SCROLL TO ZOOM</span><i></i><span>SELECT TO EXPAND</span></div><div class="mini" id="coordinates">X 0000 — Y 0000 · 076%</div></div>
-    <div class="floating-controls"><button class="round-btn" id="minusBtn" aria-label="缩小画布" title="缩小 (-)"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button><button class="round-btn" id="plusBtn" aria-label="放大画布" title="放大 (+)"><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button><button class="round-btn" id="searchBtn" aria-label="搜索图片" title="搜索图片 (/ 或 Ctrl+K)"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg></button><button class="round-btn" id="discoverBtn" aria-label="随机发现作品" title="发现作品 (R)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="m14.5 9.5-2.4 5-2.6.9 1-2.6 4-3.3z"/></svg></button><button class="round-btn" id="homeBtn" aria-label="返回画布中心" title="重置视图 (0)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button></div>
+    <div class="floating-controls"><button class="round-btn" id="minusBtn" aria-label="缩小画布" title="缩小 (-)"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-minus"></use></svg></button><button class="round-btn" id="plusBtn" aria-label="放大画布" title="放大 (+)"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-plus"></use></svg></button><button class="round-btn" id="searchBtn" aria-label="搜索图片" title="搜索图片 (/ 或 Ctrl+K)"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-search"></use></svg></button><button class="round-btn" id="discoverBtn" aria-label="随机发现作品" title="发现作品 (R)"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-compass"></use></svg></button><button class="round-btn" id="homeBtn" aria-label="返回画布中心" title="重置视图 (0)"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-crosshair"></use></svg></button></div>
   </div>
   <input class="sr-only" type="file" id="folderInput" accept="image/*" webkitdirectory multiple tabindex="-1" aria-label="选择图片文件夹" />
   <input class="sr-only" type="file" id="fileInput" accept="image/*,.jpg,.jpeg,.png,.webp,.avif,.gif,.bmp" multiple tabindex="-1" aria-label="选择图片文件" />
   <div class="drop-overlay" id="dropOverlay" aria-hidden="true"><div class="drop-copy">DROP YOUR IMAGES HERE<small>拖入图片文件或文件夹 · 所有图片仅在本地处理</small></div></div>
   <div class="search-overlay" id="searchOverlay" hidden role="dialog" aria-modal="true" aria-labelledby="searchTitle">
     <div class="search-panel">
-      <div class="search-heading"><span id="searchTitle">FIND IN SPACE</span><button type="button" id="searchClose" aria-label="关闭搜索">ESC <span aria-hidden="true">×</span></button></div>
+      <div class="search-heading"><span id="searchTitle">FIND IN SPACE</span><button type="button" id="searchClose" aria-label="关闭搜索">ESC <svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-x"></use></svg></button></div>
       <label class="sr-only" for="searchInput">搜索图片文件名或路径</label>
-      <div class="search-field"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><input id="searchInput" type="search" placeholder="输入文件名、路径或作品标题…" autocomplete="off" spellcheck="false" /></div>
+      <div class="search-field"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-search"></use></svg><input id="searchInput" type="search" placeholder="输入文件名、路径或作品标题…" autocomplete="off" spellcheck="false" /></div>
       <div class="search-summary" id="searchSummary" role="status" aria-live="polite"></div>
       <div class="search-results" id="searchResults" role="group" aria-label="匹配的图片"></div>
       <div class="search-actions"><span id="searchFilterHint">仅限本地图库可按结果过滤</span><button id="searchFilterBtn" type="button" disabled>仅显示匹配项</button></div>
@@ -189,12 +248,12 @@
   <div class="import-progress" id="importProgress" hidden role="status" aria-live="off"><span id="importMessage">准备导入图片…</span><button id="importCancel" type="button" aria-label="取消导入">取消</button></div>
   <div class="sr-only" id="sceneStatus" role="status" aria-live="polite" aria-atomic="true"></div>
   <div class="modal" id="helpModal" hidden role="dialog" aria-modal="true" aria-labelledby="helpTitle">
-    <div class="modal-card"><div class="overline">NOEMA / FIELD MANUAL</div><button class="round-btn modal-close" id="helpClose" aria-label="关闭指南"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button><h2 id="helpTitle">Explore without edges.</h2><p>无限延展的图像档案。拖动画布穿越视觉场景；缩放始终围绕指针所在的位置。选择任意图像，它将从原位置展开，周围作品随之自然退让。</p><div class="keys"><div class="key-item"><span class="kbd">拖动</span> 移动画布</div><div class="key-item"><span class="kbd">滚轮</span> 指针缩放</div><div class="key-item"><span class="kbd">+ / −</span> 缩放视图</div><div class="key-item"><span class="kbd">方向键</span> 平移画布</div><div class="key-item"><span class="kbd">Enter</span> 展开焦点作品</div><div class="key-item"><span class="kbd">Esc</span> 收起作品</div><div class="key-item"><span class="kbd">0</span> 重置视图</div><div class="key-item"><span class="kbd">?</span> 操作指南</div><div class="key-item"><span class="kbd">R</span> 随机发现</div><div class="key-item"><span class="kbd">I</span> 完整查看原图</div><div class="key-item"><span class="kbd">← / →</span> 原图切换</div><div class="key-item"><span class="kbd">1</span> 原图 100% 查看</div><div class="key-item"><span class="kbd">文件夹</span> 打开本地图片</div><div class="key-item"><span class="kbd">拖放</span> 导入文件或目录</div><div class="key-item"><span class="kbd">最近</span> 按需恢复授权文件夹</div><div class="key-item"><span class="kbd">/ 或 ⌘K</span> 搜索图片</div></div><div class="cache-actions"><span id="cacheStatus" aria-live="polite">正在读取缩略图缓存…</span><button type="button" id="clearCacheBtn">清除缩略图缓存</button></div><div class="cache-actions"><span id="indexStatus" aria-live="polite">正在读取图片布局索引…</span><button type="button" id="clearIndexBtn">清除布局索引</button></div><div class="cache-actions"><span>渲染性能指标仅在开启时采样，关闭后立即停止。</span><button id="metricsToggle" type="button" aria-pressed="false">显示性能指标 (Shift+P)</button></div><button class="forget-folder" id="forgetFolder" type="button" hidden>清除记住的文件夹</button></div>
+    <div class="modal-card"><div class="overline">NOEMA / FIELD MANUAL</div><button class="round-btn modal-close" id="helpClose" aria-label="关闭指南"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-x"></use></svg></button><h2 id="helpTitle">Explore without edges.</h2><p>无限延展的图像档案。拖动画布穿越视觉场景；缩放始终围绕指针所在的位置。选择任意图像，它将从原位置展开，周围作品随之自然退让。</p><div class="keys"><div class="key-item"><span class="kbd">拖动</span> 移动画布</div><div class="key-item"><span class="kbd">滚轮</span> 指针缩放</div><div class="key-item"><span class="kbd">+ / −</span> 缩放视图</div><div class="key-item"><span class="kbd">方向键</span> 平移画布</div><div class="key-item"><span class="kbd">Enter</span> 展开焦点作品</div><div class="key-item"><span class="kbd">Esc</span> 收起作品</div><div class="key-item"><span class="kbd">0</span> 重置视图</div><div class="key-item"><span class="kbd">?</span> 操作指南</div><div class="key-item"><span class="kbd">R</span> 随机发现</div><div class="key-item"><span class="kbd">F</span> 沉浸模式（再次按 F 返回）</div><div class="key-item"><span class="kbd">I</span> 完整查看原图</div><div class="key-item"><span class="kbd">← / →</span> 原图切换</div><div class="key-item"><span class="kbd">1</span> 原图 100% 查看</div><div class="key-item"><span class="kbd">文件夹</span> 打开本地图片</div><div class="key-item"><span class="kbd">拖放</span> 导入文件或目录</div><div class="key-item"><span class="kbd">最近</span> 按需恢复授权文件夹</div><div class="key-item"><span class="kbd">/ 或 ⌘K</span> 搜索图片</div></div><div class="cache-actions"><span id="cacheStatus" aria-live="polite">正在读取缩略图缓存…</span><button type="button" id="clearCacheBtn">清除缩略图缓存</button></div><div class="cache-actions"><span id="indexStatus" aria-live="polite">正在读取图片布局索引…</span><button type="button" id="clearIndexBtn">清除布局索引</button></div><div class="cache-actions"><span>渲染性能指标仅在开启时采样，关闭后立即停止。</span><button id="metricsToggle" type="button" aria-pressed="false">显示性能指标 (Shift+P)</button></div><button class="forget-folder" id="forgetFolder" type="button" hidden>清除记住的文件夹</button></div>
   </div>
   <div id="inspector" class="inspector" hidden role="dialog" aria-modal="true" aria-labelledby="inspectorTitle">
     <header class="inspector-top">
       <div class="inspector-title"><strong id="inspectorTitle">Image</strong><span id="inspectorCount">1 / 1</span></div>
-      <button class="round-btn" id="inspectorClose" aria-label="返回画布" title="返回画布 (Esc)"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      <button class="round-btn" id="inspectorClose" aria-label="返回画布" title="返回画布 (Esc)"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-x"></use></svg></button>
     </header>
     <div class="inspector-viewport" id="inspectorViewport" tabindex="0" aria-label="原图查看区域，可拖动或滚轮缩放">
       <img class="inspector-image inspector-preview" id="inspectorPreview" alt="" aria-hidden="true" draggable="false" hidden />
@@ -203,16 +262,16 @@
     </div>
     <footer class="inspector-bottom">
       <div class="inspector-group">
-        <button class="round-btn" id="inspectorPrev" aria-label="上一张图片" title="上一张 (←)"><svg viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></svg></button>
-        <button class="round-btn" id="inspectorNext" aria-label="下一张图片" title="下一张 (→)"><svg viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></svg></button>
+        <button class="round-btn" id="inspectorPrev" aria-label="上一张图片" title="上一张 (←)"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-chevron-left"></use></svg></button>
+        <button class="round-btn" id="inspectorNext" aria-label="下一张图片" title="下一张 (→)"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-chevron-right"></use></svg></button>
       </div>
       <div class="inspector-meta" id="inspectorMeta">FIT TO VIEW · NOEMA</div>
       <div class="inspector-group">
-        <button class="round-btn" id="inspectorZoomOut" aria-label="缩小原图" title="缩小 (-)"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+        <button class="round-btn" id="inspectorZoomOut" aria-label="缩小原图" title="缩小 (-)"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-minus"></use></svg></button>
         <span id="inspectorScale" class="inspector-scale">100%</span>
-        <button class="round-btn" id="inspectorZoomIn" aria-label="放大原图" title="放大 (+)"><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></svg></button>
-        <button class="round-btn" id="inspectorActual" aria-label="以 100% 像素比例查看" title="原始尺寸 (1)"><svg viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 14h6v6h-6zM4 20h6M20 4v6"/></svg></button>
-        <button class="round-btn" id="inspectorFit" aria-label="适应屏幕" title="适应屏幕 (0)"><svg viewBox="0 0 24 24"><path d="M8 3H4v5M16 3h4v5M20 16v5h-4M4 16v5h4"/></svg></button>
+        <button class="round-btn" id="inspectorZoomIn" aria-label="放大原图" title="放大 (+)"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-plus"></use></svg></button>
+        <button class="round-btn" id="inspectorActual" aria-label="以 100% 像素比例查看" title="原始尺寸 (1)"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-maximize"></use></svg></button>
+        <button class="round-btn" id="inspectorFit" aria-label="适应屏幕" title="适应屏幕 (0)"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-minimize"></use></svg></button>
       </div>
     </footer>
   </div>
@@ -534,6 +593,26 @@ const posterWallLayout=window.NOEMAPosterWallLayout,wallMotion=window.NOEMAWallM
 const stage=document.getElementById('stage'),world=document.getElementById('world'),modal=document.getElementById('helpModal');
 const counter=document.getElementById('counter'),coordinates=document.getElementById('coordinates');
 const sceneStatus=document.getElementById('sceneStatus'),chrome=document.querySelector('.chrome');
+
+const app=document.getElementById('app'),immersiveButton=document.getElementById('immersiveBtn');
+function setImmersiveMode(enabled){
+ const immersive=Boolean(enabled);
+ if(app.classList.contains('is-immersive')===immersive)return;
+ app.classList.toggle('is-immersive',immersive);
+ immersiveButton.setAttribute('aria-pressed',String(immersive));
+ immersiveButton.setAttribute('aria-label',immersive?'退出沉浸模式':'进入沉浸模式');
+ immersiveButton.title=immersive?'退出沉浸模式 (F)':'沉浸模式 (F)';
+ immersiveButton.querySelector('use')?.setAttribute('href',immersive?'#lucide-shrink':'#lucide-expand');
+ if(immersive&&!document.getElementById('metricsHud').hidden)toggleMetrics(false);
+ // Focus stays on an accessible surface when controls visually disappear.
+ if(!inspector.hidden){
+  if(immersive)inspectorView.focus({preventScroll:true});
+  else document.getElementById('inspectorClose').focus({preventScroll:true});
+  inspectorFitToView();
+ }else if(immersive)stage.focus({preventScroll:true});
+ sceneStatus.textContent=immersive?'已开启沉浸模式；按 F 返回普通界面':'已退出沉浸模式';
+}
+
 const collectionTag=document.getElementById('collectionTag'),notice=document.getElementById('notice'),dropOverlay=document.getElementById('dropOverlay');
 let noticeTimer=0;function notify(message){sceneStatus.textContent=message;notice.textContent=message;notice.classList.add('visible');clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>notice.classList.remove('visible'),3800)}
 const motion=window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -650,7 +729,7 @@ function exitWaveDelay(rect){
 function makeTile(id,rect,index){const a=artworks[index],button=document.createElement('button');
  const position=localMode?imageSlotForIndex(index):(()=>{const [bx,by,i]=id.split(':').map(Number);return{bx,by,i}})();
  if(!position)return null;button.type='button';button.className='m-tile';button.dataset.instance=id;button.setAttribute('aria-label',`${a.title}，${a.category}，按回车展开`);button.setAttribute('aria-expanded','false');button.style.setProperty('--fallback',`linear-gradient(145deg,${a.color},#101114)`);
- button.innerHTML=`<div class="tile-art"><img class="low-res" alt="" loading="lazy" decoding="async" draggable="false"><img class="hi-res" alt="" decoding="async" draggable="false"></div><div class="tile-shade"></div><div class="tile-index">NO. ${String(index+1).padStart(2,'0')}</div><div class="tile-info"><div class="tile-kicker">${escapeHTML(a.category)} &nbsp; / &nbsp; STUDY ${String(index+1).padStart(2,'0')}</div><h2 class="tile-title">${escapeHTML(a.title)}</h2><div class="detail"><span class="detail-line"></span>${escapeHTML(a.desc)}<span class="detail-link">CLICK TO CLOSE <span aria-hidden="true">↙</span></span></div></div><div class="tile-arrow" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></div><div class="tile-dimmer"></div>`;
+ button.innerHTML=`<div class="tile-art"><img class="low-res" alt="" loading="lazy" decoding="async" draggable="false"><img class="hi-res" alt="" decoding="async" draggable="false"></div><div class="tile-shade"></div><div class="tile-index">NO. ${String(index+1).padStart(2,'0')}</div><div class="tile-info"><div class="tile-kicker">${escapeHTML(a.category)} &nbsp; / &nbsp; STUDY ${String(index+1).padStart(2,'0')}</div><h2 class="tile-title">${escapeHTML(a.title)}</h2><div class="detail"><span class="detail-line"></span>${escapeHTML(a.desc)}<span class="detail-link">CLICK TO CLOSE <svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-arrow-right"></use></svg></span></div></div><div class="tile-arrow" aria-hidden="true"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-arrow-right"></use></svg></div><div class="tile-dimmer"></div>`;
  button.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();focusRestore=button;select(id)}});
  button.addEventListener('click',e=>{if(e.detail===0){focusRestore=button;select(id)}});
  world.appendChild(button);
@@ -966,6 +1045,7 @@ document.addEventListener('keydown',event=>{
  if(inspector.hidden)return;
  const key=event.key.toLowerCase();
  if(event.key==='Tab'){
+  if(app.classList.contains('is-immersive')){event.preventDefault();return}
   const controls=[...inspector.querySelectorAll('button')].filter(element=>!element.disabled);
   const first=controls[0],last=controls[controls.length-1];
   if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus()}
@@ -1401,11 +1481,22 @@ function toggleMetrics(force=null){
  if(enable)metricsMonitor.start();else metricsMonitor.stop();
 }
 document.getElementById('metricsToggle').addEventListener('click',()=>toggleMetrics());
-document.getElementById('infoBtn').addEventListener('click',showHelp);document.getElementById('helpClose').addEventListener('click',hideHelp);modal.addEventListener('click',e=>{if(e.target===modal)hideHelp()});
+immersiveButton.addEventListener('click',()=>setImmersiveMode(!app.classList.contains('is-immersive')));
+ document.getElementById('infoBtn').addEventListener('click',showHelp);document.getElementById('helpClose').addEventListener('click',hideHelp);modal.addEventListener('click',e=>{if(e.target===modal)hideHelp()});
 document.getElementById('closeBtn').addEventListener('click',close);document.getElementById('plusBtn').addEventListener('click',()=>zoomAt(1.24,viewport.w/2,viewport.h/2));document.getElementById('minusBtn').addEventListener('click',()=>zoomAt(1/1.24,viewport.w/2,viewport.h/2));document.getElementById('homeBtn').addEventListener('click',()=>reset());document.getElementById('discoverBtn').addEventListener('click',discover);
 document.addEventListener('keydown',e=>{
  if(!searchOverlay.hidden){if(e.key==='Escape'){e.preventDefault();closeSearch()}return}
- if(e.key==='Escape'){if(!modal.hidden){hideHelp();return}close();return}if(!modal.hidden)return;
+ if(e.key==='Escape'){
+  if(!modal.hidden){hideHelp();return}
+  if(active){close();return}
+  if(app.classList.contains('is-immersive')){e.preventDefault();setImmersiveMode(false);return}
+  return;
+ }
+ if(!modal.hidden)return;
+ if(e.key.toLowerCase()==='f'&&!e.altKey&&!e.ctrlKey&&!e.metaKey&&!e.shiftKey
+   &&!e.target?.closest?.('input,textarea,[contenteditable="true"]')){
+  e.preventDefault();setImmersiveMode(!app.classList.contains('is-immersive'));return;
+ }
  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();openSearch();return}
  if(e.key==='/'&&!e.shiftKey&&!e.altKey&&!e.ctrlKey&&!e.metaKey){e.preventDefault();openSearch();return}
  if(e.key==='?'||((e.shiftKey)&&e.key==='/')){e.preventDefault();showHelp();return}
