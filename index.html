@@ -557,14 +557,24 @@ const observer=('IntersectionObserver' in window)?new IntersectionObserver(entri
 async function loadThumbnail(m){
  if(m.thumbRequested)return;m.thumbRequested=true;
  const version=collectionVersion,art=m.art;
- const url=art.file?await scheduleThumbnail(art):photo(art.img,780);
- if(version!==collectionVersion||!m.button.isConnected||m.art!==art){return}
- if(url)setImage(m.low,url);
+ const url=art.file?await scheduleThumbnail(art,thumbnailPriority(m)):photo(art.img,780);
+ if(version!==collectionVersion||!m.button.isConnected||m.art!==art)return;
+ if(url){m.low.loading='eager';setImage(m.low,url)}
 }
 function loadOriginal(m){
- if(m.fullRequested)return;m.fullRequested=true;
- if(m.art.file){releaseFullImage();m.fullRequested=true;activeFullUrl=URL.createObjectURL(m.art.file);setImage(m.hi,activeFullUrl)}
- else setImage(m.hi,photo(m.art.img,1800));
+ if(m.fullRequested)return;
+ m.fullRequested=true;
+ if(!m.art.file){m.hi.loading='eager';setImage(m.hi,photo(m.art.img,1800));return}
+ // A user-clicked tile only needs screen-sized pixels. Full files are decoded
+ // exclusively by the dedicated original-image inspector.
+ const token=++activePreviewToken;
+ void schedulePreview(m.art).then(blob=>{
+  if(!blob||token!==activePreviewToken||active!==m.id||!m.button.isConnected)return;
+  const url=URL.createObjectURL(blob);
+  if(activeFullUrl)URL.revokeObjectURL(activeFullUrl);
+  activeFullUrl=url;
+  m.hi.loading='eager';setImage(m.hi,url);
+ }).catch(error=>console.warn('预览失败，保留缩略图:',error));
 }
 function clearMotionUnderlays(){
  for(const entry of motionUnderlays.values()){
