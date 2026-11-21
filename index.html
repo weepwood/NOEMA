@@ -153,6 +153,38 @@
 @media(max-width:520px){.search-overlay{padding:76px 10px 16px}.search-panel{max-height:calc(100dvh - 100px)}.search-field input{font-size:16px}.search-footer{font-size:9px;padding:12px 14px}.floating-controls{gap:5px}.floating-controls .round-btn{width:42px;height:42px}.bottom-left .number{font-size:27px}}
 .sr-only{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important;scroll-behavior:auto!important}}
+
+/* Immersive canvas: no metadata, toolbar, UI chrome or image overlays.
+   The exit hit target remains keyboard reachable and reveals on hover/focus. */
+#app.is-immersive .topbar{height:0;padding:0;background:none;pointer-events:none}
+#app.is-immersive .topbar .brand,
+#app.is-immersive .topbar .top-middle{display:none}
+#app.is-immersive .top-tools{position:absolute;right:24px;top:20px;min-width:0;gap:0;pointer-events:none}
+#app.is-immersive .top-tools>:not(#immersiveBtn){display:none!important}
+#app.is-immersive #immersiveBtn{opacity:0;pointer-events:auto;transform:none;transition:opacity .18s ease,background .18s ease,border-color .18s ease}
+#app.is-immersive #immersiveBtn:is(:hover,:focus-visible){opacity:1}
+#app.is-immersive .corner-index,
+#app.is-immersive .bottom-left,
+#app.is-immersive .bottom-center,
+#app.is-immersive .floating-controls,
+#app.is-immersive .selection-exit,
+#app.is-immersive .selection-inspect,
+#app.is-immersive .stage-vignette,
+#app.is-immersive .grain,
+#app.is-immersive .toast,
+#app.is-immersive .filter-banner,
+#app.is-immersive .metrics-hud{visibility:hidden!important;opacity:0!important;pointer-events:none!important}
+#app.is-immersive .m-tile .tile-shade,
+#app.is-immersive .m-tile .tile-dimmer,
+#app.is-immersive .m-tile .tile-index,
+#app.is-immersive .m-tile .tile-info,
+#app.is-immersive .m-tile .tile-arrow{display:none!important}
+#app.is-immersive .m-tile.is-active{box-shadow:none}
+#app.is-immersive .inspector-top,
+#app.is-immersive .inspector-bottom{visibility:hidden;pointer-events:none}
+#app.is-immersive .inspector-viewport{inset:0}
+@media(hover:none){#app.is-immersive #immersiveBtn{opacity:.4}}
+@media(max-width:760px){#app.is-immersive .top-tools{top:16px;right:16px}}
 </style>
 </head>
 <body>
@@ -216,7 +248,7 @@
   <div class="import-progress" id="importProgress" hidden role="status" aria-live="off"><span id="importMessage">准备导入图片…</span><button id="importCancel" type="button" aria-label="取消导入">取消</button></div>
   <div class="sr-only" id="sceneStatus" role="status" aria-live="polite" aria-atomic="true"></div>
   <div class="modal" id="helpModal" hidden role="dialog" aria-modal="true" aria-labelledby="helpTitle">
-    <div class="modal-card"><div class="overline">NOEMA / FIELD MANUAL</div><button class="round-btn modal-close" id="helpClose" aria-label="关闭指南"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-x"></use></svg></button><h2 id="helpTitle">Explore without edges.</h2><p>无限延展的图像档案。拖动画布穿越视觉场景；缩放始终围绕指针所在的位置。选择任意图像，它将从原位置展开，周围作品随之自然退让。</p><div class="keys"><div class="key-item"><span class="kbd">拖动</span> 移动画布</div><div class="key-item"><span class="kbd">滚轮</span> 指针缩放</div><div class="key-item"><span class="kbd">+ / −</span> 缩放视图</div><div class="key-item"><span class="kbd">方向键</span> 平移画布</div><div class="key-item"><span class="kbd">Enter</span> 展开焦点作品</div><div class="key-item"><span class="kbd">Esc</span> 收起作品</div><div class="key-item"><span class="kbd">0</span> 重置视图</div><div class="key-item"><span class="kbd">?</span> 操作指南</div><div class="key-item"><span class="kbd">R</span> 随机发现</div><div class="key-item"><span class="kbd">I</span> 完整查看原图</div><div class="key-item"><span class="kbd">← / →</span> 原图切换</div><div class="key-item"><span class="kbd">1</span> 原图 100% 查看</div><div class="key-item"><span class="kbd">文件夹</span> 打开本地图片</div><div class="key-item"><span class="kbd">拖放</span> 导入文件或目录</div><div class="key-item"><span class="kbd">最近</span> 按需恢复授权文件夹</div><div class="key-item"><span class="kbd">/ 或 ⌘K</span> 搜索图片</div></div><div class="cache-actions"><span id="cacheStatus" aria-live="polite">正在读取缩略图缓存…</span><button type="button" id="clearCacheBtn">清除缩略图缓存</button></div><div class="cache-actions"><span id="indexStatus" aria-live="polite">正在读取图片布局索引…</span><button type="button" id="clearIndexBtn">清除布局索引</button></div><div class="cache-actions"><span>渲染性能指标仅在开启时采样，关闭后立即停止。</span><button id="metricsToggle" type="button" aria-pressed="false">显示性能指标 (Shift+P)</button></div><button class="forget-folder" id="forgetFolder" type="button" hidden>清除记住的文件夹</button></div>
+    <div class="modal-card"><div class="overline">NOEMA / FIELD MANUAL</div><button class="round-btn modal-close" id="helpClose" aria-label="关闭指南"><svg class="lucide-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><use href="#lucide-x"></use></svg></button><h2 id="helpTitle">Explore without edges.</h2><p>无限延展的图像档案。拖动画布穿越视觉场景；缩放始终围绕指针所在的位置。选择任意图像，它将从原位置展开，周围作品随之自然退让。</p><div class="keys"><div class="key-item"><span class="kbd">拖动</span> 移动画布</div><div class="key-item"><span class="kbd">滚轮</span> 指针缩放</div><div class="key-item"><span class="kbd">+ / −</span> 缩放视图</div><div class="key-item"><span class="kbd">方向键</span> 平移画布</div><div class="key-item"><span class="kbd">Enter</span> 展开焦点作品</div><div class="key-item"><span class="kbd">Esc</span> 收起作品</div><div class="key-item"><span class="kbd">0</span> 重置视图</div><div class="key-item"><span class="kbd">?</span> 操作指南</div><div class="key-item"><span class="kbd">R</span> 随机发现</div><div class="key-item"><span class="kbd">F</span> 沉浸模式（再次按 F 返回）</div><div class="key-item"><span class="kbd">I</span> 完整查看原图</div><div class="key-item"><span class="kbd">← / →</span> 原图切换</div><div class="key-item"><span class="kbd">1</span> 原图 100% 查看</div><div class="key-item"><span class="kbd">文件夹</span> 打开本地图片</div><div class="key-item"><span class="kbd">拖放</span> 导入文件或目录</div><div class="key-item"><span class="kbd">最近</span> 按需恢复授权文件夹</div><div class="key-item"><span class="kbd">/ 或 ⌘K</span> 搜索图片</div></div><div class="cache-actions"><span id="cacheStatus" aria-live="polite">正在读取缩略图缓存…</span><button type="button" id="clearCacheBtn">清除缩略图缓存</button></div><div class="cache-actions"><span id="indexStatus" aria-live="polite">正在读取图片布局索引…</span><button type="button" id="clearIndexBtn">清除布局索引</button></div><div class="cache-actions"><span>渲染性能指标仅在开启时采样，关闭后立即停止。</span><button id="metricsToggle" type="button" aria-pressed="false">显示性能指标 (Shift+P)</button></div><button class="forget-folder" id="forgetFolder" type="button" hidden>清除记住的文件夹</button></div>
   </div>
   <div id="inspector" class="inspector" hidden role="dialog" aria-modal="true" aria-labelledby="inspectorTitle">
     <header class="inspector-top">
@@ -561,6 +593,26 @@ const posterWallLayout=window.NOEMAPosterWallLayout,wallMotion=window.NOEMAWallM
 const stage=document.getElementById('stage'),world=document.getElementById('world'),modal=document.getElementById('helpModal');
 const counter=document.getElementById('counter'),coordinates=document.getElementById('coordinates');
 const sceneStatus=document.getElementById('sceneStatus'),chrome=document.querySelector('.chrome');
+
+const app=document.getElementById('app'),immersiveButton=document.getElementById('immersiveBtn');
+function setImmersiveMode(enabled){
+ const immersive=Boolean(enabled);
+ if(app.classList.contains('is-immersive')===immersive)return;
+ app.classList.toggle('is-immersive',immersive);
+ immersiveButton.setAttribute('aria-pressed',String(immersive));
+ immersiveButton.setAttribute('aria-label',immersive?'退出沉浸模式':'进入沉浸模式');
+ immersiveButton.title=immersive?'退出沉浸模式 (F)':'沉浸模式 (F)';
+ immersiveButton.querySelector('use')?.setAttribute('href',immersive?'#lucide-shrink':'#lucide-expand');
+ if(immersive&&!document.getElementById('metricsHud').hidden)toggleMetrics(false);
+ // Focus stays on an accessible surface when controls visually disappear.
+ if(!inspector.hidden){
+  if(immersive)inspectorView.focus({preventScroll:true});
+  else document.getElementById('inspectorClose').focus({preventScroll:true});
+  inspectorFitToView();
+ }else if(immersive)stage.focus({preventScroll:true});
+ sceneStatus.textContent=immersive?'已开启沉浸模式；按 F 返回普通界面':'已退出沉浸模式';
+}
+
 const collectionTag=document.getElementById('collectionTag'),notice=document.getElementById('notice'),dropOverlay=document.getElementById('dropOverlay');
 let noticeTimer=0;function notify(message){sceneStatus.textContent=message;notice.textContent=message;notice.classList.add('visible');clearTimeout(noticeTimer);noticeTimer=setTimeout(()=>notice.classList.remove('visible'),3800)}
 const motion=window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -993,6 +1045,7 @@ document.addEventListener('keydown',event=>{
  if(inspector.hidden)return;
  const key=event.key.toLowerCase();
  if(event.key==='Tab'){
+  if(app.classList.contains('is-immersive')){event.preventDefault();return}
   const controls=[...inspector.querySelectorAll('button')].filter(element=>!element.disabled);
   const first=controls[0],last=controls[controls.length-1];
   if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus()}
@@ -1428,11 +1481,22 @@ function toggleMetrics(force=null){
  if(enable)metricsMonitor.start();else metricsMonitor.stop();
 }
 document.getElementById('metricsToggle').addEventListener('click',()=>toggleMetrics());
-document.getElementById('infoBtn').addEventListener('click',showHelp);document.getElementById('helpClose').addEventListener('click',hideHelp);modal.addEventListener('click',e=>{if(e.target===modal)hideHelp()});
+immersiveButton.addEventListener('click',()=>setImmersiveMode(!app.classList.contains('is-immersive')));
+ document.getElementById('infoBtn').addEventListener('click',showHelp);document.getElementById('helpClose').addEventListener('click',hideHelp);modal.addEventListener('click',e=>{if(e.target===modal)hideHelp()});
 document.getElementById('closeBtn').addEventListener('click',close);document.getElementById('plusBtn').addEventListener('click',()=>zoomAt(1.24,viewport.w/2,viewport.h/2));document.getElementById('minusBtn').addEventListener('click',()=>zoomAt(1/1.24,viewport.w/2,viewport.h/2));document.getElementById('homeBtn').addEventListener('click',()=>reset());document.getElementById('discoverBtn').addEventListener('click',discover);
 document.addEventListener('keydown',e=>{
  if(!searchOverlay.hidden){if(e.key==='Escape'){e.preventDefault();closeSearch()}return}
- if(e.key==='Escape'){if(!modal.hidden){hideHelp();return}close();return}if(!modal.hidden)return;
+ if(e.key==='Escape'){
+  if(!modal.hidden){hideHelp();return}
+  if(active){close();return}
+  if(app.classList.contains('is-immersive')){e.preventDefault();setImmersiveMode(false);return}
+  return;
+ }
+ if(!modal.hidden)return;
+ if(e.key.toLowerCase()==='f'&&!e.altKey&&!e.ctrlKey&&!e.metaKey&&!e.shiftKey
+   &&!e.target?.closest?.('input,textarea,[contenteditable="true"]')){
+  e.preventDefault();setImmersiveMode(!app.classList.contains('is-immersive'));return;
+ }
  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();openSearch();return}
  if(e.key==='/'&&!e.shiftKey&&!e.altKey&&!e.ctrlKey&&!e.metaKey){e.preventDefault();openSearch();return}
  if(e.key==='?'||((e.shiftKey)&&e.key==='/')){e.preventDefault();showHelp();return}
