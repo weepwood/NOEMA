@@ -16,7 +16,8 @@
 .m-tile .tile-art{position:absolute;inset:0;background:var(--fallback,linear-gradient(145deg,#31312d,#131515));overflow:hidden}
 .m-tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;user-select:none;-webkit-user-drag:none;pointer-events:none;transition:transform .65s cubic-bezier(.18,.68,.24,1),opacity .4s ease;opacity:0}
 .m-tile img.loaded{opacity:1}.m-tile img.hi-res{opacity:0;transition:opacity .35s ease}.m-tile img.hi-res.loaded{opacity:1}
-.m-tile:hover img.low-res,.m-tile:focus-visible img.low-res{transform:scale(1.045)}
+.m-tile:hover,.m-tile:focus-visible{transform:translateZ(0) scale(1.045);z-index:2}
+.m-tile.is-focus-ring{outline:2px solid var(--paper);outline-offset:4px}
 /* Internal art parallax lets nearby tiles react without ever moving the mosaic cells. */
 .stage.has-selection .m-tile.is-near-focus img{transform:translate3d(var(--focus-dx,0px),var(--focus-dy,0px),0) scale(1.06)}
 .m-tile .tile-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.13) 0%,transparent 37%,rgba(0,0,0,.12) 55%,rgba(0,0,0,.80) 100%);pointer-events:none}
@@ -38,6 +39,13 @@
 .m-tile.is-active .detail{display:block;animation:detail-on .38s ease both}
 @keyframes detail-on{0%{opacity:0;transform:translateY(10px)}100%{opacity:1;transform:none}}
 .m-tile.is-active .tile-arrow{opacity:0}
+
+/* Entrance / exit wave: tiles drop into place from the home corner, and leave in reverse order. */
+.m-tile.is-entering{opacity:0;transform:translateZ(0) translateY(var(--wave-dy,0px)) scale(0.96)}
+.m-tile.is-entering[style*="--wave-dy"]{animation:waveIn var(--wave-dur,0.4s) var(--wave-delay,0ms) cubic-bezier(.22,1,.36,1) both}
+.m-tile.is-exiting{opacity:0;transform:translateZ(0) translateY(var(--wave-dy,0px)) scale(0.88);animation:waveOut var(--wave-dur,0.28s) var(--wave-delay,0ms) cubic-bezier(.4,0,1,1) both}
+@keyframes waveIn{from{opacity:0;transform:translateZ(0) translateY(var(--wave-dy,0px)) scale(0.96)}to{opacity:1;transform:translateZ(0) translateY(0) scale(1)}}
+@keyframes waveOut{from{opacity:1;transform:translateZ(0) translateY(0) scale(1)}to{opacity:0;transform:translateZ(0) translateY(var(--wave-dy,0px)) scale(0.88)}}
 .stage-vignette{position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,7,7,.85) 0%,rgba(7,7,7,.22) 12%,transparent 23%,transparent 78%,rgba(7,7,7,.36) 91%,rgba(7,7,7,.75) 100%);pointer-events:none;z-index:12}
 .grain{position:absolute;inset:0;opacity:.105;z-index:13;pointer-events:none;background-image:url('data:image/svg+xml,%3Csvg viewBox=%220 0 180 180%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%22.95%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22 opacity=%22.55%22/%3E%3C/svg%3E');mix-blend-mode:soft-light}
 .chrome{position:absolute;inset:0;z-index:18;pointer-events:none}.chrome button{pointer-events:auto}
@@ -260,7 +268,7 @@ function thumbnailInBackground(file){
  const worker=getThumbnailWorker();if(!worker)return makeThumbnailBlob(file);
  return new Promise((resolve,reject)=>{
   const id=++workerId;workerPending.set(id,{resolve,reject});
-  try{worker.postMessage({id,file,maxEdge:THUMB_SIZE})}catch(e){workerPending.delete(id);reject(e)}
+  try{worker.postMessage({id,file,maxEdge:THUMB_SIZE*DPR})}catch(e){workerPending.delete(id);reject(e)}
  }).catch(()=>makeThumbnailBlob(file));
 }
 function rememberThumbnail(art,url,bytes){
@@ -335,7 +343,7 @@ function scheduleThumbnail(art){
 async function makeThumbnailBlob(file){
  let bitmap;
  try{
-  if(typeof createImageBitmap==='function')bitmap=await createImageBitmap(file,{resizeWidth:THUMB_SIZE,resizeQuality:'medium'});
+  if(typeof createImageBitmap==='function')bitmap=await createImageBitmap(file,{resizeWidth:THUMB_SIZE*DPR,resizeQuality:'medium'});
   if(!bitmap)throw Error('ImageBitmap unavailable');
   const ratio=Math.min(1,THUMB_SIZE/Math.max(bitmap.width,bitmap.height));
   const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(bitmap.width*ratio));canvas.height=Math.max(1,Math.round(bitmap.height*ratio));
@@ -441,6 +449,11 @@ function imageSlotForIndex(index){
  return i<0?null:{bx,by,i,rect:getRect(bx,by,i)};
 }
 const BW=12*PITCH,BH=8*PITCH,MAX=220,OVERSCAN=650;
+// Entrance / exit wave (Folia PosterWall parity): tiles drop in staggered from CAMERA_HOME,
+// leave in reverse order. Distances measured in cell steps.
+const CAMERA_HOME={x:34,y:80};
+const ENTRANCE_STAGGER=0.03,ENTRANCE_MAX_DELAY=0.34,ENTRANCE_WINDOW=1100;
+const DPR=Math.max(1,window.devicePixelRatio||1);
 const stage=document.getElementById('stage'),world=document.getElementById('world'),modal=document.getElementById('helpModal');
 const counter=document.getElementById('counter'),coordinates=document.getElementById('coordinates');
 const sceneStatus=document.getElementById('sceneStatus'),chrome=document.querySelector('.chrome');
@@ -450,8 +463,13 @@ const motion=window.matchMedia('(prefers-reduced-motion: reduce)');
 const nodes=new Map(),pointers=new Map();
 let viewport={w:innerWidth,h:innerHeight};
 let camera={x:0,y:0,s:.76},cameraGoal={...camera},last=0,raf=0,active=null,focusRestore=null;
-let drag=null,pinch=null,initialized=false,keepPlaying=false,lastCull=null,lastModalFocus=null;
+let drag=null,pinch=null,coastRaf=null,initialized=false,keepPlaying=false,lastCull=null,lastModalFocus=null;
 let cullRuns=0,lastCandidateCount=0,lastClippedCount=0;
+// Wave state
+let entranceDone=false,exitStarted=false;
+const entranceStart=Date.now();
+// Focus-walk state: which poster currently has keyboard focus.
+let focusedId=null;
 const clamp=(v,min,max)=>Math.min(max,Math.max(min,v));
 const dist=(p,q)=>Math.hypot(p.x-q.x,p.y-q.y);
 const intersects=(a,b)=>a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y;
@@ -486,11 +504,23 @@ function loadOriginal(m){
  if(m.art.file){releaseFullImage();m.fullRequested=true;activeFullUrl=URL.createObjectURL(m.art.file);setImage(m.hi,activeFullUrl)}
  else setImage(m.hi,photo(m.art.img,1800));
 }
-function makeTile(id,rect,index){const a=artworks[index],button=document.createElement('button');button.type='button';button.className='m-tile';button.dataset.instance=id;button.setAttribute('aria-label',`${a.title}，${a.category}，按回车展开`);button.setAttribute('aria-expanded','false');button.style.setProperty('--fallback',`linear-gradient(145deg,${a.color},#101114)`);
+function waveDelay(rect){
+ const steps=Math.max(0,rect.x-CAMERA_HOME.x)+Math.max(0,rect.y-CAMERA_HOME.y);
+ const delay=Math.min(ENTRANCE_MAX_DELAY,(steps/(UNIT+GAP))*ENTRANCE_STAGGER);
+ return Date.now()-entranceStart<ENTRANCE_WINDOW&&!entranceDone&&!exitStarted&&!motion.matches?delay*1000:null;
+}
+function exitWaveDelay(rect){
+ // Reverse wave: tiles farther from the home corner leave first.
+ const steps=Math.max(0,rect.x-CAMERA_HOME.x)+Math.max(0,rect.y-CAMERA_HOME.y);
+ const entranceDelay=Math.min(ENTRANCE_MAX_DELAY,(steps/(UNIT+GAP))*ENTRANCE_STAGGER);
+ return Math.max(0,ENTRANCE_MAX_DELAY-entranceDelay)*1000;
+}
+function makeTile(id,rect,index){const a=artworks[index],button=document.createElement('button');button.type='button';button.className='m-tile';button.dataset.instance=id;button.setAttribute('data-instance-id',id);button.setAttribute('aria-label',`${a.title}，${a.category}，按回车展开`);button.setAttribute('aria-expanded','false');button.style.setProperty('--fallback',`linear-gradient(145deg,${a.color},#101114)`);
  button.innerHTML=`<div class="tile-art"><img class="low-res" alt="" loading="lazy" decoding="async" draggable="false"><img class="hi-res" alt="" decoding="async" draggable="false"></div><div class="tile-shade"></div><div class="tile-index">NO. ${String(index+1).padStart(2,'0')}</div><div class="tile-info"><div class="tile-kicker">${escapeHTML(a.category)} &nbsp; / &nbsp; STUDY ${String(index+1).padStart(2,'0')}</div><h2 class="tile-title">${escapeHTML(a.title)}</h2><div class="detail"><span class="detail-line"></span>${escapeHTML(a.desc)}<span class="detail-link">CLICK TO CLOSE <span aria-hidden="true">↙</span></span></div></div><div class="tile-arrow" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></div><div class="tile-dimmer"></div>`;
  button.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();focusRestore=button;select(id)}});
  // Assistive technology may dispatch click without a preceding pointer sequence.
  button.addEventListener('click',e=>{if(e.detail===0){focusRestore=button;select(id)}});
+ button.addEventListener('dblclick',e=>{e.preventDefault();e.stopPropagation();select(id)});
  world.appendChild(button);
  const m={id,rect,art:a,button,low:button.querySelector('.low-res'),hi:button.querySelector('.hi-res'),thumbRequested:false,fullRequested:false,cur:{...rect},vel:{x:0,y:0,w:0,h:0},goal:{...rect}};
  nodes.set(id,m);place(m);if(observer)observer.observe(button);else loadThumbnail(m);return m;
@@ -557,22 +587,23 @@ function syncVisible(force=false){
  if(active)wanted.add(active);
  for(const [id,m] of nodes){if(wanted.has(id))continue;if(observer)observer.unobserve(m.button);
   if(document.activeElement===m.button)stage.focus({preventScroll:true});
-  m.button.remove();nodes.delete(id);changed=true;
+  if(exitStarted){m.button.classList.add('is-exiting');m.button.style.setProperty('--wave-dy','90px');m.button.style.setProperty('--wave-dur','0.28s');m.button.style.setProperty('--wave-delay',(exitWaveDelay(m.rect))+'ms');}else{m.button.remove();nodes.delete(id);}changed=true;
  }
  for(const m of nodes.values()){
   const focusable=m.id===active||intersects(m.rect,actual);
   const tab=focusable?0:-1;if(m.button.tabIndex!==tab)m.button.tabIndex=tab;
+  m.button.classList.toggle('is-focus-ring',m.id===focusedId);
  }
  if(changed){updateGoals();evictThumbnails()}
 }
 function select(id){if(!nodes.has(id))return;const already=active===id;if(already){close();return}
  if(active!==null&&active!==id)releaseFullImage();
- active=id;stage.classList.add('has-selection');document.getElementById('closeBtn').tabIndex=0;document.getElementById('inspectBtn').tabIndex=0;const m=nodes.get(id),r=m.rect;const cx=r.x+r.w/2,cy=r.y+r.h/2;
- cameraGoal={x:viewport.w/2-cx*camera.s,y:viewport.h/2-cy*camera.s,s:camera.s};
+ active=id;stage.classList.add('has-selection');document.getElementById('closeBtn').tabIndex=0;document.getElementById('inspectBtn').tabIndex=0;const m=nodes.get(id);
+ // Keep the grown card at its window position (Folia: expansion overlays, camera follows if re-seated).
  counter.innerHTML=`${String(artworks.indexOf(m.art)+1).padStart(2,'0')}<span style="font-size:.42em;color:#ffffff66"> / ${localMode?artworks.length:'∞'}</span>`;sceneStatus.textContent=`已展开 ${m.art.title}。按 Escape 收起作品。`;
  updateGoals();start()
 }
-function close(){if(!active)return;releaseFullImage();active=null;stage.classList.remove('has-selection');document.getElementById('closeBtn').tabIndex=-1;document.getElementById('inspectBtn').tabIndex=-1;updateGoals();counter.innerHTML=`01<span style="font-size:.42em;color:#ffffff66"> / ${localMode?artworks.length:'∞'}</span>`;if(focusRestore?.isConnected)focusRestore.focus({preventScroll:true});else stage.focus({preventScroll:true});focusRestore=null;sceneStatus.textContent='作品已收起';start()}
+function close(){if(!active)return;releaseFullImage();active=null;stage.classList.remove('has-selection');exitStarted=true;document.getElementById('closeBtn').tabIndex=-1;document.getElementById('inspectBtn').tabIndex=-1;updateGoals();counter.innerHTML=`01<span style="font-size:.42em;color:#ffffff66"> / ${localMode?artworks.length:'∞'}</span>`;if(focusRestore?.isConnected)focusRestore.focus({preventScroll:true});else stage.focus({preventScroll:true});focusRestore=null;sceneStatus.textContent='作品已收起';start();setTimeout(()=>{exitStarted=false;entranceDone=true;for(const [id,m] of nodes){if(observer)observer.unobserve(m.button);m.button.remove()}nodes.clear();if(focusRestore?.isConnected)focusRestore.focus({preventScroll:true});else stage.focus({preventScroll:true});focusRestore=null;start()},300)}
 function spring(m,dt){
  const k=170,damp=22;let isMoving=false,changed=false;
  for(const p of ['x','y','w','h']){
@@ -598,10 +629,14 @@ stage.addEventListener('pointerdown',e=>{if(e.button!==0&&e.pointerType==='mouse
 });
 stage.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return;const p=point(e),old=pointers.get(e.pointerId);pointers.set(e.pointerId,p);
  if(pointers.size>=2){if(!pinch)pinch=pinchState();const arr=[...pointers.values()],mid={x:(arr[0].x+arr[1].x)/2,y:(arr[0].y+arr[1].y)/2};const targetS=clamp(pinch.scale*dist(arr[0],arr[1])/pinch.dist,.40,1.9);camera.s=targetS;camera.x=mid.x-pinch.world.x*targetS;camera.y=mid.y-pinch.world.y*targetS;cameraGoal={...camera};updateGoals();updateCamera();start();return}
- if(drag&&drag.id===e.pointerId){const deltaX=p.x-old.x,deltaY=p.y-old.y;drag.travel=dist(p,drag.start);if(drag.travel>5){camera.x+=deltaX;camera.y+=deltaY;cameraGoal={...camera};updateCamera();start()}}
+ if(drag&&drag.id===e.pointerId){const deltaX=p.x-old.x,deltaY=p.y-old.y;drag.travel=dist(p,drag.start);drag.vx=deltaX;drag.vy=deltaY;drag.lastTime=performance.now();if(drag.travel>5){camera.x+=deltaX;camera.y+=deltaY;cameraGoal={...camera};updateCamera();start()}}
 });
 function pointerEnd(e){const p=point(e),d=drag;const wasClick=d&&d.id===e.pointerId&&d.travel<=7&&dist(p,d.start)<=9;
- pointers.delete(e.pointerId);if(pointers.size===0){stage.classList.remove('is-dragging');keepPlaying=false;drag=null;pinch=null}else if(pointers.size===1){const [id,v]=[...pointers.entries()][0];drag={id,point:v,start:v,travel:100,tile:null};pinch=null}
+ pointers.delete(e.pointerId);if(pointers.size===0){stage.classList.remove('is-dragging');keepPlaying=false;
+  // Inertia coast after a drag (Folia: continue along release velocity).
+  if(d&&d.travel>5){const now=performance.now();const dt=Math.max(1,now-(d.lastTime||now))/1000;const speed=Math.hypot(d.vx||0,d.vy||0);if(speed>60){const vx=(d.vx||0)/speed,vy=(d.vy||0)/speed;const power=0.9,timeConstant=0.4;let t=0;const from={x:camera.x,y:camera.y};const coast=()=>{t+=1/60;const k=1-Math.exp(-t/timeConstant);const dist=speed*power*(1-Math.exp(-t/timeConstant))/100*60;camera.x=from.x+vx*dist;camera.y=from.y+vy*dist;cameraGoal={...camera};updateCamera();if(t<timeConstant*3){coastRaf=requestAnimationFrame(coast)}else{coastRaf=0;last=0}};coastRaf=requestAnimationFrame(coast);start()}}
+  drag=null;pinch=null
+ }else if(pointers.size===1){const [id,v]=[...pointers.entries()][0];drag={id,point:v,start:v,travel:100,tile:null};pinch=null}
  if(wasClick&&d.tile){focusRestore=nodes.get(d.tile)?.button||null;select(d.tile)}start()
 }
 stage.addEventListener('pointerup',pointerEnd);stage.addEventListener('pointercancel',e=>{pointers.delete(e.pointerId);
@@ -814,6 +849,50 @@ function discover(){
  if(!options.length){reset();return}
  const item=options[Math.floor(Math.random()*options.length)];focusRestore=item.button;
  select(item.id);item.button.focus({preventScroll:true});
+}
+// Keyboard focus-walk: move focus between visible poster instances. Arrow from a focused tile steps
+// to the nearest adjacent tile; the first arrow adopts the tile closest to the viewport center.
+function walkFocus(key){
+ const actual={x:-camera.x/camera.s,y:-camera.y/camera.s,w:viewport.w/camera.s,h:viewport.h/camera.s};
+ const visible=[...nodes.values()].filter(m=>intersects(m.rect,actual));
+ if(!visible.length)return;
+ const dir={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[key];
+ if(!dir)return;
+ const cx=viewport.w/2/camera.s,cy=viewport.h/2/camera.s;
+ let current=focusedId?nodes.get(focusedId):null;
+ if(!current){
+  // First arrow: adopt the tile nearest the viewport center.
+  current=visible.reduce((best,m)=>Math.hypot(m.rect.x+m.rect.w/2-cx,m.rect.y+m.rect.h/2-cy)<Math.hypot(best.rect.x+best.rect.w/2-cx,best.rect.y+best.rect.h/2-cy)?m:best,visible[0]);
+ }
+ // Find adjacent tile in the direction, preferring the closest center in that direction.
+ const dx=dir[0],dy=dir[1];
+ const candidates=visible.filter(m=>{
+  const r=m.rect;
+  return dx===1?r.x>current.rect.x+current.rect.w:dx===-1?r.x+r.w<current.rect.x:dy===1?r.y>current.rect.y+current.rect.h:r.y+r.h<current.rect.y;
+ });
+ if(candidates.length){
+  const next=candidates.reduce((best,m)=>{
+   const sc=Math.abs((m.rect.x+m.rect.w/2)-(current.rect.x+current.rect.w/2))+Math.abs((m.rect.y+m.rect.h/2)-(current.rect.y+current.rect.h/2));
+   const bc=Math.abs((best.rect.x+best.rect.w/2)-(current.rect.x+current.rect.w/2))+Math.abs((best.rect.y+best.rect.h/2)-(current.rect.y+current.rect.h/2));
+   return sc<bc
+  },candidates[0]);
+  focusedId=next.id;
+  next.button.focus({preventScroll:true});
+  // Pan camera to keep focused tile in view if needed.
+  const targetX=viewport.w/2-(next.rect.x+next.rect.w/2)*camera.s;
+  const targetY=viewport.h/2-(next.rect.y+next.rect.h/2)*camera.s;
+  cameraGoal={x:targetX,y:targetY,s:camera.s};
+  updateCamera();start();
+ }else{
+  // No adjacent tile: wrap focus to the far side in the direction.
+  const wrapped=visible.reduce((best,m)=>{
+   const score=dx===1?m.rect.x:dx===-1?-m.rect.x:dy===1?m.rect.y:-m.rect.y;
+   const bscore=dx===1?best.rect.x:dx===-1?-best.rect.x:dy===1?best.rect.y:-best.rect.y;
+   return score>bscore?m:best
+  },visible[0]);
+  focusedId=wrapped.id;
+  wrapped.button.focus({preventScroll:true});
+ }
 }
 
 
@@ -1144,11 +1223,11 @@ document.addEventListener('keydown',e=>{
  if(e.key==='?'||((e.shiftKey)&&e.key==='/')){e.preventDefault();showHelp();return}
  if(e.altKey||e.ctrlKey||e.metaKey)return;
  const k=e.key;if(e.shiftKey&&k.toLowerCase()==='p'){e.preventDefault();toggleMetrics();return}if(k==='+'||k==='='||k==='Add'){e.preventDefault();zoomAt(1.2,viewport.w/2,viewport.h/2)}else if(k==='-'||k==='_'||k==='Subtract'){e.preventDefault();zoomAt(1/1.2,viewport.w/2,viewport.h/2)}else if(k==='0'){e.preventDefault();reset()}else if(k.toLowerCase()==='r'){e.preventDefault();discover()}else if(k.toLowerCase()==='i'&&active){e.preventDefault();openInspector()}
- else if(k.startsWith('Arrow')){e.preventDefault();const step=e.shiftKey?250:100;camera.x+=(k==='ArrowLeft'?step:k==='ArrowRight'?-step:0);camera.y+=(k==='ArrowUp'?step:k==='ArrowDown'?-step:0);cameraGoal={...camera};updateCamera();start()}
+ else if(k.startsWith('Arrow')){e.preventDefault();walkFocus(k)}
 });
 function measure(){const r=stage.getBoundingClientRect(),w=r.width,h=r.height;if(!w||!h)return;const old=viewport;viewport={w,h};if(!initialized){initialized=true;reset(false)}else{camera.x+=(w-old.w)/2;camera.y+=(h-old.h)/2;cameraGoal={...camera};updateGoals();start();syncVisible(true)}}
 new ResizeObserver(measure).observe(stage);measure();
-window.addEventListener('pagehide',()=>{metricsMonitor?.stop();cancelImport();closeInspector();releaseFullImage();clearThumbnailCache();thumbnailWorker?.terminate();thumbnailWorker=null});
+window.addEventListener('pagehide',()=>{metricsMonitor?.stop();cancelImport();closeInspector();releaseFullImage();clearThumbnailCache();if(coastRaf)cancelAnimationFrame(coastRaf);thumbnailWorker?.terminate();thumbnailWorker=null});
 })();
 </script>
 </body>
