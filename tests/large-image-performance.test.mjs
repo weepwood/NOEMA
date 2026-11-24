@@ -9,6 +9,7 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const script=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].at(-1)?.[1];
 assert.ok(script,'inline gallery code exists');
+const pipeline=fs.readFileSync(path.join(root,'src/image-pipeline.js'),'utf8'),inspectorSource=fs.readFileSync(path.join(root,'src/inspector-controller.js'),'utf8');
 
 const take=(start,end)=>{
  const a=script.indexOf(start),b=script.indexOf(end,a+start.length);
@@ -34,7 +35,7 @@ test('thumbnail priority favors currently visible center pictures over overscan'
 });
 
 test('preview requests jump ahead of queued thumbnail prefetch',()=>{
- const source=take('function queueImageTask(task){','function scheduleThumbnail(');
+ const source=pipeline.slice(pipeline.indexOf('function queueImageTask(task){'),pipeline.indexOf('function scheduleThumbnail('));
  const tasks=[],env={thumbnailQueue:tasks,pumpThumbnails:()=>{},Math};
  vm.createContext(env);
  vm.runInContext(source+'globalThis.enqueue=queueImageTask;',env);
@@ -50,22 +51,22 @@ test('a clicked local tile loads a bounded preview rather than full-resolution o
  assert.doesNotMatch(wallLoader,/createObjectURL\(m\.art\.file\)/);
  assert.match(script,/const PREVIEW_EDGE=Math\.min\(1600/);
  assert.match(script,/const THUMB_EDGE=Math\.min\(1024/);
- assert.match(script,/const previewCache=new Map\(\),MAX_PREVIEW_CACHE=3/);
+ assert.match(pipeline,/const previewCache=new Map\(\),MAX_PREVIEW_CACHE=3/);
  assert.match(script,/activePreviewToken\+\+/);
- assert.match(script,/thumbnailWorkers<\(workerDisabled\|\|location\.protocol==='file:'/);
- assert.doesNotMatch(script,/createObjectURL\(task\.art\.file\)/);
- assert.match(script,/const previewKey=key\?'p1:'\+key:null/);
- assert.match(script,/persistentStore\.get\(previewKey\)/);
- assert.match(script,/persistentStore\.put\(previewKey,blob\)/);
+ assert.match(pipeline,/thumbnailWorkers<\(workerDisabled\|\|location\.protocol==='file:'/);
+ assert.doesNotMatch(pipeline,/createObjectURL\(task\.art\.file\)/);
+ assert.match(pipeline,/const previewKey=key\?'p1:'\+key:null/);
+ assert.match(pipeline,/persistentStore\.get\(previewKey\)/);
+ assert.match(pipeline,/persistentStore\.put\(previewKey,blob\)/);
 });
 
 test('full-resolution inspector displays a preview then the original image',()=>{
  assert.match(html,/id="inspectorPreview"/);
- assert.match(script,/function setInspectorPreview\(blob,token\)/);
- assert.match(script,/const cached=previewCache\.get\(art\)/);
- assert.match(script,/if\(art\.thumbUrl\)\{inspectorPreview\.src=art\.thumbUrl/);
- assert.match(script,/inspectorOriginalLoaded=true;clearInspectorPreview\(\)/);
- assert.match(script,/inspectorUrl=URL\.createObjectURL\(art\.file\)/);
- assert.match(script,/token!==inspectorToken\|\|inspector\.hidden\|\|inspectorOriginalLoaded/);
- assert.match(script,/clearInspectorPreview\(\);[\s\S]*?stage\.inert=false/);
+ assert.match(inspectorSource,/function setInspectorPreview\(blob,token\)/);
+ assert.match(inspectorSource,/const cached=getPreview\(art\)/);
+ assert.match(inspectorSource,/if\(art\.thumbUrl\)\{inspectorPreview\.src=art\.thumbUrl/);
+ assert.match(inspectorSource,/inspectorOriginalLoaded=true;clearInspectorPreview\(\)/);
+ assert.match(inspectorSource,/inspectorUrl=URL\.createObjectURL\(art\.file\)/);
+ assert.match(inspectorSource,/token!==inspectorToken\|\|inspector\.hidden\|\|inspectorOriginalLoaded/);
+ assert.match(inspectorSource,/clearInspectorPreview\(\);[\s\S]*?stage\.inert=false/);
 });

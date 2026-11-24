@@ -51,3 +51,24 @@ jobs:
           name: noema-browser-evidence-${{ matrix.browser }}
           path: artifacts/
           if-no-files-found: warn
+  endurance-checks:
+    if: github.event_name == 'pull_request' || inputs.endurance == true
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --package-lock=false playwright@1.56.1
+      - run: npx playwright install --with-deps chromium
+      - run: |
+          python3 -m http.server 8000 > /tmp/noema-endurance-http.log 2>&1 &
+          for i in {1..30}; do curl -fsS http://127.0.0.1:8000/ >/dev/null && break; sleep 1; done
+          NOEMA_ENDURANCE_SECONDS=1800 node scripts/endurance-check.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: noema-endurance-evidence
+          path: artifacts/endurance/
+          if-no-files-found: error

@@ -9,7 +9,7 @@ import {fileURLToPath} from 'node:url';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const script=fs.readFileSync(path.join(root,'thumbnail-store.js'),'utf8');
-const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+const html=fs.readFileSync(path.join(root,'index.html'),'utf8')+'\n'+fs.readFileSync(path.join(root,'src/image-pipeline.js'),'utf8');
 
 function mockIndexedDB(){
   const rows=new Map();
