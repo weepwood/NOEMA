@@ -1,0 +1,29 @@
+name: V10 fixed-working-set memory diagnostic
+on:
+  push:
+    branches: [diagnostic/v10-memory-eff7989]
+    paths: [scripts/v10-memory-diagnostic.mjs, .github/workflows/v10-memory-diagnostic.yml]
+permissions:
+  contents: read
+jobs:
+  memory-diagnostic:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --package-lock=false playwright@1.56.1
+      - run: npx playwright install --with-deps chromium
+      - run: |
+          git diff --exit-code eff798941b48d37658af9ecda4bdd31c4970eb85 -- index.html src assets styles thumbnail-store.js thumbnail-worker.js library-index.js
+          python3 -m http.server 8000 > /tmp/noema-diagnostic-http.log 2>&1 &
+          for i in {1..30}; do curl -fsS http://127.0.0.1:8000/ >/dev/null && break; sleep 1; done
+          node scripts/v10-memory-diagnostic.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: noema-v10-memory-diagnostic
+          path: artifacts/memory-diagnostic/
+          if-no-files-found: error
