@@ -20,3 +20,8 @@ f28a537 四项 CI 均通过，但实际产物发现 WebKit 桌面截图有占位
 本轮抽离图片管线、原图查看器、画布手势的状态与事件，图库保留选择与相机适配；Worker超时、任务结算和降级；删除缩放时重复重排调用。新增独立30分钟实际时间耐久任务，20k目录项、反复远距离定位与原图查看、稳定检查点CDP堆/DOM采样、返回示例后缓存归零断言。尚待最新CI、耐久实际产物和发布审查。未声明GPU内存测量或严格像素快照基线通过。
 
 88c1b62 静态 59/61，geometry 与 immersive-lucide 两项因仍查找旧 inline Inspector 函数失败，已将原断言迁至 inspector-controller.js；不降低验收标准。CI 同分支新提交取消过期任务。
+
+## V10 正式合并验收（2026-11-24）
+PR #11 eff7989 五项 CI 全通过：https://github.com/weepwood/NOEMA/actions/runs/45416070156 。合并 SHA d82e3e5ab75f3e5c5d1af4df26fe12f431876fa8。静态61/61，Chromium 20000文件/1800帧 P95 25.3ms、15慢帧；Firefox 31ms、19/640慢帧；WebKit 79ms、307/640慢帧。三引擎真实截图已复审。耐久产物14933834465：1801.710秒、923交互、95采样，页面异常0，峰值227缓存、127.69MiB保守像素估算，重置后缓存/队列归零。
+独立诊断 https://github.com/weepwood/NOEMA/actions/runs/45423500484 （产物14934768031）：生产文件与 eff7989 一致；12固定目标，24轮预热+96轮测量，额外12轮重导入，耗时296795ms。预热后JS堆7.84→6.86MiB；固定集实际元素949、磁贴36、Detached DOM树0；重置1/2后JS堆2.96/3.01MiB，Embedder 7.14/8.00MiB，Detached BUTTON树1/2（保留节点ID2/4），缓存与任务归零。固定集后段JS堆与Embedder及CDP节点仍略增，不认定零泄漏；未发现当前发布阻塞级泄漏证据，少量残留列入后续维护观察。20k为16编码源重复文件目录项；Linux无头WebKit非Safari真机，不宣称GPU内存已测或60fps达标。
+功能冻结。正式发布需当前main的Verify与Pages成功、线上文件校验，再创建v10.0.0与静态ZIP/SHA256。不得把旧工作流或Tag当作当前部署证明。
