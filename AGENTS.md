@@ -8,3 +8,5 @@
 - 交接见 [docs/handoff.md](docs/handoff.md)。
 
 - 浏览器证据必须检查实际截图和 JSON；CI 使用固定 Ubuntu 24.04 与 Chromium/Firefox/WebKit。手动 endurance 专项用于 20000 个真实编码文件目录项/1800 帧，明确重复素材限制。部署只发布通过检查的最新 main SHA，避免旧工作流覆盖。
+
+- 截图验收必须等待可见磁贴图片加载及相机稳定，不能以固定短延迟替代。PR Chromium 执行 20000 个重复编码文件目录项和 1800 帧专项，生产 main 默认较小样本；报告区分实际 JS heap、估算像素与不可观测 GPU 内存。

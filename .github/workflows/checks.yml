@@ -32,8 +32,8 @@ jobs:
         browser: [chromium, firefox, webkit]
     env:
       NOEMA_BROWSER: ${{ matrix.browser }}
-      NOEMA_FILE_COUNT: ${{ matrix.browser == 'chromium' && (inputs.endurance && '20000' || '1200') || '48' }}
-      NOEMA_FRAMES: ${{ inputs.endurance && matrix.browser == 'chromium' && '1800' || '640' }}
+      NOEMA_FILE_COUNT: ${{ matrix.browser == 'chromium' && ((inputs.endurance || github.event_name == 'pull_request') && '20000' || '1200') || '48' }}
+      NOEMA_FRAMES: ${{ (inputs.endurance || github.event_name == 'pull_request') && matrix.browser == 'chromium' && '1800' || '640' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

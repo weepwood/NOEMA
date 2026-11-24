@@ -28,3 +28,7 @@
  .local-collection .bottom-left .number{font-size:20px}
 }
 @media(max-width:360px){.bottom-left{bottom:76px}.topbar .brand-sub{display:none}}
+
+/* Keep texture when idle; skip costly full-viewport blending during interaction. */
+.stage.is-moving .grain{visibility:hidden}
+.stage.is-moving ~ .chrome .round-btn{backdrop-filter:none;-webkit-backdrop-filter:none}

@@ -406,6 +406,7 @@ async function cachedAspect(file,namespace){
 async function readAspectsLater(version){
  for(let offset=90;offset<artworks.length;offset+=24){
   if(version!==collectionVersion||!localMode)return;
+  if(keepPlaying||cameraFlight||coastRaf){await new Promise(done=>setTimeout(done,80));offset-=24;continue}
   const batch=artworks.slice(offset,offset+24);
   const namespace=indexNamespace;
   await Promise.all(batch.map(async art=>{const ratio=await cachedAspect(art.file,namespace);if(version===collectionVersion)art.ratio=ratio}));
@@ -500,7 +501,7 @@ function pumpThumbnails(){
     const cacheHit=Boolean(blob);
     if(task.version!==collectionVersion){task.resolve(null);return}
     if(!blob)blob=await thumbnailInBackground(task.art.file,task.edge||THUMB_EDGE,task.art.ratio);
-    if(task.version!==collectionVersion){task.resolve(null);return}
+    if(task.version!==collectionVersion||!Array.from(nodes.values()).some(m=>m.art===task.art)){task.resolve(null);return}
     const url=URL.createObjectURL(blob);task.art.thumbEdge=task.edge||THUMB_EDGE;rememberThumbnail(task.art,url,blob.size);task.resolve(url);
     if(!cacheHit&&key&&blob.type==='image/webp')void persistentStore.put(key,blob);
    }catch(error){
@@ -651,16 +652,14 @@ function artIndex(bx,by,i){
  const n=(bx*17+by*29+i*7+100000*24)%artworks.length;
  return(n+artworks.length)%artworks.length;
 }
-function start(){if(!raf)raf=requestAnimationFrame(frame)}
+function start(){if(!raf){stage.classList.add('is-moving');raf=requestAnimationFrame(frame)}}
 function zoomAt(factor,px,py){if(coastRaf){cancelAnimationFrame(coastRaf);coastRaf=null}cameraFlight=null;camera=canvasCore.anchoredZoom(camera,factor,px,py,.40,1.9);cameraGoal={...camera};updateGoals();updateCamera();start()}
 function reset(animate=true){if(coastRaf){cancelAnimationFrame(coastRaf);coastRaf=null}cameraFlight=null;if(active){const old=nodes.get(active);if(old)holdMotionUnderlay(old);releaseFullImage()}const s=viewport.w<700?.70:viewport.w<1150?.76:.84;const single=localMode&&artworks.length===1?imageSlotForIndex(0)?.rect:null;const x=single?viewport.w/2-(single.x+single.w/2)*s:localMode?Math.max(20,viewport.w*.12):viewport.w*.5-BW*.46*s,y=single?viewport.h/2-(single.y+single.h/2)*s:localMode?Math.max(70,viewport.h*.10):viewport.h*.5-BH*.45*s;active=null;activeReflow=null;stage.classList.remove('has-selection');document.getElementById('closeBtn').tabIndex=-1;document.getElementById('inspectBtn').tabIndex=-1;sceneStatus.textContent='已返回画布中心';counter.innerHTML=`01<span style="font-size:.42em;color:#ffffff66"> / ${localMode?artworks.length:'∞'}</span>`;updateGoals();cameraGoal={x,y,s};if(motion.matches||!animate)camera={...cameraGoal};updateCamera();start()}
-function updateCamera(){world.style.transform=`translate3d(${camera.x}px,${camera.y}px,0) scale(${camera.s})`;if(coordinates)coordinates.textContent=`X ${slugNum(Math.round(-camera.x/camera.s))} — Y ${slugNum(Math.round(-camera.y/camera.s))} · ${String(Math.round(camera.s*100)).padStart(3,'0')}%`}
+function updateCamera(){const transform=`translate3d(${camera.x}px,${camera.y}px,0) scale(${camera.s})`;if(world.style.transform!==transform)world.style.transform=transform;if(coordinates){const label=`X ${slugNum(Math.round(-camera.x/camera.s))} — Y ${slugNum(Math.round(-camera.y/camera.s))} · ${String(Math.round(camera.s*100)).padStart(3,'0')}%`;if(coordinates.textContent!==label)coordinates.textContent=label}}
 function setImage(img,src){
- img.onload=async()=>{
-   try{if(img.decode)await img.decode()}catch{ /* onload already confirmed this asset */ }
-   if(img.isConnected&&img.getAttribute('src')===src)img.classList.add('loaded');
- };
- img.onerror=()=>img.classList.remove('loaded');img.src=src;
+ const reveal=()=>{if(img.isConnected&&img.getAttribute('src')===src&&img.naturalWidth>0)img.classList.add('loaded')};
+ img.onload=reveal;
+ img.onerror=()=>img.classList.remove('loaded');img.src=src;if(img.complete)reveal();
 }
 const observer=('IntersectionObserver' in window)?new IntersectionObserver(entries=>{for(const en of entries){if(!en.isIntersecting)continue;const m=nodes.get(en.target.dataset.instance);if(m)loadThumbnail(m);observer.unobserve(en.target)}},{root:stage,rootMargin:'280px'}):null;
 async function loadThumbnail(m){
@@ -826,7 +825,7 @@ if(active){
   if(exitStarted){m.button.classList.add('is-exiting');m.button.style.setProperty('--wave-dy','90px');m.button.style.setProperty('--wave-dur','0.28s');m.button.style.setProperty('--wave-delay',(exitWaveDelay(m.rect))+'ms');}else{m.button.remove();nodes.delete(id);}changed=true;
  }
  for(const m of nodes.values()){
-  const focusable=m.id===active||intersects(m.rect,actual);
+  const focusable=m.id===active||intersects(m.cur,actual);
   const tab=focusable?0:-1;if(m.button.tabIndex!==tab)m.button.tabIndex=tab;
   m.button.classList.toggle('is-focus-ring',m.id===focusedId);
    if(focusable&&!m.thumbRequested&&!m.art.thumbFailed)void loadThumbnail(m);
@@ -872,7 +871,7 @@ function spring(m,dt){
 }
 function frame(now){
  raf=0;
- const dt=last?Math.min(.034,(now-last)/1000):.016;
+ const dt=last?Math.max(0,Math.min(.25,(now-last)/1000)):.016;
  last=now;
  let moving=false;
  if(cameraFlight){
@@ -889,9 +888,9 @@ function frame(now){
   }
  }
  updateCamera();syncVisible();
- for(const m of nodes.values())if(spring(m,dt))moving=true;
+ for(const m of nodes.values())if((m.cur.x!==m.goal.x||m.cur.y!==m.goal.y||m.cur.w!==m.goal.w||m.cur.h!==m.goal.h||m.vel.x||m.vel.y||m.vel.w||m.vel.h)&&spring(m,dt))moving=true;
  if(motionUnderlays.size)settleMotionUnderlays();
- if(moving||keepPlaying)start();else{last=0;scheduleLODRefresh()}
+ if(moving||keepPlaying||coastRaf)start();else{last=0;stage.classList.remove('is-moving');scheduleLODRefresh()}
 }
 let lodTimer=0;
 function scheduleLODRefresh(){
@@ -924,7 +923,7 @@ stage.addEventListener('pointerup',e=>{pointers.delete(e.pointerId);if(stage.has
  if(pointers.size>=2){drag=null;pinch=pinchState();return}
  if(pointers.size===0){const wasClick=drag&&drag.travel<5;const d=drag;drag=null;pinch=null;
   if(wasClick&&d.tile){focusRestore=nodes.get(d.tile)?.button||null;select(d.tile)}
-   else if(d&&!motion.matches&&performance.now()-d.lastTime<80){let vx=clamp(d.vx||0,-2.5,2.5),vy=clamp(d.vy||0,-2.5,2.5),previous=performance.now();const coast=now=>{const dt=Math.max(0,Math.min(34,now-previous));previous=now;const next=window.NOEMAGestureCore.coast(vx,vy,dt);camera.x+=next.dx;camera.y+=next.dy;vx=next.vx;vy=next.vy;cameraGoal={...camera};updateCamera();start();coastRaf=Math.hypot(vx,vy)>.025?requestAnimationFrame(coast):null};if(Math.hypot(vx,vy)>.15)coastRaf=requestAnimationFrame(coast)}
+   else if(d&&!motion.matches&&performance.now()-d.lastTime<80){let vx=clamp(d.vx||0,-2.5,2.5),vy=clamp(d.vy||0,-2.5,2.5),previous=performance.now();const coast=now=>{const dt=Math.max(0,Math.min(250,now-previous));previous=now;const next=window.NOEMAGestureCore.coast(vx,vy,dt);camera.x+=next.dx;camera.y+=next.dy;vx=next.vx;vy=next.vy;cameraGoal={...camera};updateCamera();start();coastRaf=Math.hypot(vx,vy)>.025?requestAnimationFrame(coast):null};if(Math.hypot(vx,vy)>.15)coastRaf=requestAnimationFrame(coast)}
    keepPlaying=false;stage.classList.remove('is-dragging');start()}});
 function cancelStagePointer(e){if(!pointers.delete(e.pointerId))return;
  if(pointers.size===1){const [id,p]=pointers.entries().next().value;drag=window.NOEMAGestureCore.resumeDrag(id,p,performance.now());pinch=null}
@@ -1550,6 +1549,7 @@ document.addEventListener('keydown',e=>{
 });
 function measure(){const r=stage.getBoundingClientRect(),w=r.width,h=r.height;if(!w||!h)return;const old=viewport;viewport={w,h};if(!initialized){initialized=true;reset(false)}else{camera.x+=(w-old.w)/2;camera.y+=(h-old.h)/2;cameraGoal={...camera};updateGoals();start();syncVisible(true)}}
 new ResizeObserver(measure).observe(stage);measure();
+window.NOEMADiagnostics=Object.freeze({snapshot:()=>({tiles:nodes.size,cacheCount:thumbCache.size,cacheBytes:thumbCacheBytes,estimatedPixelsBytes:window.NOEMAImageLOD.pixelBytes([...thumbCache.keys()]),queue:thumbnailQueue.length,workers:thumbnailWorkers,pendingWorker:workerPending.size,underlays:motionUnderlays.size,collectionCount:artworks.length,moving:!!(raf||keepPlaying||coastRaf||cameraFlight)})});
 window.addEventListener('pagehide',event=>{clearTimeout(lodTimer);if(event.persisted){metricsMonitor?.stop();return}clearMotionUnderlays();metricsMonitor?.stop();cancelImport();closeInspector();releaseFullImage();clearThumbnailCache();if(coastRaf)cancelAnimationFrame(coastRaf);thumbnailWorker?.terminate();thumbnailWorker=null});})();
 </script>
 </body>
