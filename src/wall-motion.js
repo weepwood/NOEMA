@@ -17,7 +17,7 @@
   if(Math.abs(displacement)<.025&&Math.abs(velocity)<.04){
    return {value:target,velocity:0,moving:false};
   }
-  const dt=clamp(seconds,0,.064);
+  const dt=clamp(seconds,0,.25);
   const decayRate=DAMPING/2;
   const angular=Math.sqrt(STIFFNESS-decayRate*decayRate);
   const decay=Math.exp(-decayRate*dt);

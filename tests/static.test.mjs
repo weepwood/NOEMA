@@ -8,6 +8,7 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const script = html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
+const pipeline=fs.readFileSync(path.join(root,'src/image-pipeline.js'),'utf8');
 
 function templateFromSource() {
   const source = html.match(/const TEMPLATE=\[([\s\S]*?)\];/)?.[1];
@@ -75,13 +76,13 @@ test('local image rendering escapes filenames before inserting HTML', () => {
 });
 
 test('local thumbnail pipeline bounds decoding, cache and object URL lifetimes', () => {
-  assert.match(script, /thumbnailWorkers<\(workerDisabled\|\|location\.protocol==='file:'/);
+  assert.match(pipeline, /thumbnailWorkers<\(workerDisabled\|\|location\.protocol==='file:'/);
   assert.match(script, /MAX_THUMB_CACHE=260/);
   assert.match(script, /THUMB_EDGE=Math\.min\(1024/);
-  assert.match(script, /const resize=Number\.isFinite\(ratio\)/);
-  assert.match(script, /const previewCache=new Map\(\),MAX_PREVIEW_CACHE=3/);
-  assert.match(script, /previewCache\.clear\(\)/);
-  assert.match(script, /URL\.revokeObjectURL\(url\)/);
+  assert.match(pipeline, /const resize=Number\.isFinite\(ratio\)/);
+  assert.match(pipeline, /const previewCache=new Map\(\),MAX_PREVIEW_CACHE=3/);
+  assert.match(pipeline, /previewCache\.clear\(\)/);
+  assert.match(pipeline, /URL\.revokeObjectURL\(url\)/);
   assert.match(script, /function releaseFullImage\(/);
   assert.match(script, /window\.addEventListener\('pagehide'/);
 });

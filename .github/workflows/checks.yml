@@ -1,25 +1,77 @@
 name: Verify NOEMA
-
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
-
+    inputs:
+      endurance:
+        description: 'Chromium 20000 文件 / 1800 帧专项（重复编码素材）'
+        type: boolean
+        default: false
+concurrency:
+  group: noema-verify-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
-
 jobs:
   static-checks:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: 检出代码
-        uses: actions/checkout@v4
-      - name: 配置 Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: 检查图片资源、布局与可访问性
-        run: node --test tests/*.test.mjs
+      - run: node --test tests/*.test.mjs
+      - run: node scripts/benchmark.mjs
+  browser-checks:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    env:
+      NOEMA_BROWSER: ${{ matrix.browser }}
+      NOEMA_FILE_COUNT: ${{ matrix.browser == 'chromium' && ((inputs.endurance || github.event_name == 'pull_request') && '20000' || '1200') || '48' }}
+      NOEMA_FRAMES: ${{ (inputs.endurance || github.event_name == 'pull_request') && matrix.browser == 'chromium' && '1800' || '640' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --package-lock=false playwright@1.56.1
+      - run: npx playwright install --with-deps ${{ matrix.browser }}
+      - run: |
+          python3 -m http.server 8000 > /tmp/noema-http.log 2>&1 &
+          for i in {1..30}; do curl -fsS http://127.0.0.1:8000/ >/dev/null && break; sleep 1; done
+          node scripts/browser-check.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: noema-browser-evidence-${{ matrix.browser }}
+          path: artifacts/
+          if-no-files-found: warn
+  endurance-checks:
+    if: github.event_name == 'pull_request' || inputs.endurance == true
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save --package-lock=false playwright@1.56.1
+      - run: npx playwright install --with-deps chromium
+      - run: |
+          python3 -m http.server 8000 > /tmp/noema-endurance-http.log 2>&1 &
+          for i in {1..30}; do curl -fsS http://127.0.0.1:8000/ >/dev/null && break; sleep 1; done
+          NOEMA_ENDURANCE_SECONDS=1800 node scripts/endurance-check.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: noema-endurance-evidence
+          path: artifacts/endurance/
+          if-no-files-found: error

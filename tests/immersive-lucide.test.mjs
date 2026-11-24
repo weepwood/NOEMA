@@ -8,6 +8,7 @@ import {fileURLToPath} from 'node:url';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const inline=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].at(-1)?.[1];
+const inspectorSource=fs.readFileSync(path.join(root,'src/inspector-controller.js'),'utf8');
 const license=fs.readFileSync(path.join(root,'assets','LUCIDE-LICENSE.txt'),'utf8');
 
 test('every rendered control icon refers to one local Lucide definition',()=>{
@@ -89,6 +90,6 @@ test('keyboard shortcuts retain Escape close first, then exit immersive and avoi
  assert.match(inline,/if\(app\.classList\.contains\('is-immersive'\)\)\{e\.preventDefault\(\);setImmersiveMode\(false\);return\}/);
  assert.match(inline,/e\.key\.toLowerCase\(\)==='f'/);
  assert.match(inline,/e\.target\?\.closest\?\.\('input,textarea,\[contenteditable="true"\]'\)/);
- assert.match(inline,/if\(app\.classList\.contains\('is-immersive'\)\)\{event\.preventDefault\(\);return\}/);
+ assert.match(inspectorSource,/if\(app\.classList\.contains\('is-immersive'\)\)\{event\.preventDefault\(\);return\}/);
  assert.match(inline,/stage\.focus\(\{preventScroll:true\}\)/);
 });

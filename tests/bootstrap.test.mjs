@@ -126,6 +126,7 @@ test('real page bootstrap, first paint, selection, controls and keyboard navigat
   // This module runs before the inline page code in the actual HTML.
   vm.runInContext(fs.readFileSync(path.join(root, 'src/posterwall-layout.js'), 'utf8'), context);
   vm.runInContext(fs.readFileSync(path.join(root, 'src/wall-motion.js'), 'utf8'), context);
+  for(const name of ['image-lod','gesture-core','inspector-core','image-queue','image-pipeline','gesture-controller','inspector-controller'])vm.runInContext(fs.readFileSync(path.join(root,'src',name+'.js'),'utf8'),context);
   vm.runInContext(inlineScript, context, { timeout: 2000 });
   for (let i = 0; i < 3 && queuedFrames.length; i++) queuedFrames.shift()(16 * (i + 1));
   const wall = getNode('world');

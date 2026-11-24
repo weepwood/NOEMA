@@ -1,0 +1,9 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import '../src/image-lod.js';import '../src/gesture-core.js';import '../src/inspector-core.js';import '../src/image-queue.js';
+test('LOD downshifts with hysteresis and estimates conservative pixels',()=>{const l=globalThis.NOEMAImageLOD;assert.ok(l.shouldReplace(768,384));assert.ok(!l.shouldReplace(1024,768-0+1));assert.ok(l.shouldReplace(384,768));assert.equal(l.pixelBytes([{thumbEdge:1024}]),4194304)});
+test('pinch continuation never synthesizes click or invalid velocity',()=>{const g=globalThis.NOEMAGestureCore,p=g.pinch([{x:0,y:0},{x:20,y:10}],{x:2,y:4,s:2});assert.equal(p.world.x,4);const d=g.resumeDrag(1,{x:4,y:8},100);assert.equal(d.vx,0);assert.equal(d.tile,null);assert.ok(d.travel>5);const a=g.coast(1,2,32),b=g.coast(1,2,16),c=g.coast(b.vx,b.vy,16);assert.ok(Math.abs(a.dx-b.dx-c.dx)<1e-8)});
+test('inspector anchor remains fixed across zoom',()=>{const i=globalThis.NOEMAInspectorCore;assert.equal(i.fit({width:1038,height:538},{w:2000,h:1000}),.5);assert.deepEqual(i.zoomPan({x:2,y:3},{x:12,y:13},2),{x:-8,y:-7})});
+test('queue drops offscreen thumbnails and obsolete previews while retaining current work',()=>{const a={},b={},c={},cancelled=[];const q=[{art:a,priority:0,resolve:()=>cancelled.push(a)},{art:b,preview:true,resolve:()=>cancelled.push(b)},{art:c,preview:true,resolve:()=>cancelled.push(c)}];globalThis.NOEMAImageQueue.reconcile(q,new Map([[a,{x:42}]]),m=>m.x,new Set([c]));assert.deepEqual(cancelled,[b]);assert.equal(q[0].art,c);assert.equal(q[1].priority,42)});
+
+import '../src/wall-motion.js';
+test('low refresh spring advances by actual elapsed time, not frame count',()=>{const s=globalThis.NOEMAWallMotion;const a=s.springAxis(0,0,760,.2);let b={value:0,velocity:0};for(let i=0;i<10;i++)b=s.springAxis(b.value,b.velocity,760,.02);assert.ok(Math.abs(a.value-b.value)<1e-6);assert.ok(Math.abs(a.velocity-b.velocity)<1e-6)});

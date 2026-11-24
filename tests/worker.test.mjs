@@ -7,7 +7,7 @@ import {fileURLToPath} from 'node:url';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const workerSource=fs.readFileSync(path.join(root,'thumbnail-worker.js'),'utf8');
-const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+const html=fs.readFileSync(path.join(root,'index.html'),'utf8')+'\n'+fs.readFileSync(path.join(root,'src/image-pipeline.js'),'utf8');
 
 test('worker script parses and is deployed as a local asset',()=>{
   new vm.Script(workerSource);

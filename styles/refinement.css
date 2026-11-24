@@ -1,0 +1,34 @@
+/* Preserve the fixed editorial mosaic and subordinate chrome. */
+@media (min-width:761px){
+ .topbar{height:90px;padding-top:24px}
+ .top-tools{gap:9px}
+ .top-middle .subline{letter-spacing:.045em}
+ .selection-exit,.selection-inspect{top:94px}
+ .corner-index{top:98px}
+ .floating-controls{gap:7px;padding:5px;background:#0b0b0bdb;border:1px solid #ffffff1c;border-radius:32px}
+ .floating-controls .round-btn{width:40px;height:40px;background:transparent;border-color:transparent;backdrop-filter:none}
+ .floating-controls .round-btn:hover{background:#ffffff15;border-color:#ffffff29}
+}
+.m-tile .tile-title{letter-spacing:-.045em;text-wrap:balance}
+.local-collection .m-tile:not(.is-active) .tile-index{opacity:.5}
+@media (prefers-reduced-motion:reduce){.floating-controls .round-btn{transition:none}}
+
+/* Screenshot review: separate numerator and denominator, reduce overlay noise. */
+.bottom-left .number{display:flex;align-items:baseline;gap:8px;letter-spacing:-.065em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.bottom-left .number span{letter-spacing:0;line-height:1}
+@media(max-width:760px){
+ .corner-index{display:none}
+ .topbar{height:78px;padding:15px 16px 0;gap:8px}
+ .top-tools{gap:5px}
+ .top-tools .round-btn{width:40px;height:40px}
+ .floating-controls{gap:3px;padding:3px;background:#0b0b0bd9;border:1px solid #ffffff21;border-radius:28px;bottom:max(14px,env(safe-area-inset-bottom))}
+ .floating-controls .round-btn{width:44px;height:44px;background:transparent;border-color:transparent;backdrop-filter:none}
+ .bottom-left{left:12px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 13px)}
+ .bottom-left .number{gap:4px;font-size:24px}
+ .local-collection .bottom-left .number{font-size:20px}
+}
+@media(max-width:360px){.bottom-left{bottom:76px}.topbar .brand-sub{display:none}}
+
+/* Keep texture when idle; skip costly full-viewport blending during interaction. */
+.stage.is-moving .grain{visibility:hidden}
+.stage.is-moving ~ .chrome .round-btn{backdrop-filter:none;-webkit-backdrop-filter:none}
