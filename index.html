@@ -280,6 +280,7 @@
 <script src="./thumbnail-store.js"></script>
 <script src="./library-index.js"></script>
 <script src="./src/canvas-core.js"></script>
+<script src="./src/image-lod.js"></script>
 <script src="./src/posterwall-layout.js"></script>
 <script src="./src/wall-motion.js"></script>
 <script src="./src/search-core.js"></script>
@@ -421,7 +422,7 @@ function queueImageTask(task){
 }
 function scheduleThumbnail(art,priority=0){
  if(!art.file)return Promise.resolve(photo(art.img,780));
- if(art.thumbUrl){thumbCache.delete(art);thumbCache.set(art,art.thumbUrl);return Promise.resolve(art.thumbUrl)}
+ if(art.thumbUrl&&(art.thumbEdge||0)>=(art.requestedEdge||THUMB_EDGE)){thumbCache.delete(art);thumbCache.set(art,art.thumbUrl);return Promise.resolve(art.thumbUrl)}
  if(art.thumbPromise){
   for(const task of thumbnailQueue)if(task.art===art&&!task.preview)
    task.priority=Math.max(task.priority||0,priority);
@@ -497,7 +498,7 @@ function pumpThumbnails(){
     if(task.version!==collectionVersion){task.resolve(null);return}
     if(!blob)blob=await thumbnailInBackground(task.art.file,task.edge||THUMB_EDGE,task.art.ratio);
     if(task.version!==collectionVersion){task.resolve(null);return}
-    const url=URL.createObjectURL(blob);rememberThumbnail(task.art,url,blob.size);task.resolve(url);
+    const url=URL.createObjectURL(blob);task.art.thumbEdge=task.edge||THUMB_EDGE;rememberThumbnail(task.art,url,blob.size);task.resolve(url);
     if(!cacheHit&&key&&blob.type==='image/webp')void persistentStore.put(key,blob);
    }catch(error){
     if(task.version!==collectionVersion){task.resolve(null);return}
@@ -507,7 +508,8 @@ function pumpThumbnails(){
     // Avoid decoding huge originals directly on the visible mosaic as fallback.
     if(task.art.file.size<=8*1024*1024){
      const fallback=URL.createObjectURL(task.art.file);
-     rememberThumbnail(task.art,fallback,task.art.file.size);task.resolve(fallback);
+      task.art.thumbEdge=task.edge||THUMB_EDGE;
+      rememberThumbnail(task.art,fallback,task.art.file.size);task.resolve(fallback);
     }else task.resolve(null);
    }finally{thumbnailWorkers--;pumpThumbnails()}
   })();
@@ -519,13 +521,13 @@ function evictThumbnails(){
  for(const [art,url] of thumbCache){
   if(thumbCache.size<=MAX_THUMB_CACHE&&thumbCacheBytes<=MAX_THUMB_BYTES)break;
   if(pinned.has(art))continue;
-  URL.revokeObjectURL(url);thumbCache.delete(art);thumbCacheBytes-=art.thumbBytes||0;art.thumbBytes=0;art.thumbUrl=null;art.thumbPromise=null;
+  URL.revokeObjectURL(url);thumbCache.delete(art);thumbCacheBytes-=art.thumbBytes||0;art.thumbBytes=0;art.thumbUrl=null;art.thumbPromise=null;art.thumbEdge=0;
  }
 }
 function clearThumbnailCache(){
  collectionVersion++;
  for(const art of (allLocalArtworks||artworks)){art.thumbPromise=null;art.previewPromise=null;art.thumbFailed=false}
- for(const [art,url] of thumbCache){URL.revokeObjectURL(url);art.thumbUrl=null;art.thumbPromise=null;art.thumbBytes=0}
+ for(const [art,url] of thumbCache){URL.revokeObjectURL(url);art.thumbUrl=null;art.thumbPromise=null;art.thumbBytes=0;art.thumbEdge=0}
  thumbCache.clear();thumbCacheBytes=0;previewCache.clear();
  while(thumbnailQueue.length){thumbnailQueue.shift().resolve(null)}
 }
@@ -657,7 +659,7 @@ const observer=('IntersectionObserver' in window)?new IntersectionObserver(entri
 async function loadThumbnail(m){
  if(m.thumbRequested)return;m.thumbRequested=true;
  const version=collectionVersion,art=m.art;
- if(art.file){const pixels=Math.max(m.rect.w,m.rect.h)*camera.s*Math.min(DPR,2);art.requestedEdge=pixels<=192?192:pixels<=384?384:pixels<=768?768:1024}
+ if(art.file)art.requestedEdge=window.NOEMAImageLOD.edgeFor(m.rect,camera.s,DPR,nodes.size);
  const url=art.file?await scheduleThumbnail(art,thumbnailPriority(m)):photo(art.img,780);
  if(version!==collectionVersion||!m.button.isConnected||m.art!==art)return;
  if(url){m.low.loading='eager';setImage(m.low,url)}else m.thumbRequested=false
@@ -818,13 +820,14 @@ if(active){
   const focusable=m.id===active||intersects(m.rect,actual);
   const tab=focusable?0:-1;if(m.button.tabIndex!==tab)m.button.tabIndex=tab;
   m.button.classList.toggle('is-focus-ring',m.id===focusedId);
+   if(focusable&&m.art.file&&m.art.thumbUrl&&!m.art.thumbFailed&&!m.art.thumbPromise){const edge=window.NOEMAImageLOD.edgeFor(m.rect,camera.s,DPR,nodes.size);if(edge>(m.art.thumbEdge||0)){m.thumbRequested=false;void loadThumbnail(m)}}
   }
-  if(changed){
+  if(localMode){
   const live=new Map([...nodes.values()].map(m=>[m.art,m]));
   for(let i=thumbnailQueue.length-1;i>=0;i--){const task=thumbnailQueue[i];if(task.preview)continue;const tile=live.get(task.art);if(!tile){thumbnailQueue.splice(i,1);task.resolve(null)}else task.priority=thumbnailPriority(tile)}
   thumbnailQueue.sort((a,b)=>(b.preview?1:0)-(a.preview?1:0)||(b.priority||0)-(a.priority||0));
-  updateGoals();evictThumbnails()
- }
+  if(changed){updateGoals();evictThumbnails()}
+ }else if(changed){updateGoals();evictThumbnails()}
 }
 function select(id){if(!nodes.has(id))return;const already=active===id;if(already){close();return}
  if(active!==null&&active!==id){
@@ -1489,8 +1492,8 @@ function toggleMetrics(force=null){
   metricsMonitor=window.NOEMAPerformanceMonitor.create({
    requestFrame:callback=>requestAnimationFrame(callback),cancelFrame:id=>cancelAnimationFrame(id),
    snapshot:()=>({tiles:nodes.size,cullRuns,candidates:lastCandidateCount,clipped:lastClippedCount,
-    cacheCount:thumbCache.size,cacheMiB:(thumbCacheBytes/1048576).toFixed(1),workers:thumbnailWorkers,queue:thumbnailQueue.length}),
-   onSample:stats=>{metricsText.textContent=`FPS ${stats.fps}   最慢帧 ${stats.longestFrameMs}ms\n磁贴 ${stats.tiles}   视图候选 ${stats.candidates}\n裁剪次数 ${stats.cullRuns}   未显示 ${stats.clipped}\n缩略图 ${stats.cacheCount} / ${stats.cacheMiB} MiB\n任务 ${stats.workers}   等待 ${stats.queue}`}
+    cacheCount:thumbCache.size,cacheMiB:(thumbCacheBytes/1048576).toFixed(1),pixelMiB:window.NOEMAImageLOD.estimateMiB([...thumbCache.keys()]),workers:thumbnailWorkers,queue:thumbnailQueue.length}),
+   onSample:stats=>{metricsText.textContent=`FPS ${stats.fps}   最慢帧 ${stats.longestFrameMs}ms\n磁贴 ${stats.tiles}   视图候选 ${stats.candidates}\n裁剪次数 ${stats.cullRuns}   未显示 ${stats.clipped}\n缩略图 ${stats.cacheCount} / ${stats.cacheMiB} MiB\n估算像素 ${stats.pixelMiB} MiB\n任务 ${stats.workers}   等待 ${stats.queue}`}
   });
  }
  if(enable)metricsMonitor.start();else metricsMonitor.stop();

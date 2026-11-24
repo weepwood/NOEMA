@@ -17,7 +17,7 @@ try{
  assert.equal(await page.locator('.m-tile[aria-expanded="true"]').count(),1);
  await page.keyboard.press('Escape');await page.locator('#inspector').waitFor({state:'hidden'});
  assert.equal(await page.locator('.m-tile[aria-expanded="true"]').count(),1);
- await page.screenshot({path:'artifacts/local-focus.png'});
+ await page.waitForTimeout(700);await page.screenshot({path:'artifacts/local-focus.png'});
  await page.keyboard.press('Escape');
  const frames=await page.evaluate(async()=>{let times=[],previous=performance.now();for(let i=0;i<240;i++){await new Promise(requestAnimationFrame);const now=performance.now();times.push(now-previous);previous=now;if(i%12===0)document.getElementById(i%24===0?'plusBtn':'minusBtn').click()}return times});
  const sorted=frames.slice().sort((a,b)=>a-b);await fs.writeFile('artifacts/frame-report.json',JSON.stringify({frames:frames.length,p95:sorted[Math.floor(sorted.length*.95)],max:Math.max(...frames),over33ms:frames.filter(x=>x>33.4).length,errors},null,2));
