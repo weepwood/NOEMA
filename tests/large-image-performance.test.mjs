@@ -53,7 +53,7 @@ test('a clicked local tile loads a bounded preview rather than full-resolution o
  assert.match(script,/const previewCache=new Map\(\),MAX_PREVIEW_CACHE=3/);
  assert.match(script,/activePreviewToken\+\+/);
  assert.match(script,/thumbnailWorkers<\(workerDisabled\|\|location\.protocol==='file:'/);
- assert.match(script,/task\.art\.file\.size<=8\*1024\*1024/);
+ assert.doesNotMatch(script,/createObjectURL\(task\.art\.file\)/);
  assert.match(script,/const previewKey=key\?'p1:'\+key:null/);
  assert.match(script,/persistentStore\.get\(previewKey\)/);
  assert.match(script,/persistentStore\.put\(previewKey,blob\)/);

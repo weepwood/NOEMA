@@ -10,8 +10,10 @@
   const allowed=TIERS.filter(t=>t<=budget).at(-1)||TIERS[0];
   return Math.min(desired,allowed);
  }
+ function pixelBytes(arts){return arts.reduce((sum,art)=>sum+4*(art.thumbEdge||0)**2,0)}
+ function shouldReplace(current,desired){return !current||desired>current||desired<=current*.75}
  function estimateMiB(arts){
   return (arts.reduce((sum,art)=>{const edge=art.thumbEdge||0,ratio=Number(art.ratio)||1;return sum+edge*edge*4*Math.min(ratio,1/ratio)},0)/1048576).toFixed(1);
  }
- root.NOEMAImageLOD=Object.freeze({edgeFor,estimateMiB,TIERS});
+ root.NOEMAImageLOD=Object.freeze({edgeFor,estimateMiB,pixelBytes,shouldReplace,TIERS,PIXEL_BUDGET});
 })(typeof window==='undefined'?globalThis:window);

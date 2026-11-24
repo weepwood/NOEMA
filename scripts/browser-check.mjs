@@ -1,28 +1,60 @@
-import { chromium } from 'playwright';
+import { chromium,firefox,webkit } from 'playwright';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
-const browser=await chromium.launch({headless:true});
-await fs.mkdir('artifacts',{recursive:true});
+import os from 'node:os';
+import path from 'node:path';
+const engine=process.env.NOEMA_BROWSER||'chromium',type={chromium,firefox,webkit}[engine];
+const browser=await type.launch({headless:true}),out='artifacts/'+engine;
+await fs.mkdir(out,{recursive:true});
+const errors=[],fixture=await fs.mkdtemp(path.join(os.tmpdir(),'noema-fixture-'));
+const assets=(await fs.readdir('assets')).filter(x=>/^poster-.*\.webp$/.test(x)).sort();
+const count=Number(process.env.NOEMA_FILE_COUNT|| (engine==='chromium'?1200:48));
 try{
+ // Actual filesystem entries and encoded image data, repeated bundled image content.
+ for(let i=0;i<count;i++)await fs.link(path.resolve('assets',assets[i%assets.length]),path.join(fixture,'photo-'+String(i).padStart(5,'0')+'.webp')).catch(()=>fs.copyFile(path.resolve('assets',assets[i%assets.length]),path.join(fixture,'photo-'+String(i).padStart(5,'0')+'.webp')));
  const page=await browser.newPage({viewport:{width:1440,height:900},deviceScaleFactor:1});
- const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:8000/');await page.locator('.m-tile').first().waitFor();
- await page.waitForTimeout(500);await page.screenshot({path:'artifacts/demo.png'});
- const png=await page.evaluate(()=>{const c=document.createElement('canvas');c.width=320;c.height=240;const x=c.getContext('2d');x.fillStyle='#456789';x.fillRect(0,0,320,240);return c.toDataURL().split(',')[1]});
- await page.locator('#fileInput').setInputFiles(Array.from({length:24},(_,i)=>({name:'photo-'+i+'.png',mimeType:'image/png',buffer:Buffer.from(png,'base64')})));
- await page.locator('#app.local-collection').waitFor();
+ await page.waitForFunction(()=>[...document.querySelectorAll('.m-tile img.low-res')].some(i=>i.complete&&i.naturalWidth>0));
+ await page.waitForTimeout(800);await page.screenshot({path:out+'/demo.png'});
+ const start=Date.now();
+ await page.locator('#folderInput').setInputFiles(fixture);
+ await page.locator('#app.local-collection').waitFor({timeout:120000});
+ assert.ok((await page.locator('#collectionTag').textContent()).includes(String(count)));
+ const importMs=Date.now()-start;
+ await page.waitForFunction(()=>[...document.querySelectorAll('.m-tile img.low-res')].some(i=>i.complete&&i.naturalWidth>0),{},{timeout:60000});
  const tile=page.locator('.m-tile').first();await tile.focus();await page.keyboard.press('Enter');
  await page.locator('.m-tile[aria-expanded="true"]').waitFor();
  await page.keyboard.press('i');await page.locator('#inspector').waitFor();
  assert.equal(await page.locator('.m-tile[aria-expanded="true"]').count(),1);
+ await page.waitForFunction(()=>document.getElementById('inspectorImage').naturalWidth>0);
+ await page.screenshot({path:out+'/inspector.png'});
+ await page.keyboard.press('ArrowRight');await page.keyboard.press('ArrowLeft');
  await page.keyboard.press('Escape');await page.locator('#inspector').waitFor({state:'hidden'});
  assert.equal(await page.locator('.m-tile[aria-expanded="true"]').count(),1);
- await page.waitForTimeout(700);await page.screenshot({path:'artifacts/local-focus.png'});
+ await page.waitForTimeout(800);await page.screenshot({path:out+'/local-focus.png'});
  await page.keyboard.press('Escape');
- const frames=await page.evaluate(async()=>{let times=[],previous=performance.now();for(let i=0;i<240;i++){await new Promise(requestAnimationFrame);const now=performance.now();times.push(now-previous);previous=now;if(i%12===0)document.getElementById(i%24===0?'plusBtn':'minusBtn').click()}return times});
- const sorted=frames.slice().sort((a,b)=>a-b);await fs.writeFile('artifacts/frame-report.json',JSON.stringify({frames:frames.length,p95:sorted[Math.floor(sorted.length*.95)],max:Math.max(...frames),over33ms:frames.filter(x=>x>33.4).length,errors},null,2));
+ await page.keyboard.press('f');assert.ok(await page.locator('#app.is-immersive').count());await page.keyboard.press('f');
+ await page.keyboard.press('Control+k');await page.locator('#searchOverlay').waitFor();
+ await page.locator('#searchInput').fill('photo-'+String(count-1).padStart(5,'0'));await page.waitForTimeout(250);
+ await page.keyboard.press('Enter');await page.waitForTimeout(600);await page.keyboard.press('Escape');
+ const frames=await page.evaluate(async n=>{let times=[],previous=performance.now(),peak=0;for(let i=0;i<n;i++){await new Promise(requestAnimationFrame);const now=performance.now();times.push(now-previous);previous=now;if(i%12===0)document.getElementById(i%24===0?'plusBtn':'minusBtn').click();if(i%48===0){const b=[...document.querySelectorAll('.m-tile')].find(x=>x.tabIndex===0);b?.focus();b?.dispatchEvent(new MouseEvent('click',{bubbles:true,detail:0}))}peak=Math.max(peak,document.querySelectorAll('.m-tile').length)}return{times,peak}},Number(process.env.NOEMA_FRAMES||640));
+ const sorted=frames.times.slice().sort((a,b)=>a-b);
+ await fs.writeFile(out+'/frame-report.json',JSON.stringify({engine,fixtureFiles:count,distinctEncodedSources:assets.length,importMs,frames:frames.times.length,p95:sorted[Math.floor(sorted.length*.95)],max:Math.max(...frames.times),over33ms:frames.times.filter(x=>x>33.4).length,peakMounted:frames.peak,errors},null,2));
+ assert.deepEqual(errors,[]);assert.ok(frames.peak<1200);
+ await page.screenshot({path:out+'/local-wall.png'});
+ const mobile=await browser.newPage({viewport:{width:390,height:844},hasTouch:true,deviceScaleFactor:2,...(engine==='firefox'?{}:{isMobile:true})});
+ mobile.on('pageerror',e=>errors.push(e.message));
+ await mobile.goto('http://127.0.0.1:8000/');await mobile.locator('.m-tile').first().waitFor();
+ await mobile.waitForTimeout(800);await mobile.screenshot({path:out+'/mobile.png'});
+ if(engine==='chromium'){
+  const session=await mobile.context().newCDPSession(mobile);
+  const t=(type,touchPoints)=>session.send('Input.dispatchTouchEvent',{type,touchPoints});
+  const point=(x,y,id)=>({x,y,id,radiusX:3,radiusY:3});
+  const before=await mobile.locator('#world').evaluate(e=>e.style.transform);
+  await t('touchStart',[point(110,350,1)]);await t('touchMove',[point(155,390,1)]);await t('touchEnd',[]);
+  await mobile.waitForTimeout(150);
+  assert.notEqual(await mobile.locator('#world').evaluate(e=>e.style.transform),before);
+ }
  assert.deepEqual(errors,[]);
- await page.screenshot({path:'artifacts/local-wall.png'});
- const mobile=await browser.newPage({viewport:{width:390,height:844},isMobile:true,hasTouch:true,deviceScaleFactor:2});
- await mobile.goto('http://127.0.0.1:8000/');await mobile.locator('.m-tile').first().waitFor();await mobile.screenshot({path:'artifacts/mobile.png'});
-}finally{await browser.close()}
+}finally{await browser.close();await fs.rm(fixture,{recursive:true,force:true})}

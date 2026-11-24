@@ -22,14 +22,23 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
+      - name: 确认受检提交仍为主分支最新版本
+        id: current
+        run: |
+          current=$(git ls-remote origin refs/heads/main | cut -f1)
+          if [ "$current" = "${{ github.event.workflow_run.head_sha }}" ]; then echo "ok=true" >> "$GITHUB_OUTPUT"; else echo "ok=false" >> "$GITHUB_OUTPUT"; fi
       - uses: actions/configure-pages@v5
+        if: steps.current.outputs.ok == 'true'
       - name: 准备静态发布文件
+        if: steps.current.outputs.ok == 'true'
         run: |
           mkdir -p dist
           cp index.html thumbnail-store.js thumbnail-worker.js library-index.js dist/
           cp -R assets src styles dist/
       - uses: actions/upload-pages-artifact@v3
+        if: steps.current.outputs.ok == 'true'
         with:
           path: dist
       - uses: actions/deploy-pages@v4
+        if: steps.current.outputs.ok == 'true'
         id: deployment

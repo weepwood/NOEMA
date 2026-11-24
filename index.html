@@ -281,6 +281,9 @@
 <script src="./library-index.js"></script>
 <script src="./src/canvas-core.js"></script>
 <script src="./src/image-lod.js"></script>
+<script src="./src/gesture-core.js"></script>
+<script src="./src/inspector-core.js"></script>
+<script src="./src/image-queue.js"></script>
 <script src="./src/posterwall-layout.js"></script>
 <script src="./src/wall-motion.js"></script>
 <script src="./src/search-core.js"></script>
@@ -422,7 +425,7 @@ function queueImageTask(task){
 }
 function scheduleThumbnail(art,priority=0){
  if(!art.file)return Promise.resolve(photo(art.img,780));
- if(art.thumbUrl&&(art.thumbEdge||0)>=(art.requestedEdge||THUMB_EDGE)){thumbCache.delete(art);thumbCache.set(art,art.thumbUrl);return Promise.resolve(art.thumbUrl)}
+ if(art.thumbUrl&&art.thumbEdge===(art.requestedEdge||THUMB_EDGE)){thumbCache.delete(art);thumbCache.set(art,art.thumbUrl);return Promise.resolve(art.thumbUrl)}
  if(art.thumbPromise){
   for(const task of thumbnailQueue)if(task.art===art&&!task.preview)
    task.priority=Math.max(task.priority||0,priority);
@@ -505,28 +508,32 @@ function pumpThumbnails(){
     if(task.preview){task.resolve(null);return}
     task.art.thumbFailed=true;
     console.warn('缩略图生成失败:',task.art.title,error);
-    // Avoid decoding huge originals directly on the visible mosaic as fallback.
-    if(task.art.file.size<=8*1024*1024){
-     const fallback=URL.createObjectURL(task.art.file);
-      task.art.thumbEdge=task.edge||THUMB_EDGE;
-      rememberThumbnail(task.art,fallback,task.art.file.size);task.resolve(fallback);
-    }else task.resolve(null);
+    // Compressed byte size cannot bound decoded pixels; never load originals here.
+    task.resolve(task.art.thumbUrl||null);
    }finally{thumbnailWorkers--;pumpThumbnails()}
   })();
  }
 }
 function evictThumbnails(){
- if(thumbCache.size<=MAX_THUMB_CACHE&&thumbCacheBytes<=MAX_THUMB_BYTES)return;
+ const lod=window.NOEMAImageLOD;
+ let pixels=lod.pixelBytes([...thumbCache.keys()]);
+ const within=()=>thumbCache.size<=MAX_THUMB_CACHE&&thumbCacheBytes<=MAX_THUMB_BYTES&&pixels<=lod.PIXEL_BUDGET;
+ if(within())return;
  const pinned=new Set([...nodes.values()].map(node=>node.art));
  for(const [art,url] of thumbCache){
-  if(thumbCache.size<=MAX_THUMB_CACHE&&thumbCacheBytes<=MAX_THUMB_BYTES)break;
+  if(within())break;
   if(pinned.has(art))continue;
+  pixels-=lod.pixelBytes([art]);
   URL.revokeObjectURL(url);thumbCache.delete(art);thumbCacheBytes-=art.thumbBytes||0;art.thumbBytes=0;art.thumbUrl=null;art.thumbPromise=null;art.thumbEdge=0;
  }
 }
-function clearThumbnailCache(){
+function invalidateImageTasks(){
  collectionVersion++;
  for(const art of (allLocalArtworks||artworks)){art.thumbPromise=null;art.previewPromise=null;art.thumbFailed=false}
+ while(thumbnailQueue.length)thumbnailQueue.shift().resolve(null);
+}
+function clearThumbnailCache(){
+ invalidateImageTasks();
  for(const [art,url] of thumbCache){URL.revokeObjectURL(url);art.thumbUrl=null;art.thumbPromise=null;art.thumbBytes=0;art.thumbEdge=0}
  thumbCache.clear();thumbCacheBytes=0;previewCache.clear();
  while(thumbnailQueue.length){thumbnailQueue.shift().resolve(null)}
@@ -660,7 +667,9 @@ async function loadThumbnail(m){
  if(m.thumbRequested)return;m.thumbRequested=true;
  const version=collectionVersion,art=m.art;
  if(art.file)art.requestedEdge=window.NOEMAImageLOD.edgeFor(m.rect,camera.s,DPR,nodes.size);
- const url=art.file?await scheduleThumbnail(art,thumbnailPriority(m)):photo(art.img,780);
+ const demoHigh=!art.file&&Math.max(m.rect.w,m.rect.h)*camera.s*Math.min(DPR,2)>300;
+ if(!art.file)m.demoHigh=demoHigh;
+ const url=art.file?await scheduleThumbnail(art,thumbnailPriority(m)):photo(art.img,demoHigh?1800:780);
  if(version!==collectionVersion||!m.button.isConnected||m.art!==art)return;
  if(url){m.low.loading='eager';setImage(m.low,url)}else m.thumbRequested=false
 }
@@ -820,12 +829,12 @@ if(active){
   const focusable=m.id===active||intersects(m.rect,actual);
   const tab=focusable?0:-1;if(m.button.tabIndex!==tab)m.button.tabIndex=tab;
   m.button.classList.toggle('is-focus-ring',m.id===focusedId);
-   if(focusable&&m.art.file&&m.art.thumbUrl&&!m.art.thumbFailed&&!m.art.thumbPromise){const edge=window.NOEMAImageLOD.edgeFor(m.rect,camera.s,DPR,nodes.size);if(edge>(m.art.thumbEdge||0)){m.thumbRequested=false;void loadThumbnail(m)}}
+   if(focusable&&!m.thumbRequested&&!m.art.thumbFailed)void loadThumbnail(m);
   }
   if(localMode){
   const live=new Map([...nodes.values()].map(m=>[m.art,m]));
-  for(let i=thumbnailQueue.length-1;i>=0;i--){const task=thumbnailQueue[i];if(task.preview)continue;const tile=live.get(task.art);if(!tile){thumbnailQueue.splice(i,1);task.resolve(null)}else task.priority=thumbnailPriority(tile)}
-  thumbnailQueue.sort((a,b)=>(b.preview?1:0)-(a.preview?1:0)||(b.priority||0)-(a.priority||0));
+  const focusArt=nodes.get(active)?.art,inspectArt=!inspector.hidden?artworks[inspectorIndex]:null;
+  window.NOEMAImageQueue.reconcile(thumbnailQueue,live,thumbnailPriority,new Set([focusArt,inspectArt]));
   if(changed){updateGoals();evictThumbnails()}
  }else if(changed){updateGoals();evictThumbnails()}
 }
@@ -882,10 +891,26 @@ function frame(now){
  updateCamera();syncVisible();
  for(const m of nodes.values())if(spring(m,dt))moving=true;
  if(motionUnderlays.size)settleMotionUnderlays();
- if(moving||keepPlaying)start();else last=0;
+ if(moving||keepPlaying)start();else{last=0;scheduleLODRefresh()}
+}
+let lodTimer=0;
+function scheduleLODRefresh(){
+ clearTimeout(lodTimer);
+ lodTimer=setTimeout(()=>{
+  if(keepPlaying||cameraFlight||coastRaf){scheduleLODRefresh();return}
+  const bounds=canvasCore.viewportBounds(camera,viewport);
+  for(const m of nodes.values()){
+   if(m.id===active||!intersects(m.rect,bounds)||m.art.thumbFailed||m.art.thumbPromise)continue;
+   const art=m.art;
+   if(art.file){const desired=window.NOEMAImageLOD.edgeFor(m.rect,camera.s,DPR,nodes.size);if(!window.NOEMAImageLOD.shouldReplace(art.thumbEdge||0,desired))continue}
+   else if(m.demoHigh===(Math.max(m.rect.w,m.rect.h)*camera.s*Math.min(DPR,2)>300))continue;
+   m.thumbRequested=false;void loadThumbnail(m);
+  }
+  if(localMode)evictThumbnails();
+ },180);
 }
 function point(e){const r=stage.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
-function pinchState(){const a=[...pointers.values()];if(a.length<2)return null;const mid={x:(a[0].x+a[1].x)/2,y:(a[0].y+a[1].y)/2};return{dist:Math.max(1,dist(a[0],a[1])),mid,scale:camera.s,world:{x:(mid.x-camera.x)/camera.s,y:(mid.y-camera.y)/camera.s}}}
+function pinchState(){return window.NOEMAGestureCore.pinch([...pointers.values()],camera)}
 stage.addEventListener('pointerdown',e=>{if(e.button!==0&&e.pointerType==='mouse')return;cameraFlight=null;if(coastRaf){cancelAnimationFrame(coastRaf);coastRaf=null}cameraGoal={...camera};const p=point(e);pointers.set(e.pointerId,p);stage.setPointerCapture(e.pointerId);stage.classList.add('is-dragging');keepPlaying=true;
  if(pointers.size===1){drag={id:e.pointerId,point:p,start:p,travel:0,vx:0,vy:0,lastTime:performance.now(),tile:e.target.closest('.m-tile')?.dataset.instance||null};pinch=null}
  else{pinch=pinchState();drag=null}
@@ -895,18 +920,20 @@ stage.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return;co
  if(drag&&drag.id===e.pointerId){const deltaX=p.x-old.x,deltaY=p.y-old.y;drag.travel=Math.max(drag.travel,dist(p,drag.start));const now=performance.now(),ms=Math.max(8,now-drag.lastTime);drag.vx=(drag.vx||0)*.4+deltaX/ms*.6;drag.vy=(drag.vy||0)*.4+deltaY/ms*.6;drag.lastTime=now;if(drag.travel>5){camera.x+=deltaX;camera.y+=deltaY;cameraGoal={...camera};updateCamera();start()}}
 });
 stage.addEventListener('pointerup',e=>{pointers.delete(e.pointerId);if(stage.hasPointerCapture?.(e.pointerId))stage.releasePointerCapture(e.pointerId);
- if(pointers.size===1){const [id,p]=pointers.entries().next().value;drag={id,point:p,start:p,travel:100,tile:null,vx:0,vy:0,lastTime:performance.now()};pinch=null;return}
+ if(pointers.size===1){const [id,p]=pointers.entries().next().value;drag=window.NOEMAGestureCore.resumeDrag(id,p,performance.now());pinch=null;return}
  if(pointers.size>=2){drag=null;pinch=pinchState();return}
  if(pointers.size===0){const wasClick=drag&&drag.travel<5;const d=drag;drag=null;pinch=null;
   if(wasClick&&d.tile){focusRestore=nodes.get(d.tile)?.button||null;select(d.tile)}
-   else if(d&&!motion.matches&&performance.now()-d.lastTime<80){let vx=clamp(d.vx||0,-2.5,2.5),vy=clamp(d.vy||0,-2.5,2.5),previous=performance.now();const coast=now=>{const dt=Math.max(0,Math.min(34,now-previous));previous=now;const decay=Math.exp(-dt/115);camera.x+=vx*115*(1-decay);camera.y+=vy*115*(1-decay);vx*=decay;vy*=decay;cameraGoal={...camera};updateCamera();start();coastRaf=Math.hypot(vx,vy)>.025?requestAnimationFrame(coast):null};if(Math.hypot(vx,vy)>.15)coastRaf=requestAnimationFrame(coast)}
+   else if(d&&!motion.matches&&performance.now()-d.lastTime<80){let vx=clamp(d.vx||0,-2.5,2.5),vy=clamp(d.vy||0,-2.5,2.5),previous=performance.now();const coast=now=>{const dt=Math.max(0,Math.min(34,now-previous));previous=now;const next=window.NOEMAGestureCore.coast(vx,vy,dt);camera.x+=next.dx;camera.y+=next.dy;vx=next.vx;vy=next.vy;cameraGoal={...camera};updateCamera();start();coastRaf=Math.hypot(vx,vy)>.025?requestAnimationFrame(coast):null};if(Math.hypot(vx,vy)>.15)coastRaf=requestAnimationFrame(coast)}
    keepPlaying=false;stage.classList.remove('is-dragging');start()}});
-stage.addEventListener('pointercancel',e=>{pointers.delete(e.pointerId);
- if(pointers.size===1){const [id,p]=pointers.entries().next().value;drag={id,point:p,start:p,travel:100,tile:null};pinch=null}
+function cancelStagePointer(e){if(!pointers.delete(e.pointerId))return;
+ if(pointers.size===1){const [id,p]=pointers.entries().next().value;drag=window.NOEMAGestureCore.resumeDrag(id,p,performance.now());pinch=null}
  else if(pointers.size>=2){drag=null;pinch=pinchState()}
  else{drag=null;pinch=null;keepPlaying=false;stage.classList.remove('is-dragging')}
  start();
-});
+}
+stage.addEventListener('pointercancel',cancelStagePointer);
+stage.addEventListener('lostpointercapture',cancelStagePointer);
 stage.addEventListener('wheel',e=>{e.preventDefault();const p=point(e);zoomAt(Math.exp(-e.deltaY*(e.deltaMode===1?.028:.00135)),p.x,p.y)},{passive:false});
 stage.addEventListener('dblclick',e=>{if(e.target.closest('.m-tile'))return;const p=point(e);zoomAt(1.32,p.x,p.y)});
 // Dedicated full-resolution viewer. Unlike the wall's cover crop it never crops the image.
@@ -929,7 +956,7 @@ function applyInspector(){
 function inspectorFitToView(){
  if(inspector.hidden)return;
  const size=inspectorView.getBoundingClientRect();
- inspectorFit=Math.max(.001,Math.min((size.width-38)/inspectorNatural.w,(size.height-38)/inspectorNatural.h));
+ inspectorFit=window.NOEMAInspectorCore.fit(size,inspectorNatural);
  inspectorZoom=inspectorFit;inspectorPan={x:0,y:0};applyInspector();
 }
 function inspectorZoomAt(target,clientX,clientY){
@@ -938,8 +965,7 @@ function inspectorZoomAt(target,clientX,clientY){
  const clamped=clamp(target,Math.min(.12,inspectorFit*.7),Math.max(6,inspectorFit*8));
  const factor=clamped/inspectorZoom;
  const x=clientX-(bounds.left+bounds.width/2),y=clientY-(bounds.top+bounds.height/2);
- inspectorPan.x=x-(x-inspectorPan.x)*factor;
- inspectorPan.y=y-(y-inspectorPan.y)*factor;
+ inspectorPan=window.NOEMAInspectorCore.zoomPan(inspectorPan,{x,y},factor);
  inspectorZoom=clamped;applyInspector();
 }
 function clearInspectorPreview(){
@@ -1252,7 +1278,7 @@ function applyLocalView(items,query=''){
  if(!inspector.hidden)closeInspector();
  close();releaseFullImage();
  for(const m of nodes.values()){if(observer)observer.unobserve(m.button);m.button.remove()}
- nodes.clear();clearMotionUnderlays();clearThumbnailCache();
+ nodes.clear();clearMotionUnderlays();invalidateImageTasks();evictThumbnails();
  artworks=items;activeFilterQuery=query;configureLocalAtlas();lastCull=null;focusRestore=null;
  // Keep physical files in allLocalArtworks, while layout and inspector use only filtered items.
  const collectionLabel=collectionTag.querySelector('span');
@@ -1524,7 +1550,7 @@ document.addEventListener('keydown',e=>{
 });
 function measure(){const r=stage.getBoundingClientRect(),w=r.width,h=r.height;if(!w||!h)return;const old=viewport;viewport={w,h};if(!initialized){initialized=true;reset(false)}else{camera.x+=(w-old.w)/2;camera.y+=(h-old.h)/2;cameraGoal={...camera};updateGoals();start();syncVisible(true)}}
 new ResizeObserver(measure).observe(stage);measure();
-window.addEventListener('pagehide',()=>{clearMotionUnderlays();metricsMonitor?.stop();cancelImport();closeInspector();releaseFullImage();clearThumbnailCache();if(coastRaf)cancelAnimationFrame(coastRaf);thumbnailWorker?.terminate();thumbnailWorker=null});})();
+window.addEventListener('pagehide',event=>{clearTimeout(lodTimer);if(event.persisted){metricsMonitor?.stop();return}clearMotionUnderlays();metricsMonitor?.stop();cancelImport();closeInspector();releaseFullImage();clearThumbnailCache();if(coastRaf)cancelAnimationFrame(coastRaf);thumbnailWorker?.terminate();thumbnailWorker=null});})();
 </script>
 </body>
 </html>

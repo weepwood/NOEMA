@@ -6,3 +6,5 @@
 - 图片不上传；目录授权由用户触发；缓存可清理；压缩 Blob 不等于解码内存。
 - 中文 Git commit；独立 PR；日常 Node 检查，高风险画布/缓存/交互需浏览器专项，正式发布需三浏览器与长时压力验证。失败不合并。
 - 交接见 [docs/handoff.md](docs/handoff.md)。
+
+- 浏览器证据必须检查实际截图和 JSON；CI 使用固定 Ubuntu 24.04 与 Chromium/Firefox/WebKit。手动 endurance 专项用于 20000 个真实编码文件目录项/1800 帧，明确重复素材限制。部署只发布通过检查的最新 main SHA，避免旧工作流覆盖。

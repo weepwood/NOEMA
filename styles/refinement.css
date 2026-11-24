@@ -12,3 +12,19 @@
 .m-tile .tile-title{letter-spacing:-.045em;text-wrap:balance}
 .local-collection .m-tile:not(.is-active) .tile-index{opacity:.5}
 @media (prefers-reduced-motion:reduce){.floating-controls .round-btn{transition:none}}
+
+/* Screenshot review: separate numerator and denominator, reduce overlay noise. */
+.bottom-left .number{display:flex;align-items:baseline;gap:8px;letter-spacing:-.065em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.bottom-left .number span{letter-spacing:0;line-height:1}
+@media(max-width:760px){
+ .corner-index{display:none}
+ .topbar{height:78px;padding:15px 16px 0;gap:8px}
+ .top-tools{gap:5px}
+ .top-tools .round-btn{width:40px;height:40px}
+ .floating-controls{gap:3px;padding:3px;background:#0b0b0bd9;border:1px solid #ffffff21;border-radius:28px;bottom:max(14px,env(safe-area-inset-bottom))}
+ .floating-controls .round-btn{width:44px;height:44px;background:transparent;border-color:transparent;backdrop-filter:none}
+ .bottom-left{left:12px;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 13px)}
+ .bottom-left .number{gap:4px;font-size:24px}
+ .local-collection .bottom-left .number{font-size:20px}
+}
+@media(max-width:360px){.bottom-left{bottom:76px}.topbar .brand-sub{display:none}}
