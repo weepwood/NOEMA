@@ -12,7 +12,7 @@
 .stage{position:absolute;inset:0;overflow:hidden;cursor:grab;touch-action:none;outline:0;background:#070707}
 .stage.is-dragging{cursor:grabbing}
 .world{position:absolute;left:0;top:0;width:0;height:0;transform-origin:0 0;will-change:transform}
-.m-tile{position:absolute;z-index:2;margin:0;padding:0;display:block;background:#21201c;border:0;border-radius:0;overflow:hidden;color:#fff;text-align:left;cursor:pointer;isolation:isolate;appearance:none;transform:translateZ(0);contain:layout style paint;outline-offset:-4px}
+.m-tile{position:absolute;z-index:2;margin:0;padding:0;display:block;background:#21201c;border:0;border-radius:0;overflow:hidden;color:#fff;text-align:left;cursor:pointer;isolation:isolate;appearance:none;contain:layout style paint;outline-offset:-4px}
 .m-tile .tile-art{position:absolute;inset:0;background:var(--fallback,linear-gradient(145deg,#31312d,#131515));overflow:hidden}
 .m-tile img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;user-select:none;-webkit-user-drag:none;pointer-events:none;transition:transform .65s cubic-bezier(.18,.68,.24,1),opacity .4s ease;opacity:0}
 .m-tile img.loaded{opacity:1}.m-tile img.hi-res{opacity:0;transition:opacity .35s ease}.m-tile img.hi-res.loaded{opacity:1}
@@ -186,6 +186,7 @@
 @media(hover:none){#app.is-immersive #immersiveBtn{opacity:.4}}
 @media(max-width:760px){#app.is-immersive .top-tools{top:16px;right:16px}}
 </style>
+<link rel="stylesheet" href="./styles/refinement.css">
 </head>
 <body>
 <div id="app">
@@ -428,22 +429,25 @@ function scheduleThumbnail(art,priority=0){
   return art.thumbPromise;
  }
  const version=collectionVersion;
- art.thumbPromise=new Promise(resolve=>queueImageTask({art,version,resolve,priority}));
- return art.thumbPromise;
+ const pending=new Promise(resolve=>queueImageTask({art,version,resolve,priority,edge:art.requestedEdge||THUMB_EDGE}));
+ art.thumbPromise=pending;
+ void pending.then(()=>{if(art.thumbPromise===pending)art.thumbPromise=null});
+ return pending;
 }
 function schedulePreview(art){
  const cached=previewCache.get(art);
  if(cached){previewCache.delete(art);previewCache.set(art,cached);return Promise.resolve(cached)}
  if(art.previewPromise)return art.previewPromise;
  const version=collectionVersion;
- art.previewPromise=new Promise(resolve=>queueImageTask({art,version,resolve,preview:true,priority:Infinity}))
+ const pending=new Promise(resolve=>queueImageTask({art,version,resolve,preview:true,priority:Infinity}))
   .then(blob=>{
    if(version!==collectionVersion||!blob)return null;
    previewCache.delete(art);previewCache.set(art,blob);
    while(previewCache.size>MAX_PREVIEW_CACHE)previewCache.delete(previewCache.keys().next().value);
    return blob;
-  }).finally(()=>{art.previewPromise=null});
- return art.previewPromise;
+  }).finally(()=>{if(art.previewPromise===pending)art.previewPromise=null});
+ art.previewPromise=pending;
+ return pending;
 }
 async function makeThumbnailBlob(file,maxEdge=THUMB_EDGE,ratio=1){
  let bitmap;
@@ -485,12 +489,13 @@ function pumpThumbnails(){
      if(!cached&&previewKey&&blob?.type==='image/webp')void persistentStore.put(previewKey,blob);
      return;
     }
-    const key=await getPersistentKey(task.art);
-    if(task.version!==collectionVersion){task.resolve(null);return}
-    let blob=key?await persistentStore.get(key):null;
+    const identity=await getPersistentKey(task.art);
+     const key=identity?'lod1:'+task.edge+':'+identity:null;
+     if(task.version!==collectionVersion){task.resolve(null);return}
+     let blob=key?await persistentStore.get(key):null;
     const cacheHit=Boolean(blob);
     if(task.version!==collectionVersion){task.resolve(null);return}
-    if(!blob)blob=await thumbnailInBackground(task.art.file,THUMB_EDGE,task.art.ratio);
+    if(!blob)blob=await thumbnailInBackground(task.art.file,task.edge||THUMB_EDGE,task.art.ratio);
     if(task.version!==collectionVersion){task.resolve(null);return}
     const url=URL.createObjectURL(blob);rememberThumbnail(task.art,url,blob.size);task.resolve(url);
     if(!cacheHit&&key&&blob.type==='image/webp')void persistentStore.put(key,blob);
@@ -519,6 +524,7 @@ function evictThumbnails(){
 }
 function clearThumbnailCache(){
  collectionVersion++;
+ for(const art of (allLocalArtworks||artworks)){art.thumbPromise=null;art.previewPromise=null;art.thumbFailed=false}
  for(const [art,url] of thumbCache){URL.revokeObjectURL(url);art.thumbUrl=null;art.thumbPromise=null;art.thumbBytes=0}
  thumbCache.clear();thumbCacheBytes=0;previewCache.clear();
  while(thumbnailQueue.length){thumbnailQueue.shift().resolve(null)}
@@ -637,8 +643,8 @@ function artIndex(bx,by,i){
  return(n+artworks.length)%artworks.length;
 }
 function start(){if(!raf)raf=requestAnimationFrame(frame)}
-function zoomAt(factor,px,py){cameraFlight=null;camera=canvasCore.anchoredZoom(camera,factor,px,py,.40,1.9);cameraGoal={...camera};updateGoals();updateCamera();start()}
-function reset(animate=true){cameraFlight=null;if(active){const old=nodes.get(active);if(old)holdMotionUnderlay(old);releaseFullImage()}const s=viewport.w<700?.70:viewport.w<1150?.76:.84;const single=localMode&&artworks.length===1?imageSlotForIndex(0)?.rect:null;const x=single?viewport.w/2-(single.x+single.w/2)*s:localMode?Math.max(20,viewport.w*.12):viewport.w*.5-BW*.46*s,y=single?viewport.h/2-(single.y+single.h/2)*s:localMode?Math.max(70,viewport.h*.10):viewport.h*.5-BH*.45*s;active=null;activeReflow=null;stage.classList.remove('has-selection');document.getElementById('closeBtn').tabIndex=-1;document.getElementById('inspectBtn').tabIndex=-1;sceneStatus.textContent='已返回画布中心';counter.innerHTML=`01<span style="font-size:.42em;color:#ffffff66"> / ${localMode?artworks.length:'∞'}</span>`;updateGoals();cameraGoal={x,y,s};if(motion.matches||!animate)camera={...cameraGoal};updateCamera();start()}
+function zoomAt(factor,px,py){if(coastRaf){cancelAnimationFrame(coastRaf);coastRaf=null}cameraFlight=null;camera=canvasCore.anchoredZoom(camera,factor,px,py,.40,1.9);cameraGoal={...camera};updateGoals();updateCamera();start()}
+function reset(animate=true){if(coastRaf){cancelAnimationFrame(coastRaf);coastRaf=null}cameraFlight=null;if(active){const old=nodes.get(active);if(old)holdMotionUnderlay(old);releaseFullImage()}const s=viewport.w<700?.70:viewport.w<1150?.76:.84;const single=localMode&&artworks.length===1?imageSlotForIndex(0)?.rect:null;const x=single?viewport.w/2-(single.x+single.w/2)*s:localMode?Math.max(20,viewport.w*.12):viewport.w*.5-BW*.46*s,y=single?viewport.h/2-(single.y+single.h/2)*s:localMode?Math.max(70,viewport.h*.10):viewport.h*.5-BH*.45*s;active=null;activeReflow=null;stage.classList.remove('has-selection');document.getElementById('closeBtn').tabIndex=-1;document.getElementById('inspectBtn').tabIndex=-1;sceneStatus.textContent='已返回画布中心';counter.innerHTML=`01<span style="font-size:.42em;color:#ffffff66"> / ${localMode?artworks.length:'∞'}</span>`;updateGoals();cameraGoal={x,y,s};if(motion.matches||!animate)camera={...cameraGoal};updateCamera();start()}
 function updateCamera(){world.style.transform=`translate3d(${camera.x}px,${camera.y}px,0) scale(${camera.s})`;if(coordinates)coordinates.textContent=`X ${slugNum(Math.round(-camera.x/camera.s))} — Y ${slugNum(Math.round(-camera.y/camera.s))} · ${String(Math.round(camera.s*100)).padStart(3,'0')}%`}
 function setImage(img,src){
  img.onload=async()=>{
@@ -651,9 +657,10 @@ const observer=('IntersectionObserver' in window)?new IntersectionObserver(entri
 async function loadThumbnail(m){
  if(m.thumbRequested)return;m.thumbRequested=true;
  const version=collectionVersion,art=m.art;
+ if(art.file){const pixels=Math.max(m.rect.w,m.rect.h)*camera.s*Math.min(DPR,2);art.requestedEdge=pixels<=192?192:pixels<=384?384:pixels<=768?768:1024}
  const url=art.file?await scheduleThumbnail(art,thumbnailPriority(m)):photo(art.img,780);
  if(version!==collectionVersion||!m.button.isConnected||m.art!==art)return;
- if(url){m.low.loading='eager';setImage(m.low,url)}
+ if(url){m.low.loading='eager';setImage(m.low,url)}else m.thumbRequested=false
 }
 function loadOriginal(m){
  if(m.fullRequested)return;
@@ -753,8 +760,10 @@ function ensureFocusBlock(chosen){
 }
 function focusCameraFor(rect){return wallMotion.focusCamera(rect,camera,viewport)}
 function flyToFocus(rect){
+ if(coastRaf){cancelAnimationFrame(coastRaf);coastRaf=null}
  const goal=focusCameraFor(rect);
- cameraFlight={from:{...camera},to:goal,elapsed:0};
+ const velocity=cameraFlight?.velocity||{x:0,y:0};
+ cameraFlight={from:{...camera},to:goal,elapsed:0,velocity};
  cameraGoal={...goal};
  if(motion.matches){camera={...goal};cameraFlight=null;updateCamera()}
 }
@@ -810,7 +819,12 @@ if(active){
   const tab=focusable?0:-1;if(m.button.tabIndex!==tab)m.button.tabIndex=tab;
   m.button.classList.toggle('is-focus-ring',m.id===focusedId);
   }
-  if(changed){updateGoals();evictThumbnails()}
+  if(changed){
+  const live=new Map([...nodes.values()].map(m=>[m.art,m]));
+  for(let i=thumbnailQueue.length-1;i>=0;i--){const task=thumbnailQueue[i];if(task.preview)continue;const tile=live.get(task.art);if(!tile){thumbnailQueue.splice(i,1);task.resolve(null)}else task.priority=thumbnailPriority(tile)}
+  thumbnailQueue.sort((a,b)=>(b.preview?1:0)-(a.preview?1:0)||(b.priority||0)-(a.priority||0));
+  updateGoals();evictThumbnails()
+ }
 }
 function select(id){if(!nodes.has(id))return;const already=active===id;if(already){close();return}
  if(active!==null&&active!==id){
@@ -850,11 +864,9 @@ function frame(now){
  last=now;
  let moving=false;
  if(cameraFlight){
-  cameraFlight.elapsed+=dt;
-  const sample=wallMotion.panFrame(cameraFlight.from,cameraFlight.to,cameraFlight.elapsed,motion.matches);
-  camera=sample.camera;
-  if(sample.done){camera={...cameraFlight.to};cameraFlight=null}
-  else moving=true;
+  let inFlight=false;
+   for(const key of ['x','y']){const next=wallMotion.springAxis(camera[key],cameraFlight.velocity[key],cameraFlight.to[key],dt,motion.matches);camera[key]=next.value;cameraFlight.velocity[key]=next.velocity;inFlight||=next.moving}
+   if(!inFlight){camera={...cameraFlight.to};cameraFlight=null}else moving=true;
  }else if(motion.matches){
   camera={...cameraGoal};
  }else{
@@ -871,18 +883,21 @@ function frame(now){
 }
 function point(e){const r=stage.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
 function pinchState(){const a=[...pointers.values()];if(a.length<2)return null;const mid={x:(a[0].x+a[1].x)/2,y:(a[0].y+a[1].y)/2};return{dist:Math.max(1,dist(a[0],a[1])),mid,scale:camera.s,world:{x:(mid.x-camera.x)/camera.s,y:(mid.y-camera.y)/camera.s}}}
-stage.addEventListener('pointerdown',e=>{if(e.button!==0&&e.pointerType==='mouse')return;cameraFlight=null;cameraGoal={...camera};const p=point(e);pointers.set(e.pointerId,p);stage.setPointerCapture(e.pointerId);stage.classList.add('is-dragging');keepPlaying=true;
- if(pointers.size===1){drag={id:e.pointerId,point:p,start:p,travel:0,tile:e.target.closest('.m-tile')?.dataset.instance||null};pinch=null}
+stage.addEventListener('pointerdown',e=>{if(e.button!==0&&e.pointerType==='mouse')return;cameraFlight=null;if(coastRaf){cancelAnimationFrame(coastRaf);coastRaf=null}cameraGoal={...camera};const p=point(e);pointers.set(e.pointerId,p);stage.setPointerCapture(e.pointerId);stage.classList.add('is-dragging');keepPlaying=true;
+ if(pointers.size===1){drag={id:e.pointerId,point:p,start:p,travel:0,vx:0,vy:0,lastTime:performance.now(),tile:e.target.closest('.m-tile')?.dataset.instance||null};pinch=null}
  else{pinch=pinchState();drag=null}
 });
 stage.addEventListener('pointermove',e=>{if(!pointers.has(e.pointerId))return;const p=point(e),old=pointers.get(e.pointerId);pointers.set(e.pointerId,p);
  if(pointers.size>=2){if(!pinch)pinch=pinchState();const arr=[...pointers.values()],mid={x:(arr[0].x+arr[1].x)/2,y:(arr[0].y+arr[1].y)/2};const targetS=clamp(pinch.scale*dist(arr[0],arr[1])/pinch.dist,.40,1.9);camera.s=targetS;camera.x=mid.x-pinch.world.x*targetS;camera.y=mid.y-pinch.world.y*targetS;cameraGoal={...camera};updateGoals();updateCamera();start();return}
- if(drag&&drag.id===e.pointerId){const deltaX=p.x-old.x,deltaY=p.y-old.y;drag.travel=dist(p,drag.start);drag.vx=deltaX;drag.vy=deltaY;drag.lastTime=performance.now();if(drag.travel>5){camera.x+=deltaX;camera.y+=deltaY;cameraGoal={...camera};updateCamera();start()}}
+ if(drag&&drag.id===e.pointerId){const deltaX=p.x-old.x,deltaY=p.y-old.y;drag.travel=Math.max(drag.travel,dist(p,drag.start));const now=performance.now(),ms=Math.max(8,now-drag.lastTime);drag.vx=(drag.vx||0)*.4+deltaX/ms*.6;drag.vy=(drag.vy||0)*.4+deltaY/ms*.6;drag.lastTime=now;if(drag.travel>5){camera.x+=deltaX;camera.y+=deltaY;cameraGoal={...camera};updateCamera();start()}}
 });
-stage.addEventListener('pointerup',e=>{pointers.delete(e.pointerId);stage.releasePointerCapture(e.pointerId);
+stage.addEventListener('pointerup',e=>{pointers.delete(e.pointerId);if(stage.hasPointerCapture?.(e.pointerId))stage.releasePointerCapture(e.pointerId);
+ if(pointers.size===1){const [id,p]=pointers.entries().next().value;drag={id,point:p,start:p,travel:100,tile:null,vx:0,vy:0,lastTime:performance.now()};pinch=null;return}
+ if(pointers.size>=2){drag=null;pinch=pinchState();return}
  if(pointers.size===0){const wasClick=drag&&drag.travel<5;const d=drag;drag=null;pinch=null;
   if(wasClick&&d.tile){focusRestore=nodes.get(d.tile)?.button||null;select(d.tile)}
-  keepPlaying=false;stage.classList.remove('is-dragging');start()}});
+   else if(d&&!motion.matches&&performance.now()-d.lastTime<80){let vx=clamp(d.vx||0,-2.5,2.5),vy=clamp(d.vy||0,-2.5,2.5),previous=performance.now();const coast=now=>{const dt=Math.max(0,Math.min(34,now-previous));previous=now;const decay=Math.exp(-dt/115);camera.x+=vx*115*(1-decay);camera.y+=vy*115*(1-decay);vx*=decay;vy*=decay;cameraGoal={...camera};updateCamera();start();coastRaf=Math.hypot(vx,vy)>.025?requestAnimationFrame(coast):null};if(Math.hypot(vx,vy)>.15)coastRaf=requestAnimationFrame(coast)}
+   keepPlaying=false;stage.classList.remove('is-dragging');start()}});
 stage.addEventListener('pointercancel',e=>{pointers.delete(e.pointerId);
  if(pointers.size===1){const [id,p]=pointers.entries().next().value;drag={id,point:p,start:p,travel:100,tile:null};pinch=null}
  else if(pointers.size>=2){drag=null;pinch=pinchState()}
@@ -968,7 +983,7 @@ function loadInspectorIndex(index){
  // Keep gallery selection and camera in sync with inspector navigation.
  if(localMode){
   const slot=imageSlotForIndex(index);
-  if(slot){const id=`local:${index}`;if(!nodes.has(id))makeTile(id,slot.rect,index);select(id)}
+  if(slot){const id=`local:${index}`;if(!nodes.has(id))makeTile(id,slot.rect,index);if(active!==id)select(id)}
  }
 }
 function openInspector(){
