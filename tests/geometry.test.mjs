@@ -9,6 +9,7 @@ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const source=html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
 assert.ok(source);
+const inspectorSource=fs.readFileSync(path.join(root,'src/inspector-controller.js'),'utf8');
 const raw=source.match(/const TEMPLATE=\[([\s\S]*?)\];/)?.[1];
 assert.ok(raw);
 const template=vm.runInNewContext('['+raw+']');
@@ -91,8 +92,8 @@ test('20k local images map to 20k distinct slots without wrapping',()=>{
 
 test('full image viewer retains natural aspect ratio and original scale',()=>{
  assert.match(html,/id="inspector"[^>]*role="dialog"/);
- assert.match(source,/inspectorImage\.naturalWidth/);
- assert.match(source,/inspectorImage\.naturalHeight/);
- assert.match(source,/inspectorZoomAt\(1,/);
+ assert.match(inspectorSource,/inspectorImage\.naturalWidth/);
+ assert.match(inspectorSource,/inspectorImage\.naturalHeight/);
+ assert.match(inspectorSource,/inspectorZoomAt\(1,/);
  assert.match(html,/id="inspectorNext"/);
 });

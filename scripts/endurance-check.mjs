@@ -16,8 +16,8 @@ try{
  const start=Date.now();await sample('baseline');
  while(Date.now()-start<duration){
   const index=(report.cycles*7919+123)%20000;
-  await page.keyboard.press('Control+k');await page.locator('#searchInput').fill('photo-'+String(index).padStart(5,'0'));await page.locator('.search-result').first().waitFor();
-  await page.waitForTimeout(250);await page.keyboard.press('Enter');await page.locator('#searchOverlay').waitFor({state:'hidden'});
+  await page.keyboard.press('Control+k');const query='photo-'+String(index).padStart(5,'0');await page.locator('#searchInput').fill(query);await page.locator('.search-result').filter({hasText:query}).first().waitFor();
+  await page.keyboard.press('Enter');await page.locator('#searchOverlay').waitFor({state:'hidden'});
   await page.keyboard.press('i');await page.locator('#inspector').waitFor();await page.waitForFunction(()=>document.getElementById('inspectorImage').naturalWidth>0,undefined,{timeout:30000});
   await page.keyboard.press('ArrowRight');await page.keyboard.press('Escape');await page.locator('#inspector').waitFor({state:'hidden'});await page.keyboard.press('Escape');
   await page.locator('#plusBtn').click();await page.locator('#minusBtn').click();

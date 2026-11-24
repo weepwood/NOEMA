@@ -10,6 +10,9 @@ on:
         description: 'Chromium 20000 文件 / 1800 帧专项（重复编码素材）'
         type: boolean
         default: false
+concurrency:
+  group: noema-verify-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
